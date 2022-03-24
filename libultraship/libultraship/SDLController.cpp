@@ -42,10 +42,10 @@ namespace Ship {
         ConfigFile& Conf = *pConf.get();
 
         for (int i = 0; i < SDL_NumJoysticks(); i++) {
-            if (SDL_IsGameController(i)) {
+          //  if (SDL_IsGameController(i)) {
                 // Get the GUID from SDL
-                char GuidBuf[33];
-                SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), GuidBuf, sizeof(GuidBuf));
+                char GuidBuf[33] = "DamnIt";
+                //SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), GuidBuf, sizeof(GuidBuf));
                 auto NewGuid = std::string(GuidBuf);
 
                 // Invalid GUID read. Go to next.
@@ -61,12 +61,8 @@ namespace Ship {
 
                 // If the GUID is blank from the config, OR if the config GUID matches, load the controller.
                 if (Conf[ConfSection]["GUID"].compare("") == 0 || Conf[ConfSection]["GUID"].compare(INVALID_SDL_CONTROLLER_GUID) == 0 || Conf[ConfSection]["GUID"].compare(NewGuid) == 0) {
-                    auto NewCont = SDL_GameControllerOpen(i);
+                    auto NewCont = SDL_JoystickOpen(i);
 
-                    if (SDL_GameControllerHasSensor(NewCont, SDL_SENSOR_GYRO))
-                    {
-                        SDL_GameControllerSetSensorEnabled(NewCont, SDL_SENSOR_GYRO, SDL_TRUE);
-                    }
 
                     // We failed to load the controller. Go to next.
                     if (NewCont == nullptr) {
@@ -90,7 +86,7 @@ namespace Ship {
 
                     break;
                 }
-            }
+      //      }
         }
 
         return Cont != nullptr;
@@ -98,7 +94,7 @@ namespace Ship {
 
     bool SDLController::Close() {
         if (Cont != nullptr) {
-            SDL_GameControllerClose(Cont);
+            SDL_JoystickClose(Cont);
         }
         Cont = nullptr;
         guid = "";
@@ -165,10 +161,10 @@ namespace Ship {
         std::shared_ptr<ConfigFile> pConf = GlobalCtx2::GetInstance()->GetConfig();
         ConfigFile& Conf = *pConf.get();
 
-        SDL_GameControllerUpdate();
+        SDL_JoystickUpdate();
 
         // If the controller is disconnected, close it.
-        if (Cont != nullptr && !SDL_GameControllerGetAttached(Cont)) {
+        if (Cont != nullptr && !SDL_JoystickGetAttached(Cont)) {
             Close();
         }
 
@@ -180,64 +176,35 @@ namespace Ship {
             }
         }
 
-        if (SDL_GameControllerHasSensor(Cont, SDL_SENSOR_GYRO))
-        {
-            float gyroData[3];
-            SDL_GameControllerGetSensorData(Cont, SDL_SENSOR_GYRO, gyroData, 3);
 
-            const char* contName = SDL_GameControllerName(Cont);
-            const int isSpecialController = strcmp("PS5 Controller", contName);
-            const float gyroSensitivity = Game::Settings.controller.gyro_sensitivity;
-
-            if (gyroDriftX == 0) {
-                if (isSpecialController == 0) {
-                    gyroDriftX = gyroData[2];
-                }
-                else {
-                    gyroDriftX = gyroData[0];
-                }
-            }
-
-            if (gyroDriftY == 0) {
-                gyroDriftY = gyroData[1];
-            }
-
-            if (isSpecialController == 0) {
-                wGyroX = gyroData[2] - gyroDriftX;
-            }
-            else {
-                wGyroX = gyroData[0] - gyroDriftX;
-            }
-
-            wGyroY = gyroData[1] - gyroDriftY;
-
-            wGyroX *= gyroSensitivity;
-            wGyroY *= gyroSensitivity;
-        }
-
-        for (int32_t i = SDL_CONTROLLER_BUTTON_A; i < SDL_CONTROLLER_BUTTON_MAX; i++) {
-            if (ButtonMapping.contains(i)) {
-                if (SDL_GameControllerGetButton(Cont, (SDL_GameControllerButton)i)) {
-                    dwPressedButtons |= ButtonMapping[i];
+        for (int32_t i = 0; i < SDL_JoystickNumButtons(Cont); i++) {
+            //if (ButtonMapping.contains(i)) {
+                if (SDL_JoystickGetButton(Cont, i)) {
+                    if (ButtonMapping.contains(i)) {
+                        dwPressedButtons |= ButtonMapping[i];
+                    }
+                    // if showinputs()
+                    printf("Saw input! %d\n\n", i);
+                    
                 }
                 else {
                     dwPressedButtons &= ~ButtonMapping[i];
                 }
-            }
+           // }
         }
 
         SDL_GameControllerAxis StickAxisX = SDL_CONTROLLER_AXIS_INVALID;
         SDL_GameControllerAxis StickAxisY = SDL_CONTROLLER_AXIS_INVALID;
         int32_t StickDeadzone = 0;
 
-        for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
+        for (int32_t i = 0; i < SDL_JoystickNumAxes(Cont); i++) {
             auto Axis = (SDL_GameControllerAxis)i;
             auto PosScancode = i + AXIS_SCANCODE_BIT;
             auto NegScancode = -PosScancode;
             auto AxisThreshold = ThresholdMapping[i];
             auto PosButton = ButtonMapping[PosScancode];
             auto NegButton = ButtonMapping[NegScancode];
-            auto AxisValue = SDL_GameControllerGetAxis(Cont, Axis);
+            auto AxisValue = SDL_JoystickGetAxis(Cont, Axis);
 
 #ifdef TARGET_WEB
             // Firefox has a bug: https://bugzilla.mozilla.org/show_bug.cgi?id=1606562
@@ -324,8 +291,8 @@ namespace Ship {
             }
 
             if (StickAxisX != SDL_CONTROLLER_AXIS_INVALID && StickAxisY != SDL_CONTROLLER_AXIS_INVALID) {
-                auto AxisValueX = SDL_GameControllerGetAxis(Cont, StickAxisX);
-                auto AxisValueY = SDL_GameControllerGetAxis(Cont, StickAxisY);
+                auto AxisValueX = SDL_JoystickGetAxis(Cont, StickAxisX);
+                auto AxisValueY = SDL_JoystickGetAxis(Cont, StickAxisY);
                 NormalizeStickAxis(AxisValueX, AxisValueY, StickDeadzone);
             }
         }
@@ -333,18 +300,18 @@ namespace Ship {
 
     void SDLController::WriteToSource(ControllerCallback* controller)
     {
-        if (SDL_GameControllerHasRumble(Cont)) {
+        if (SDL_JoystickHasRumble(Cont)) {
             if (controller->rumble > 0) {
-                SDL_GameControllerRumble(Cont, 0xFFFF * Game::Settings.controller.rumble_strength, 0xFFFF * Game::Settings.controller.rumble_strength, 1);
+                SDL_JoystickRumble(Cont, 0xFFFF * Game::Settings.controller.rumble_strength, 0xFFFF * Game::Settings.controller.rumble_strength, 1);
             }
         }
 
-        if (SDL_GameControllerHasLED(Cont)) {
+        if (SDL_JoystickHasLED(Cont)) {
             if (controller->ledColor == 1) {
-                SDL_JoystickSetLED(SDL_GameControllerGetJoystick(Cont), 255, 0, 0);
+                SDL_JoystickSetLED(Cont, 255, 0, 0);
             }
             else {
-                SDL_JoystickSetLED(SDL_GameControllerGetJoystick(Cont), 0, 255, 0);
+                SDL_JoystickSetLED(Cont, 0, 255, 0);
             }
         }
     }

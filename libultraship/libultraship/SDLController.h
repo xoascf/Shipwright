@@ -25,7 +25,7 @@ namespace Ship {
 
 		private:
 			std::string guid;
-			SDL_GameController* Cont;
+			SDL_Joystick* Cont;
 			std::map<int32_t, int16_t> ThresholdMapping;
 
 			void LoadAxisThresholds();
