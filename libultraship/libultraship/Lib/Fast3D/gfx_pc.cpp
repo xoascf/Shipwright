@@ -2704,7 +2704,11 @@ void gfx_end_frame(void) {
     }
 }
 
+extern "C" {
+int set_divisor = 0;
+}
 void gfx_set_framedivisor(int divisor) {
+    set_divisor = divisor;
     gfx_wapi->set_frame_divisor(divisor);
 }
 

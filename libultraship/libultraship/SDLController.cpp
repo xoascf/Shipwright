@@ -84,7 +84,12 @@ namespace Ship {
                     LoadBinding();
                     LoadAxisThresholds();
 
-                    break;
+                    printf("Number Haptic Devices: %d\n", SDL_NumHaptics());
+                    Haptic = SDL_HapticOpenFromJoystick(Cont);
+                    if(Haptic)
+                    {
+                        SDL_HapticRumbleInit(Haptic);
+                    }
                 }
       //      }
         }
@@ -298,11 +303,19 @@ namespace Ship {
         }
     }
 
+    extern "C" int set_divisor;
     void SDLController::WriteToSource(ControllerCallback* controller)
     {
+        static u8 rumbling = 0;
         if (SDL_JoystickHasRumble(Cont)) {
-            if (controller->rumble > 0) {
-                SDL_JoystickRumble(Cont, 0xFFFF * Game::Settings.controller.rumble_strength, 0xFFFF * Game::Settings.controller.rumble_strength, 1);
+            if (controller->rumble > 0 && !rumbling) {
+                printf("!!!!!!!! Sending Joystick Rumble\n");
+                //SDL_JoystickRumble(Cont, 0xFFFF, 0xFFFF, 1);
+                rumbling = 1;
+                SDL_HapticRumblePlay(Haptic, 0xFFFF, (controller->rumble * (1000 / (60 / set_divisor))));
+            } else if(controller->rumble == 0 && rumbling){
+                //SDL_HapticRumbleStop(Haptic);
+                rumbling = 0;
             }
         }
 

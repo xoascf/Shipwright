@@ -26,6 +26,7 @@ namespace Ship {
 		private:
 			std::string guid;
 			SDL_Joystick* Cont;
+			SDL_Haptic* Haptic;
 			std::map<int32_t, int16_t> ThresholdMapping;
 
 			void LoadAxisThresholds();

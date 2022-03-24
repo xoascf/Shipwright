@@ -34,7 +34,7 @@ extern "C" {
         std::shared_ptr<Ship::ConfigFile> pConf = Ship::GlobalCtx2::GetInstance()->GetConfig();
         Ship::ConfigFile& Conf = *pConf.get();
 
-        if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
+        if (SDL_Init(SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC) != 0) {
             SPDLOG_ERROR("Failed to initialize SDL game controllers ({})", SDL_GetError());
             exit(EXIT_FAILURE);
         }

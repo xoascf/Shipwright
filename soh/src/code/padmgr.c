@@ -64,11 +64,17 @@ void PadMgr_RumbleControl(PadMgr* padMgr) {
 
     triedRumbleComm = 0;
 
+    if (padMgr->rumbleEnable[0] != 0) {
+        controllerCallback.rumble = 1;
+        OTRControllerCallback(&controllerCallback);
+    }
+
     for (i = 0; i < 4; i++) {
         if (padMgr->ctrlrIsConnected[i]) {
             if (padMgr->padStatus[i].status & 1) {
                 if (padMgr->pakType[i] == temp) {
                     if (padMgr->rumbleEnable[i] != 0) {
+
                         if (padMgr->rumbleCounter[i] < 3) {
                             // clang-format off
                             if (1) {} osSyncPrintf(VT_FGCOL(YELLOW));
@@ -100,6 +106,7 @@ void PadMgr_RumbleControl(PadMgr* padMgr) {
                             osSyncPrintf("padmgr: %dコン: %s\n", i + 1, "振動パック 停止");
                             osSyncPrintf(VT_RST);
 
+                            padMgr->rumbleEnable[i] = 0;
                             if (osMotorStop(&padMgr->pfs[i]) != 0) {
                                 padMgr->pakType[i] = 0;
                                 osSyncPrintf(VT_FGCOL(YELLOW));
@@ -170,6 +177,7 @@ void PadMgr_RumbleStop(PadMgr* padMgr) {
     OSMesgQueue* ctrlrQ = PadMgr_LockSerialMesgQueue(padMgr);
 
     for (i = 0; i < 4; i++) {
+        padMgr->rumbleEnable[i] = 0;
         if (osMotorInit(ctrlrQ, &padMgr->pfs[i], i) == 0) {
 #if 0
             if ((gFaultStruct.msgId == 0) && (padMgr->rumbleOnFrames != 0)) 
@@ -180,7 +188,6 @@ void PadMgr_RumbleStop(PadMgr* padMgr) {
                 osSyncPrintf(VT_RST);
             }
 #endif
-
             osMotorStop(&padMgr->pfs[i]);
         }
     }
@@ -269,15 +276,17 @@ void PadMgr_ProcessInputs(PadMgr* padMgr) {
         input->press.stick_y += (s8)(input->cur.stick_y - input->prev.stick_y);
     }
 
-    controllerCallback.rumble = padMgr->rumbleEnable[0] > 0 ? 1 : 0;
-
+    
     if (HealthMeter_IsCritical()) {
         controllerCallback.ledColor = 1;
     } else {
         controllerCallback.ledColor = 0;
     }
 
-    OTRControllerCallback(&controllerCallback);
+    if (padMgr->rumbleEnable[0] == 0) {
+        controllerCallback.rumble = 0;
+        OTRControllerCallback(&controllerCallback);
+    }
 
     PadMgr_UnlockPadData(padMgr);
 }
