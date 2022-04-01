@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-import argparse, json, os, signal, time, sys, shutil
+import argparse, json, os, signal, time, sys, shutil, platform
+from pathlib import Path
 from multiprocessing import Pool, cpu_count, Event, Manager, ProcessError
 import shutil
 
@@ -9,6 +10,17 @@ def SignalHandler(sig, frame):
     mainAbort.set()
     # Don't exit immediately to update the extracted assets file.
 
+def ZapdExec():
+    if sys.platform == "win32":
+        if platform.architecture()[0] == "32bit":
+            return "Win32/Release/ZAPD.exe"
+        else:
+            return "x64/Release/ZAPD.exe"
+    else:
+        return "../ZAPD/ZAPD.out"
+
+zapdBin = Path(ZapdExec())
+
 def BuildOTR():
     shutil.copyfile("baserom/Audiobank", "Extract/Audiobank")
     shutil.copyfile("baserom/Audioseq", "Extract/Audioseq")
@@ -16,9 +28,7 @@ def BuildOTR():
 
     shutil.copytree("assets", "Extract/assets")
 
-    execStr = "x64\\Release\\ZAPD.exe" if sys.platform == "win32" else "../ZAPD/ZAPD.out"
-
-    execStr += " botr -se OTR"
+    execStr = f"{zapdBin} botr -se OTR"
 
     print(execStr)
     exitValue = os.system(execStr)
@@ -29,8 +39,7 @@ def BuildOTR():
         print("\n")
 
 def ExtractFile(xmlPath, outputPath, outputSourcePath):
-    execStr = "x64\\Release\\ZAPD.exe" if sys.platform == "win32" else "../ZAPD/ZAPD.out"
-    execStr += " e -eh -i %s -b baserom/ -o %s -osf %s -gsf 1 -rconf CFG/Config.xml -se OTR" % (xmlPath, outputPath, outputSourcePath)
+    execStr =  f"{zapdBin} e -eh -i {xmlPath} -b baserom/ -o {outputPath} -osf {outputSourcePath} -gsf 1 -rconf CFG/Config.xml -se OTR"
 
     if "overlays" in xmlPath:
         execStr += " --static"
