@@ -372,6 +372,30 @@ void EnArrow_Fly(EnArrow* this, PlayState* play) {
         Math_Vec3f_Copy(&this->unk_210, &this->actor.world.pos);
         Actor_MoveForward(&this->actor);
 
+        if (this->actor.params == ARROW_ICE) {
+	    WaterBox* outWaterBox;
+	    f32 ySurface = this->actor.world.pos.y;
+
+	    if (WaterBox_GetSurfaceImpl(play, &play->colCtx, this->actor.world.pos.x,
+                                 this->actor.world.pos.z, &ySurface, &outWaterBox) &&
+                                 (this->actor.world.pos.y <= ySurface && ySurface < this->actor.prevPos.y)) {
+                Vec3f diff;
+                Math_Vec3f_Diff(&this->actor.prevPos, &this->actor.world.pos, &diff);
+                f32 ydiff1 = ySurface - this->actor.world.pos.y;
+                f32 ydiff2 = this->actor.prevPos.y - this->actor.world.pos.y;
+                f32 yRatio = (ydiff2 > 0.0f) ? ydiff1/ydiff2 : 0.0f;
+                Vec3f finalPos = {yRatio*diff.x+this->actor.world.pos.x,ySurface,yRatio*diff.z+this->actor.world.pos.z};
+
+                Actor_Spawn(&play->actorCtx, play, ACTOR_BG_SPOT08_ICEBLOCK,
+                    finalPos.x,finalPos.y,finalPos.z,
+                    0x0000,this->actor.world.rot.y,0x0000,0x20, true);
+                this->actor.world.pos = finalPos;
+                EnArrow_SetupAction(this, func_809B45E0);
+                this->timer = 20;
+                this->hitFlags |= 1;
+            }
+        }
+
         if ((this->touchedPoly =
                  BgCheck_ProjectileLineTest(&play->colCtx, &this->actor.prevPos, &this->actor.world.pos, &hitPoint,
                                             &this->actor.wallPoly, true, true, true, true, &bgId))) {
