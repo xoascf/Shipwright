@@ -76,7 +76,7 @@ void Main(void* arg) {
     Heaps_Alloc();
     sysHeap = (uintptr_t)gSystemHeap;
     fb = SysCfb_GetFbPtr(0);
-    gSystemHeapSize = 1024 * 1024 * 4;
+    gSystemHeapSize = SYSTEM_HEAP_SIZE;
     // "System heap initalization"
     osSyncPrintf("システムヒープ初期化 %08x-%08x %08x\n", sysHeap, fb, gSystemHeapSize);
     SystemHeap_Init((void*)sysHeap, gSystemHeapSize); // initializes the system heap
