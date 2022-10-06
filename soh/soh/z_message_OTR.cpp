@@ -172,4 +172,40 @@ extern "C" void OTRMessage_Init()
           "",
         }
     );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x8000,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Hey, you know, it's so strange what&happened to the Great Deku Tree.^Things haven't been&growing in the forrest lately,&but hopefully that will change.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x8886,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "You know, I think there are places&in the lost woods that no Kokiri&now remembers how to get to...&\x0D\x14\x03...except one...^Oops, I shouldn't have said that...\x07\x88\x87",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x8887,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "This is no longer a secret&to everyone anymore!",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x8888,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "I'll give you this, if you&promise to never let anyone know.",
+          "",
+          "",
+        }
+    );
 }
