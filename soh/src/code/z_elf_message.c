@@ -154,6 +154,11 @@ u16 ElfMessage_GetSariaText(PlayState* play) {
 
     if (!LINK_IS_ADULT) {
         if (Actor_FindNearby(play, &player->actor, ACTOR_EN_SA, 4, 800.0f) == NULL) {
+            if (play->sceneNum == SCENE_SPOT04)//Kokiri Village
+                return 0x0170;
+            else if (play->sceneNum == SCENE_LINK_HOME)//Link's House
+                return 0x0171;
+
             msgs = sChildSariaMsgs;
         } else {
             return 0x0160; // Special text about Saria preferring to talk to you face-to-face

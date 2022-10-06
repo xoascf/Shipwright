@@ -154,4 +154,22 @@ extern "C" void OTRMessage_Init()
             "Tu as l'air de t'ennuyer. Tu veux&aller faire un tour?\x1B&%gOui&Non%w",
         }
     );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x0170,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "It's nice that you are dropping by the&village again. I've heard the twins have&been arranging something special!\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x0171,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "\x0F, you've been collecting a lot of&things in your place, haven't you?&Maybe I should come around sometime.\x0B\x02",
+          "",
+          "",
+        }
+    );
 }
