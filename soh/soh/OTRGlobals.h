@@ -13,6 +13,7 @@
 #include <vector>
 
 const std::string customMessageTableID = "BaseGameOverrides";
+const std::string questMessageTableID = "QuestOverrides";
 
 class OTRGlobals
 {

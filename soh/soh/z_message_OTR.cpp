@@ -90,6 +90,7 @@ extern "C" void OTRMessage_Init()
 	}
 
     CustomMessageManager::Instance->AddCustomMessageTable(customMessageTableID);
+    CustomMessageManager::Instance->AddCustomMessageTable(questMessageTableID);
     CustomMessageManager::Instance->CreateGetItemMessage(
         customMessageTableID, (GetItemID)TEXT_GS_NO_FREEZE, ITEM_SKULL_TOKEN,
         { 
