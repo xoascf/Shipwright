@@ -359,6 +359,12 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
             }
             return 0x100C;
         case ENKO_TYPE_CHILD_6:
+            if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA)) {
+                if (IS_DAY)
+                    return 0x8001;
+                else
+                    return 0x8002;
+            }
             if (gSaveContext.eventChkInf[4] & 1) {
                 return 0x10B5;
             }

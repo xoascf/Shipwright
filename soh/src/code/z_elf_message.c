@@ -158,7 +158,16 @@ u16 ElfMessage_GetSariaText(PlayState* play) {
                 return 0x0170;
             else if (play->sceneNum == SCENE_LINK_HOME)//Link's House
                 return 0x0171;
-
+            else if (play->sceneNum == SCENE_KOKIRI_HOME)
+                return 0x0176;
+            else if (play->sceneNum == SCENE_KOKIRI_SHOP)
+                return 0x0172;
+            else if (play->sceneNum == SCENE_KOKIRI_HOME3)
+                return 0x0173;
+            else if (play->sceneNum == SCENE_KOKIRI_HOME4)
+                return 0x0174;
+            else if (play->sceneNum == SCENE_KOKIRI_HOME5)
+                return 0x0175;
             msgs = sChildSariaMsgs;
         } else {
             return 0x0160; // Special text about Saria preferring to talk to you face-to-face

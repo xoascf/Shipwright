@@ -173,10 +173,73 @@ extern "C" void OTRMessage_Init()
         }
     );
     CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x0176,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "The guys here know a lot of things.&But surely, there has to be so much&more outside the forest to discover.^\x0F, I want you you to teach&me about the world. Talk to me&about any places you discover.^I'm just so curious.\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x0172,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "The shopkeeper doesn't do a very& good job of hiding everything in&the store. Tee hee!\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x0173,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "I shouldn't be admitting this to you,&but even I sometimes get the twins&confused with the other girls.\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x0174,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "You probably shouldn't let&Mido know I'm talking to you like this...\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x0175,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "Make yourself at home.&I don't mind if other people&clean things up a bit for me.\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
         questMessageTableID, 0x8000,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
           "Hey, you know, it's so strange what&happened to the Great Deku Tree.^Things haven't been&growing in the forrest lately,&but hopefully that will change.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x8001,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Tee hee hee, a lot of Kokiri&are good at hiding secrets.^But some aren't as&good as it as others.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x8002,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Hey, wouldn't it be funny, if \x14\x03someone\x14\x01&played a prank on Mido...^Saria is maybe a bit too nice to him&for his own good.",
           "",
           "",
         }
