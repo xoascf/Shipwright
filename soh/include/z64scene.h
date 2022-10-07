@@ -346,10 +346,10 @@ enum SceneID {
     /* 0x23 */ SCENE_SHRINE,
     /* 0x24 */ SCENE_SHRINE_N,
     /* 0x25 */ SCENE_SHRINE_R,
-    /* 0x26 */ SCENE_KOKIRI_HOME,
-    /* 0x27 */ SCENE_KOKIRI_HOME3,
-    /* 0x28 */ SCENE_KOKIRI_HOME4,
-    /* 0x29 */ SCENE_KOKIRI_HOME5,
+    /* 0x26 */ SCENE_KOKIRI_HOME,//Know-It-All Brothers' House
+    /* 0x27 */ SCENE_KOKIRI_HOME3,//Twins' House
+    /* 0x28 */ SCENE_KOKIRI_HOME4,//Mido's House
+    /* 0x29 */ SCENE_KOKIRI_HOME5,//Saria's House
     /* 0x2A */ SCENE_KAKARIKO,
     /* 0x2B */ SCENE_KAKARIKO3,
     /* 0x2C */ SCENE_SHOP1,
@@ -360,7 +360,7 @@ enum SceneID {
     /* 0x31 */ SCENE_ALLEY_SHOP,
     /* 0x32 */ SCENE_NIGHT_SHOP,
     /* 0x33 */ SCENE_FACE_SHOP,
-    /* 0x34 */ SCENE_LINK_HOME,
+    /* 0x34 */ SCENE_LINK_HOME,//Link's House
     /* 0x35 */ SCENE_IMPA,
     /* 0x36 */ SCENE_MALON_STABLE,
     /* 0x37 */ SCENE_LABO,
@@ -393,8 +393,8 @@ enum SceneID {
     /* 0x52 */ SCENE_SPOT01,
     /* 0x53 */ SCENE_SPOT02,
     /* 0x54 */ SCENE_SPOT03,
-    /* 0x55 */ SCENE_SPOT04,
-    /* 0x56 */ SCENE_SPOT05,
+    /* 0x55 */ SCENE_SPOT04,//Kokiri Forest
+    /* 0x56 */ SCENE_SPOT05,//Sacred Forest Meadow
     /* 0x57 */ SCENE_SPOT06,
     /* 0x58 */ SCENE_SPOT07,
     /* 0x59 */ SCENE_SPOT08,
