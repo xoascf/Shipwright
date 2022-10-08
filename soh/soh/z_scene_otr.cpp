@@ -75,6 +75,39 @@ bool Scene_CommandSpawnList(PlayState* play, Ship::SceneCommand* cmd)
     return false;
 }
 
+const std::map<u16, std::map<u16, std::vector<std::pair<int, Ship::ActorSpawnEntry>>>> sceneActorOverrides = {/*
+    { 0x01, { // Dodongo's Cavern
+        { 0x03, {
+            { -1, { ACTOR_EN_ITEM00, 3558, 531, -1984, 0, 0, 0, 0x106 }},
+        } },
+    } },
+    { 0x02, { // Jabu Jabu's Belly
+        { 0x0d, {
+            { 3, { ACTOR_EN_ITEM00, -1150, -1113, -2248, 0, 0, 0, 0x106 }},
+        } },
+    } },
+    { 0x3e, { // Grotto
+        { 0x05, { // Octorok Grotto
+            { 8, { ACTOR_EN_ITEM00, 32, -129, 852, 0, 0, 0, 0x406 }},
+        } },
+    } },
+    { 0x55, { // Kokiri Forest
+        { 0x00, {
+            { -1, { ACTOR_EN_ITEM00, 1297, 240, -553, 0, 0, 0, 0x100+(uint16_t)ITEM00_HEART_PIECE }},
+        } },
+    } },
+    { SCENE_LINK_HOME, {
+        { 0x00, {
+            { -1, { ACTOR_EN_ITEM00, 0, 0, 0, 0, 0, 0, 0x100+(uint16_t)ITEM00_HEART_PIECE}},
+        } },
+    } },
+    { 0x09, { // Ice Cavern
+        { 0x09, {
+            { 9, { ACTOR_EN_ITEM00, 366, 213, -2036, 0, 0, 0, 0x406 }},
+        } },
+    } },*/
+};
+
 bool Scene_CommandActorList(PlayState* play, Ship::SceneCommand* cmd) {
     Ship::SetActorList* cmdActor = (Ship::SetActorList*)cmd;
 
@@ -84,6 +117,19 @@ bool Scene_CommandActorList(PlayState* play, Ship::SceneCommand* cmd) {
         play->setupActorList = (ActorEntry*)cmdActor->cachedGameData;
     else
     {
+        if (sceneActorOverrides.find(play->sceneNum) != sceneActorOverrides.end() &&
+                        sceneActorOverrides.at(play->sceneNum).find(play->roomCtx.curRoom.num) != sceneActorOverrides.at(play->sceneNum).end()) {
+            auto& roomOverrides = sceneActorOverrides.at(play->sceneNum).at(play->roomCtx.curRoom.num);
+            for (auto& [index, entry] : roomOverrides) {
+                if (index == -1) {
+                    cmdActor->entries.push_back(entry);
+                } else {
+                    cmdActor->entries[index] = entry;
+                }
+            }
+            play->numSetupActors = cmdActor->entries.size();
+        }
+
         ActorEntry* entries = (ActorEntry*)malloc(cmdActor->entries.size() * sizeof(ActorEntry));
 
         for (int i = 0; i < cmdActor->entries.size(); i++)
