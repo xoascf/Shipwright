@@ -42,13 +42,13 @@ typedef enum {
 } FontType;
 
 const char* noControllerMsg[] = {
-    "NO CONTROLLER",
+    "SIN MANDO",
     "CONTROLLER FEHLT",
     "MANETTE DEBRANCHEE",
 };
 
 const char* pressStartMsg[] = {
-    "PRESS START",
+    "PULSA START",
     "DRUCKE START",
     "APPUYEZ SUR START",
 };
