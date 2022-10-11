@@ -6,7 +6,6 @@
 
 #include "z_en_mag.h"
 #include "objects/object_mag/object_mag.h"
-#include <GameVersions.h>
 
 #define FLAGS (ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED)
 
@@ -40,13 +39,13 @@ const ActorInit En_Mag_InitVars = {
 };
 
 const char* noControllerMsg[] = {
-    "NO CONTROLLER",
+    "SIN MANDO",
     "CONTROLLER FEHLT",
     "MANETTE DEBRANCHEE",
 };
 
 const char* pressStartMsg[] = {
-    "PRESS START",
+    "PULSA START",
     "DRUCKE START",
     "APPUYEZ SUR START",
 };
@@ -621,6 +620,9 @@ s16 GetCharArraySize(const char* str) {
 
 static void EnMag_SetCopyValues(const char** copy_tex, u16* copy_width, u16* copy_xl, u16* copy_xh) {
     u32 platform = ResourceMgr_GetGamePlatform(0);
+    if (ResourceMgr_FileExists(gTitleCopyright1998Tex)) {
+        platform = GAME_PLATFORM_N64;
+    }
     switch (platform) {
         case GAME_PLATFORM_N64:
             *copy_tex = gTitleCopyright1998Tex;
