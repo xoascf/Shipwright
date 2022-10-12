@@ -1,3 +1,5 @@
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_INFO
+
 #include "OTRGlobals.h"
 #include <ResourceMgr.h>
 #include <Scene.h>
@@ -55,6 +57,8 @@ bool Scene_CommandSpawnList(PlayState* play, Ship::SceneCommand* cmd)
             entries[i].rot.x = cmdStartPos->entries[i].rotX;
             entries[i].rot.y = cmdStartPos->entries[i].rotY;
             entries[i].rot.z = cmdStartPos->entries[i].rotZ;
+
+            SPDLOG_INFO("Spawn {0:d} - ID: {1:x}, Parameters: {2:x}", i, (uint16_t)entries[i].id, (uint16_t)entries[i].params);
         }
 
         linkSpawnEntry = &entries[play->setupEntranceList[play->curSpawn].spawn];
@@ -75,35 +79,55 @@ bool Scene_CommandSpawnList(PlayState* play, Ship::SceneCommand* cmd)
     return false;
 }
 
-const std::map<u16, std::map<u16, std::vector<std::pair<int, Ship::ActorSpawnEntry>>>> sceneActorOverrides = {/*
+const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSpawnEntry>>>> sceneActorOverrides = {/*
     { 0x01, { // Dodongo's Cavern
         { 0x03, {
-            { -1, { ACTOR_EN_ITEM00, 3558, 531, -1984, 0, 0, 0, 0x106 }},
+            { -1, -1, { ACTOR_EN_ITEM00, 3558, 531, -1984, 0, 0, 0, 0x106 }},
         } },
     } },
     { 0x02, { // Jabu Jabu's Belly
         { 0x0d, {
-            { 3, { ACTOR_EN_ITEM00, -1150, -1113, -2248, 0, 0, 0, 0x106 }},
+            { -1, 3, { ACTOR_EN_ITEM00, -1150, -1113, -2248, 0, 0, 0, 0x106 }},
         } },
     } },
     { 0x3e, { // Grotto
         { 0x05, { // Octorok Grotto
-            { 8, { ACTOR_EN_ITEM00, 32, -129, 852, 0, 0, 0, 0x406 }},
+            { -1, 8, { ACTOR_EN_ITEM00, 32, -129, 852, 0, 0, 0, 0x406 }},
         } },
     } },
     { 0x55, { // Kokiri Forest
         { 0x00, {
-            { -1, { ACTOR_EN_ITEM00, 1297, 240, -553, 0, 0, 0, 0x100+(uint16_t)ITEM00_HEART_PIECE }},
+            { -1, -1, { ACTOR_EN_ITEM00, 1297, 240, -553, 0, 0, 0, 0x0800+(uint16_t)ITEM00_HEART_PIECE }},
+            //{ -1, -1, { ACTOR_EN_TEST, 70, -80, 675, 0, 0, 0, 0xFFFF }},
+            //{ -1, -1, { ACTOR_EN_WOOD02, 0, -80, 870, 0, 0, 0, 0x0011 }},
+            //{ -1, 72, { ACTOR_EN_ITEM00, 0, -80, 870, 0, 0, 0, 0x100+(uint16_t)ITEM00_HEART_PIECE }},
+            //{ -1, -1, { ACTOR_EN_SA, -110, -80, 950, 0, 0, 0, 0x0}},
+            { -1, -1, { 0x77, -110, -80, 950, 1, 0, 0, 0x20}},
+            //{ -1, -1, { ACTOR_EN_ITEM00, 0, -80, 870, 0, 0, 0, 0x100+(uint16_t)ITEM00_HEART_PIECE }},
         } },
     } },
     { SCENE_LINK_HOME, {
         { 0x00, {
-            { -1, { ACTOR_EN_ITEM00, 0, 0, 0, 0, 0, 0, 0x100+(uint16_t)ITEM00_HEART_PIECE}},
+            { -1, -1, { ACTOR_EN_ITEM00, 0, 0, 0, 0, 0, 0, 0x100+(uint16_t)ITEM00_HEART_PIECE}},
+            { 0, -1, { ACTOR_EN_SA, -44, 0, -58, 0, 0, 0, 0x0}},
         } },
     } },
     { 0x09, { // Ice Cavern
         { 0x09, {
-            { 9, { ACTOR_EN_ITEM00, 366, 213, -2036, 0, 0, 0, 0x406 }},
+            { -1, 9, { ACTOR_EN_ITEM00, 366, 213, -2036, 0, 0, 0, 0x406 }},
+        } },
+    } },
+    { SCENE_SPOT00, { // Hyrule Field
+        { 0x00, {
+            { 2, -1, { 0x77, 4870, -160, 8506, 0, 0, 0, 0x11 }},
+            { 2, -1, { 0x00A7, 116,192,6206, 0, 0, 0, 0x18a4 }},
+            { 3, -1, { 0x77, 4870, -160, 8506, 0, 0, 0, 0x11 }},
+            { 3, -1, { 0x00A7, 116,192,6206, 0, 0, 0, 0x18a4 }},
+        } },
+    } },
+    { 0x52, { // Kakariko
+        { 0x00, {
+            { -1, 18, { 0x95, -18,800,1800, 0,-32768,0, 0xb140 }},
         } },
     } },*/
 };
@@ -120,15 +144,19 @@ bool Scene_CommandActorList(PlayState* play, Ship::SceneCommand* cmd) {
         if (sceneActorOverrides.find(play->sceneNum) != sceneActorOverrides.end() &&
                         sceneActorOverrides.at(play->sceneNum).find(play->roomCtx.curRoom.num) != sceneActorOverrides.at(play->sceneNum).end()) {
             auto& roomOverrides = sceneActorOverrides.at(play->sceneNum).at(play->roomCtx.curRoom.num);
-            for (auto& [index, entry] : roomOverrides) {
-                if (index == -1) {
-                    cmdActor->entries.push_back(entry);
-                } else {
-                    cmdActor->entries[index] = entry;
+            for (auto& [setup, index, entry] : roomOverrides) {
+                if (setup == -1 || setup == gSaveContext.sceneSetupIndex) {
+                    if (index == -1) {
+                        cmdActor->entries.push_back(entry);
+                    } else {
+                        cmdActor->entries[index] = entry;
+                    }
                 }
             }
             play->numSetupActors = cmdActor->entries.size();
         }
+
+        SPDLOG_INFO("Scene: 0x{0:x}, Room: 0x{1:x}", (uint16_t)play->sceneNum, (uint16_t)play->roomCtx.curRoom.num);
 
         ActorEntry* entries = (ActorEntry*)malloc(cmdActor->entries.size() * sizeof(ActorEntry));
 
@@ -142,6 +170,10 @@ bool Scene_CommandActorList(PlayState* play, Ship::SceneCommand* cmd) {
             entries[i].rot.y = cmdActor->entries[i].rotY;
             entries[i].rot.z = cmdActor->entries[i].rotZ;
             entries[i].params = cmdActor->entries[i].initVar;
+
+            SPDLOG_INFO("Entity {0:d}\t ID: 0x{1:x}, \tParams: 0x{2:x}, \tpos: {3:d},{4:d},{5:d}, \t{6:d},{7:d},{8:d}",
+            i, (uint16_t)entries[i].id, (uint16_t)entries[i].params,
+            entries[i].pos.x, entries[i].pos.y, entries[i].pos.z, entries[i].rot.x, entries[i].rot.y, entries[i].rot.z);
         }
 
         cmdActor->cachedGameData = entries;
