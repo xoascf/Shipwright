@@ -33,6 +33,8 @@ typedef enum {
     /* 5 */ WOOD_DRAW_LEAF_YELLOW
 } WoodDrawType;
 
+#define plant_type ((this->actor.params) & 0x1F)
+
 const ActorInit En_Wood02_InitVars = {
     ACTOR_EN_WOOD02,
     ACTORCAT_PROP,
@@ -133,7 +135,7 @@ void EnWood02_SpawnOffspring(EnWood02* this, PlayState* play) {
     for (i = 4; i >= 0; i--) {
         if ((this->unk_14E[i] & 0x7F) == 0) {
             extraRot = 0;
-            if (this->actor.params == WOOD_BUSH_GREEN_LARGE_SPAWNER) {
+            if (plant_type == WOOD_BUSH_GREEN_LARGE_SPAWNER) {
                 extraRot = 0x4000;
             }
             childSpawnAngle = &sSpawnAngle[i];
@@ -144,9 +146,9 @@ void EnWood02_SpawnOffspring(EnWood02* this, PlayState* play) {
             childPos.z = (sSpawnDistance[i] * sSpawnCos) + this->actor.home.pos.z;
             if (EnWood02_SpawnZoneCheck(this, play, &childPos)) {
                 if ((this->unk_14E[i] & 0x80) != 0) {
-                    childParams = (0xFF00 | (this->actor.params + 1));
+                    childParams = (0xFF00 | (plant_type + 1));
                 } else {
-                    childParams = (((this->drawType & 0xF0) << 4) | (this->actor.params + 1));
+                    childParams = (((this->drawType & 0xF0) << 4) | (plant_type + 1));
                 }
                 childWood = (EnWood02*)Actor_SpawnAsChild(&play->actorCtx, &this->actor, play,
                                                           ACTOR_EN_WOOD02, childPos.x, childPos.y, childPos.z,
@@ -188,12 +190,28 @@ void EnWood02_Init(Actor* thisx, PlayState* play2) {
     this->actor.params &= 0xFF;
     Actor_ProcessInitChain(&this->actor, sInitChain);
 
-    if (this->actor.params <= WOOD_TREE_KAKARIKO_ADULT) {
+    if (this->actor.params == WOOD_DYNAMIC_PLANT) {
+        if (Flags_GetCollectible(play2,this->actor.home.rot.x)) {
+            if (LINK_IS_ADULT)
+                this->actor.params |= WOOD_TREE_CONICAL_LARGE;
+            else
+                this->actor.params |= WOOD_BUSH_BLACK_LARGE;
+        } else {
+            if (LINK_IS_ADULT)
+                this->actor.params |= WOOD_TREE_CONICAL_SMALL;
+            else
+                this->actor.params |= WOOD_BUSH_BLACK_SMALL;
+        }
+
+        this->actor.world.rot.x = this->actor.shape.rot.x = 0;
+    }
+
+    if (plant_type <= WOOD_TREE_KAKARIKO_ADULT) {
         Collider_InitCylinder(play, &this->collider);
         Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
     }
 
-    switch (this->actor.params) {
+    switch (plant_type) {
         case WOOD_BUSH_GREEN_LARGE_SPAWNER:
         case WOOD_BUSH_BLACK_LARGE_SPAWNER:
             spawnType = 1;
@@ -244,15 +262,15 @@ void EnWood02_Init(Actor* thisx, PlayState* play2) {
             this->actor.velocity.y = (Rand_ZeroOne() * 1.25f) + -3.1f;
     }
 
-    if (this->actor.params <= WOOD_TREE_CONICAL_SPAWNED) {
+    if (plant_type <= WOOD_TREE_CONICAL_SPAWNED) {
         this->drawType = WOOD_DRAW_TREE_CONICAL;
-    } else if (this->actor.params <= WOOD_TREE_OVAL_GREEN_SPAWNED) {
+    } else if (plant_type <= WOOD_TREE_OVAL_GREEN_SPAWNED) {
         this->drawType = WOOD_DRAW_TREE_OVAL;
-    } else if (this->actor.params <= WOOD_TREE_KAKARIKO_ADULT) {
+    } else if (plant_type <= WOOD_TREE_KAKARIKO_ADULT) {
         this->drawType = WOOD_DRAW_TREE_KAKARIKO_ADULT;
-    } else if (this->actor.params <= WOOD_BUSH_GREEN_LARGE_SPAWNED) {
+    } else if (plant_type <= WOOD_BUSH_GREEN_LARGE_SPAWNED) {
         this->drawType = WOOD_DRAW_BUSH_GREEN;
-    } else if (this->actor.params <= WOOD_LEAF_GREEN) { // Black bushes and green leaves
+    } else if (plant_type <= WOOD_LEAF_GREEN) { // Black bushes and green leaves
         this->drawType = WOOD_DRAW_4;
     } else {
         this->drawType = WOOD_DRAW_LEAF_YELLOW;
@@ -264,7 +282,7 @@ void EnWood02_Init(Actor* thisx, PlayState* play2) {
     if (spawnType != WOOD_SPAWN_NORMAL) {
         extraRot = 0;
 
-        if (this->actor.params == WOOD_BUSH_GREEN_LARGE_SPAWNER) {
+        if (plant_type == WOOD_BUSH_GREEN_LARGE_SPAWNER) {
             extraRot = 0x4000;
         }
 
@@ -298,7 +316,7 @@ void EnWood02_Init(Actor* thisx, PlayState* play2) {
 void EnWood02_Destroy(Actor* thisx, PlayState* play) {
     EnWood02* this = (EnWood02*)thisx;
 
-    if (this->actor.params <= WOOD_TREE_KAKARIKO_ADULT) {
+    if (plant_type <= WOOD_TREE_KAKARIKO_ADULT) {
         Collider_DestroyCylinder(play, &this->collider);
     }
 }
@@ -332,7 +350,14 @@ void EnWood02_Update(Actor* thisx, PlayState* play2) {
         EnWood02_SpawnOffspring(this, play);
     }
 
-    if (this->actor.params <= WOOD_TREE_KAKARIKO_ADULT) {
+    if (this->actor.params & WOOD_DYNAMIC_PLANT && !LINK_IS_ADULT && this->actor.xzDistToPlayer < 200.0f) {
+        if (Flags_GetEnv(play, 5) && !Flags_GetCollectible(play2,this->actor.home.rot.x)) {
+            Flags_SetCollectible(play2, this->actor.home.rot.x);
+            func_80078884(NA_SE_SY_CORRECT_CHIME);
+        }
+    }
+
+    if (plant_type <= WOOD_TREE_KAKARIKO_ADULT) {
         if (this->collider.base.acFlags & AC_HIT) {
             this->collider.base.acFlags &= ~AC_HIT;
             Audio_PlayActorSound2(&this->actor, NA_SE_IT_REFLECTION_WOOD);
@@ -358,8 +383,8 @@ void EnWood02_Update(Actor* thisx, PlayState* play2) {
             if (this->unk_14C >= -1) {
                 leavesParams = WOOD_LEAF_GREEN;
 
-                if ((this->actor.params == WOOD_TREE_OVAL_YELLOW_SPAWNER) ||
-                    (this->actor.params == WOOD_TREE_OVAL_YELLOW_SPAWNED)) {
+                if ((plant_type == WOOD_TREE_OVAL_YELLOW_SPAWNER) ||
+                    (plant_type == WOOD_TREE_OVAL_YELLOW_SPAWNED)) {
                     leavesParams = WOOD_LEAF_YELLOW;
                 }
                 Audio_PlayActorSound2(&this->actor, NA_SE_EV_TREE_SWING);
@@ -378,7 +403,7 @@ void EnWood02_Update(Actor* thisx, PlayState* play2) {
             CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
             CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
         }
-    } else if (this->actor.params < 0x17) { // Bush
+    } else if (plant_type < 0x17) { // Bush
         Player* player = GET_PLAYER(play);
 
         if (this->unk_14C >= -1) {
@@ -425,7 +450,7 @@ void EnWood02_Draw(Actor* thisx, PlayState* play) {
     u8 blue;
 
     OPEN_DISPS(gfxCtx);
-    type = this->actor.params;
+    type = plant_type;
 
     if ((type == WOOD_TREE_OVAL_GREEN_SPAWNER) || (type == WOOD_TREE_OVAL_GREEN_SPAWNED) ||
         (type == WOOD_TREE_OVAL_GREEN) || (type == WOOD_LEAF_GREEN)) {
@@ -443,7 +468,7 @@ void EnWood02_Draw(Actor* thisx, PlayState* play) {
 
     Gfx_SetupDL_25Xlu(gfxCtx);
 
-    if ((this->actor.params == WOOD_LEAF_GREEN) || (this->actor.params == WOOD_LEAF_YELLOW)) {
+    if ((plant_type == WOOD_LEAF_GREEN) || (plant_type == WOOD_LEAF_YELLOW)) {
         Gfx_SetupDL_25Opa(gfxCtx);
         gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, red, green, blue, 127);
         Gfx_DrawDListOpa(play, object_wood02_DL_000700);
