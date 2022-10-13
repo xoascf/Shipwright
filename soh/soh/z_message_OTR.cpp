@@ -245,6 +245,51 @@ extern "C" void OTRMessage_Init()
         }
     );
     CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x1074,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "You know, I wish the vegitation&around here had gotten&more water years ago.^If that had happened, there's no doubt&that things would have grown&a mighty lot greater, and the&forest would be a better place for it.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x8004,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "As it is, plants are barely&growing at all, and we're&only getting weeds.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x8005,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Things are growing somewhat,&but there are still places&that could be better...",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x8006,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "I've spent years tending to&the plants in this forest,&and would you look&at what's happened.^Bountiful foliage all around,&all displaying the result of&putting in the effort to&make things grow right.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, 0x8007,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "You bet I'm proud! In fact,&since I'm feeling so generous,^I'm happy to share some of&the life the forest has in excess.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
         questMessageTableID, 0x8886,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
