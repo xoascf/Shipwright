@@ -275,7 +275,7 @@ extern "C" void OTRMessage_Init()
         questMessageTableID, 0x8006,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
-          "I've spent years tending to&the plants in this forest,&and would you look&at what's happened.^Bountiful foliage all around,&all showing what results when&you put in the effort to&make things grow right.",
+          "I've spent years tending to&the plants in this forest,&and would you look&at what's happened.^Bountiful foliage all around,&showing what results when&you put in the effort to&make things grow right.",
           "",
           "",
         }
