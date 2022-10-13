@@ -248,7 +248,7 @@ extern "C" void OTRMessage_Init()
         questMessageTableID, 0x1074,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
-          "You know, I wish the vegitation&around here had gotten&more water years ago.^If that had happened, there's no doubt&that things would have grown&a mighty lot greater, and the&forest would be a better place for it.",
+          "You know, I wish the vegetation&around here had gotten&more water years ago.^If that had happened, there's no doubt&that things would have grown&a mighty lot greater, and the&forest would be a better place for it.",
           "",
           "",
         }

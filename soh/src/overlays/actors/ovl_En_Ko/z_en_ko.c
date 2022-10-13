@@ -24,6 +24,7 @@ void EnKo_Draw(Actor* thisx, PlayState* play);
 
 void func_80A99048(EnKo* this, PlayState* play);
 void func_80A995CC(EnKo* this, PlayState* play);
+void heart_give(EnKo* this, PlayState* play);
 void func_80A99384(EnKo* this, PlayState* play);
 void func_80A99438(EnKo* this, PlayState* play);
 void func_80A99504(EnKo* this, PlayState* play);
@@ -602,6 +603,36 @@ s16 func_80A97738(PlayState* play, Actor* thisx) {
             break;
         case TEXT_STATE_DONE:
             if (Message_ShouldAdvance(play)) {
+                if ((ENKO_TYPE == ENKO_TYPE_CHILD_1 && play->msgCtx.textId == 0x8888 && !(gSaveContext.itemGetInf[1] & 0x10))
+                                || (ENKO_TYPE == ENKO_TYPE_CHILD_2 && play->msgCtx.textId == 0x8007)) {
+                    func_8002F434(this, play, GI_HEART_PIECE, 100.0f, 100.0f);
+                    this->actionFunc = heart_give;
+                }
+                return 3;
+                
+                if (ENKO_TYPE == ENKO_TYPE_CHILD_1 && play->msgCtx.textId == 0x8887 &&
+                    !(gSaveContext.itemGetInf[1] & 0x10)) {
+                    Message_ContinueTextbox(play, 0x8888);
+                } else if ((ENKO_TYPE == ENKO_TYPE_CHILD_2)) {
+                    u8 growth[NUM_TREES];
+                    u8 someGrowth = 0;
+                    u8 allGrowth = 1;
+                    for (u32 ii = 0; ii<NUM_TREES; ii++) {
+                        growth[ii] = Flags_GetCollectible(play,ii+1);
+                        someGrowth  = someGrowth || growth[ii];
+                        allGrowth  = allGrowth && growth[ii];
+                    }
+                    
+                    if (play->msgCtx.textId == 0x1074) {
+                        if (someGrowth)
+                            Message_ContinueTextbox(play, 0x8005);
+                        else
+                            Message_ContinueTextbox(play, 0x8004);
+                    } else if ((play->msgCtx.textId == 0x8006) &&
+                            allGrowth && !(gSaveContext.itemGetInf[2] & 0x01)) {
+                        Message_ContinueTextbox(play, 0x8007);
+                    }
+                }
                 return 3;
             }
     }
@@ -1378,50 +1409,6 @@ void EnKo_Update(Actor* thisx, PlayState* play) {
     }
 
     this->actionFunc(this, play);
-    
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_DONE) && Message_ShouldAdvance(play) &&
-                ENKO_TYPE == ENKO_TYPE_CHILD_1 && play->msgCtx.textId == 0x8887 &&
-                !(gSaveContext.itemGetInf[1] & 0x10)) {
-        Message_ContinueTextbox(play, 0x8888);
-    }
-
-    u8 growth[NUM_TREES];
-    u8 someGrowth = 0;
-    u8 allGrowth = 1;
-    for (u32 ii = 0; ii<NUM_TREES; ii++) {
-        growth[ii] = Flags_GetCollectible(play,ii+1);
-        someGrowth  = someGrowth || growth[ii];
-        allGrowth  = allGrowth && growth[ii];
-    }
-
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_DONE) && Message_ShouldAdvance(play) &&
-               (ENKO_TYPE == ENKO_TYPE_CHILD_2) && (play->msgCtx.textId == 0x1074)) {
-        if (someGrowth)
-            Message_ContinueTextbox(play, 0x8005);
-        else
-            Message_ContinueTextbox(play, 0x8004);
-    }
-
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_DONE) && Message_ShouldAdvance(play) &&
-               (ENKO_TYPE == ENKO_TYPE_CHILD_2) && (play->msgCtx.textId == 0x1074)) {
-        if (someGrowth)
-            Message_ContinueTextbox(play, 0x8005);
-        else
-            Message_ContinueTextbox(play, 0x8004);
-    }
-
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_DONE) && Message_ShouldAdvance(play) &&
-               (ENKO_TYPE == ENKO_TYPE_CHILD_2) && (play->msgCtx.textId == 0x8006) &&
-               allGrowth && !(gSaveContext.itemGetInf[2] & 0x01)) {
-        Message_ContinueTextbox(play, 0x8007);
-    }
-
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_DONE) && Message_ShouldAdvance(play) &&
-                ((ENKO_TYPE == ENKO_TYPE_CHILD_1 && play->msgCtx.textId == 0x8888 && !(gSaveContext.itemGetInf[1] & 0x10)) ||
-                (ENKO_TYPE == ENKO_TYPE_CHILD_2 && play->msgCtx.textId == 0x8007))) {
-        func_8002F434(this, play, GI_HEART_PIECE, 100.0f, 100.0f);
-        this->actionFunc = heart_give;
-    }
 
     func_80A9877C(this, play);
     collider = &this->collider;
