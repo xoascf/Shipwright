@@ -195,12 +195,12 @@ void EnWood02_Init(Actor* thisx, PlayState* play2) {
             if (LINK_IS_ADULT)
                 this->actor.params |= WOOD_TREE_CONICAL_LARGE;
             else
-                this->actor.params |= WOOD_BUSH_BLACK_LARGE;
+                this->actor.params |= WOOD_BUSH_GREEN_LARGE;
         } else {
             if (LINK_IS_ADULT)
-                this->actor.params |= WOOD_TREE_CONICAL_SMALL;
-            else
                 this->actor.params |= WOOD_BUSH_BLACK_SMALL;
+            else
+                this->actor.params |= WOOD_BUSH_GREEN_SMALL;
         }
 
         this->actor.world.rot.x = this->actor.shape.rot.x = 0;
@@ -350,7 +350,8 @@ void EnWood02_Update(Actor* thisx, PlayState* play2) {
         EnWood02_SpawnOffspring(this, play);
     }
 
-    if (this->actor.params & WOOD_DYNAMIC_PLANT && !LINK_IS_ADULT && this->actor.xzDistToPlayer < 200.0f) {
+    if (this->actor.params & WOOD_DYNAMIC_PLANT && !LINK_IS_ADULT &&
+                this->actor.xzDistToPlayer < 150.0f && this->actor.yDistToPlayer < 100.0f) {
         if (Flags_GetEnv(play, 5) && !Flags_GetCollectible(play2,this->actor.home.rot.x)) {
             Flags_SetCollectible(play2, this->actor.home.rot.x);
             func_80078884(NA_SE_SY_CORRECT_CHIME);
