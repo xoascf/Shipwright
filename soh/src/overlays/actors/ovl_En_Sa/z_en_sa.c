@@ -398,6 +398,9 @@ s32 func_80AF5DFC(EnSa* this, PlayState* play) {
         }
         return 4;
     }
+    if (play->sceneNum == SCENE_LINK_HOME) {
+            return 1;
+    }
     return 0;
 }
 
