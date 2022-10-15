@@ -113,3 +113,20 @@ class CustomMessageManager {
     */
     void FormatCustomMessage(std::string& message);
 };
+
+class TextIDAllocator {
+  protected:
+    uint16_t start;
+    uint16_t max_range;
+    uint16_t end;
+    std::unordered_map<std::string, uint16_t> labels;
+
+  public:
+    static TextIDAllocator* Instance;
+
+    TextIDAllocator();
+    ~TextIDAllocator();
+
+    uint16_t allocateRange(std::string name, uint16_t num_ids);
+    uint16_t getId(std::string name);
+};

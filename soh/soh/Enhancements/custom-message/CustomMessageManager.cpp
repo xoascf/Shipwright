@@ -169,3 +169,30 @@ std::string CustomMessageManager::WAIT_FOR_INPUT() {
 std::string CustomMessageManager::PLAYER_NAME() {
     return "\x0F"s;
 }
+
+
+
+TextIDAllocator::TextIDAllocator() {
+    start = 0x8000;
+    max_range = 0xFFFF;
+    end = start;
+}
+
+TextIDAllocator::~TextIDAllocator() {
+}
+
+uint16_t TextIDAllocator::allocateRange(std::string name, uint16_t num_ids) {
+    end += num_ids;
+    labels.insert({name,end});
+    return end;
+}
+
+uint16_t TextIDAllocator::getId(std::string name) {
+    auto foundId = labels.find(name);
+
+    if (foundId == labels.end()) {
+        return 0;
+    }
+
+    return foundId->second;
+}
