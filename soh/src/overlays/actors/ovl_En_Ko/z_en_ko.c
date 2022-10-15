@@ -289,10 +289,11 @@ s32 EnKo_IsOsAnimeLoaded(EnKo* this, PlayState* play) {
 
 u16 func_80A96FD0(PlayState* play, Actor* thisx) {
     EnKo* this = (EnKo*)thisx;
+    u16 KokiriMsg = GetTextID("kokiri");
     switch (ENKO_TYPE) {
         case ENKO_TYPE_CHILD_FADO:
             if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA)) {
-                return 0x8000;
+                return KokiriMsg;
             }
             if (gSaveContext.eventChkInf[4] & 1) {
                 return 0x10DA;
@@ -311,7 +312,7 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
             return 0x1004;
         case ENKO_TYPE_CHILD_1:
             if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA)) {
-                return 0x8886;
+                return KokiriMsg+8;
             }
             if (gSaveContext.eventChkInf[4] & 1) {
                 return 0x1023;
@@ -364,9 +365,9 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
         case ENKO_TYPE_CHILD_6:
             if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA)) {
                 if (IS_DAY)
-                    return 0x8001;
+                    return KokiriMsg+1;
                 else
-                    return 0x8002;
+                    return KokiriMsg+2;
             }
             if (gSaveContext.eventChkInf[4] & 1) {
                 return 0x10B5;
@@ -401,6 +402,7 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
 u16 func_80A97338(PlayState* play, Actor* thisx) {
     Player* player = GET_PLAYER(play);
     EnKo* this = (EnKo*)thisx;
+    u16 KokiriMsg = GetTextID("kokiri");
 
     switch (ENKO_TYPE) {
         case ENKO_TYPE_CHILD_FADO:
@@ -422,15 +424,18 @@ u16 func_80A97338(PlayState* play, Actor* thisx) {
         case ENKO_TYPE_CHILD_2:
             u8 growth[NUM_TREES];
             u8 someGrowth = 0;
+            u8 numGrowth = 0;
             u8 allGrowth = 1;
             for (u32 ii = 0; ii<NUM_TREES; ii++) {
                 growth[ii] = Flags_GetCollectible(play,ii+1);
                 someGrowth  = someGrowth || growth[ii];
+                if (growth[ii])
+                    numGrowth++;
                 allGrowth  = allGrowth && growth[ii];
             }
 
             if (allGrowth) {
-                return 0x8006;
+                return KokiriMsg+6;
             }
             if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
                 return 0x1074;
@@ -495,6 +500,10 @@ u16 func_80A97338(PlayState* play, Actor* thisx) {
     }
 }
 
+#define MSG_CONT(_id) \
+    this->actor.textId=_id;\
+    Message_ContinueTextbox(play,this->actor.textId);
+
 u16 func_80A97610(PlayState* play, Actor* thisx) {
     u16 faceReaction;
     EnKo* this = (EnKo*)thisx;
@@ -522,6 +531,7 @@ u16 func_80A97610(PlayState* play, Actor* thisx) {
 
 s16 func_80A97738(PlayState* play, Actor* thisx) {
     EnKo* this = (EnKo*)thisx;
+    u16 KokiriMsg = GetTextID("kokiri");
 
     switch (Message_GetState(&play->msgCtx)) {
         case TEXT_STATE_CLOSING:
@@ -603,34 +613,41 @@ s16 func_80A97738(PlayState* play, Actor* thisx) {
             break;
         case TEXT_STATE_DONE:
             if (Message_ShouldAdvance(play)) {
-                if ((ENKO_TYPE == ENKO_TYPE_CHILD_1 && play->msgCtx.textId == 0x8888 && !(gSaveContext.itemGetInf[1] & 0x10))
-                                || (ENKO_TYPE == ENKO_TYPE_CHILD_2 && play->msgCtx.textId == 0x8007)) {
+                if ((ENKO_TYPE == ENKO_TYPE_CHILD_1 && this->actor.textId == KokiriMsg+10 && !(gSaveContext.itemGetInf[1] & 0x10))
+                                || (ENKO_TYPE == ENKO_TYPE_CHILD_2 && this->actor.textId == KokiriMsg+7)) {
                     func_8002F434(this, play, GI_HEART_PIECE, 100.0f, 100.0f);
                     this->actionFunc = heart_give;
+                    return 3;
                 }
-                return 3;
-                
-                if (ENKO_TYPE == ENKO_TYPE_CHILD_1 && play->msgCtx.textId == 0x8887 &&
+
+                if (ENKO_TYPE == ENKO_TYPE_CHILD_1 && this->actor.textId == KokiriMsg+8 &&
                     !(gSaveContext.itemGetInf[1] & 0x10)) {
-                    Message_ContinueTextbox(play, 0x8888);
+                    MSG_CONT(KokiriMsg+10);
                 } else if ((ENKO_TYPE == ENKO_TYPE_CHILD_2)) {
                     u8 growth[NUM_TREES];
+                    u8 numGrowth = 0;
                     u8 someGrowth = 0;
                     u8 allGrowth = 1;
+
                     for (u32 ii = 0; ii<NUM_TREES; ii++) {
                         growth[ii] = Flags_GetCollectible(play,ii+1);
                         someGrowth  = someGrowth || growth[ii];
+                        if (growth[ii])
+                            numGrowth++;
                         allGrowth  = allGrowth && growth[ii];
                     }
-                    
-                    if (play->msgCtx.textId == 0x1074) {
-                        if (someGrowth)
-                            Message_ContinueTextbox(play, 0x8005);
-                        else
-                            Message_ContinueTextbox(play, 0x8004);
-                    } else if ((play->msgCtx.textId == 0x8006) &&
+
+                    if (this->actor.textId == 0x1074) {
+                        if (numGrowth == NUM_TREES-1) {
+                            MSG_CONT(KokiriMsg+11);
+                        } else if (someGrowth) {
+                            MSG_CONT(KokiriMsg+5);
+                        } else {
+                            MSG_CONT(KokiriMsg+4);
+                        }
+                    } else if ((this->actor.textId == KokiriMsg+6) &&
                             allGrowth && !(gSaveContext.itemGetInf[2] & 0x01)) {
-                        Message_ContinueTextbox(play, 0x8007);
+                        MSG_CONT(KokiriMsg+7);
                     }
                 }
                 return 3;

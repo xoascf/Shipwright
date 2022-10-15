@@ -151,23 +151,42 @@ u16 ElfMessage_GetTextFromMsgs(ElfMessage* msg) {
 u16 ElfMessage_GetSariaText(PlayState* play) {
     Player* player = GET_PLAYER(play);
     ElfMessage* msgs;
+    u16 SariaMsg = GetTextID("saria");
 
     if (!LINK_IS_ADULT) {
         if (Actor_FindNearby(play, &player->actor, ACTOR_EN_SA, 4, 800.0f) == NULL) {
             if (play->sceneNum == SCENE_SPOT04)//Kokiri Village
-                return 0x0170;
+                return SariaMsg;
             else if (play->sceneNum == SCENE_LINK_HOME)//Link's House
-                return 0x0171;
-            else if (play->sceneNum == SCENE_KOKIRI_HOME)
-                return 0x0176;
+                return SariaMsg+1;
             else if (play->sceneNum == SCENE_KOKIRI_SHOP)
-                return 0x0172;
+                return SariaMsg+2;
             else if (play->sceneNum == SCENE_KOKIRI_HOME3)
-                return 0x0173;
+                return SariaMsg+3;
             else if (play->sceneNum == SCENE_KOKIRI_HOME4)
-                return 0x0174;
+                return SariaMsg+4;
             else if (play->sceneNum == SCENE_KOKIRI_HOME5)
-                return 0x0175;
+                return SariaMsg+5;
+            else if (play->sceneNum == SCENE_KOKIRI_HOME)
+                return SariaMsg+6;
+            else if (play->sceneNum == SCENE_MARKET_DAY)
+                return SariaMsg+7;
+            else if (play->sceneNum == SCENE_SPOT06)
+                return SariaMsg+8;
+            else if (play->sceneNum == SCENE_SPOT02 || play->sceneNum == SCENE_HUT)
+                return SariaMsg+9;
+            else if (play->sceneNum == SCENE_SPOT07)
+                return SariaMsg+10;
+            else if (play->sceneNum == SCENE_SPOT15)
+                return SariaMsg+11;
+            else if (play->sceneNum == SCENE_SPOT20 || play->sceneNum == SCENE_SOUKO)
+                return SariaMsg+12;
+            else if (play->sceneNum == SCENE_MALON_STABLE) {
+                if (IS_DAY)
+                    return SariaMsg+13;
+                else
+                    return SariaMsg+14;
+            }
             msgs = sChildSariaMsgs;
         } else {
             return 0x0160; // Special text about Saria preferring to talk to you face-to-face

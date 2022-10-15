@@ -154,8 +154,9 @@ extern "C" void OTRMessage_Init()
             "Tu as l'air de t'ennuyer. Tu veux&aller faire un tour?\x1B&%gOui&Non%w",
         }
     );
+    u16 SariaMsg = TextIDAllocator::Instance->allocateRange("saria", 20);
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x0170,
+        questMessageTableID, SariaMsg,
         {
           TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
           "It's nice that you are dropping by the&village again. I've heard the twins have&been arranging something special!\x0B\x02",
@@ -164,7 +165,7 @@ extern "C" void OTRMessage_Init()
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x0171,
+        questMessageTableID, SariaMsg+1,
         {
           TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
           "\x0F, you've been collecting a lot of&things in your place, haven't you?&Maybe I should come around sometime.\x0B\x02",
@@ -173,25 +174,16 @@ extern "C" void OTRMessage_Init()
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x0176,
+        questMessageTableID, SariaMsg+2,
         {
           TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
-          "The guys here know a lot of things.&But surely, there has to be so much&more outside the forest to discover.^\x0F, I want you you to teach&me about the world. Talk to me&about any places you discover.^I'm just so curious.\x0B\x02",
+          "The shopkeeper doesn't do a very&good job of hiding everything in&the store. Tee hee!\x0B\x02",
           "",
           "",
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x0172,
-        {
-          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
-          "The shopkeeper doesn't do a very& good job of hiding everything in&the store. Tee hee!\x0B\x02",
-          "",
-          "",
-        }
-    );
-    CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x0173,
+        questMessageTableID, SariaMsg+3,
         {
           TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
           "I shouldn't be admitting this to you,&but even I sometimes get the twins&confused with the other girls.\x0B\x02",
@@ -200,7 +192,7 @@ extern "C" void OTRMessage_Init()
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x0174,
+        questMessageTableID, SariaMsg+4,
         {
           TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
           "You probably shouldn't let&Mido know I'm talking to you like this...\x0B\x02",
@@ -209,7 +201,7 @@ extern "C" void OTRMessage_Init()
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x0175,
+        questMessageTableID, SariaMsg+5,
         {
           TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
           "Make yourself at home.&I don't mind if other people&clean things up a bit for me.\x0B\x02",
@@ -218,16 +210,98 @@ extern "C" void OTRMessage_Init()
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x8000,
+        questMessageTableID, SariaMsg+6,
         {
-          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
-          "Hey, you know, it's so strange what&happened to the Great Deku Tree.^Things haven't been&growing in the forrest lately,&but hopefully that will change.",
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "The guys here know a lot of things.&But surely, there has to be so much&more outside the forest to discover.^\x0F, I want you you to teach&me about the world. Talk to me&about any places you discover.^I'm just so curious.\x0B\x02",
           "",
           "",
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x8001,
+        questMessageTableID, SariaMsg+7,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "I can hear so many people!&You're actually in the&castle town market,&aren't you?^It's just one of those&places I've heard the birds&chattering about sometimes.^Few of them can stand such a&noisy place, but I hear they&can find nice food there!\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+8,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "Hmm... I never would have known&there was a place with&so much water.&It must look amazing!^Come to think of it I do&wonder what it would be&like to be a creture that&could live under water.\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+9,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "What a strange place...&So, outside the forest,&those that die still remain,^and so they actually put&them under the ground&to hide them away?\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+10,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "So wow, you are in the place&where the water people live!&I think some of the Kokiri^have actually seen them before,&coming out from that deep&pool in the forest.^Have you met their princess?&I'd love to meet her myself.\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+11,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "So, you're at the royal family's&castle, where you snuck&in before right?^Tee hee, if you're feeling a&bit naughty, maybe you could find&a way to get right inside, and&discover what's really going on.\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+12,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "So there are places like this&that keep lots of big&creatures around, huh.^That sounds slightly scary.\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+13,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "\x0F, what are all those creatures&making those curious sounds?^There are those ones that make&that loud MUUUOAH sound.&And then, there's something else...^I don't even know if you can&hear it, maybe it's only&my Kokiri ears that can pick&it up, but it's there,^making this incredibly strange&high pitched noise.^What is that?\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+14,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "\x0F, what are all those creatures&making those curious sounds?^There are those ones that make&that loud MUUUOAH sound.&There are also those&ones that sometimes huff^and scratch and go NIIIHEHE!&And then, there's something else...^I don't even know if you can&hear it, maybe it's only&my Kokiri ears that can pick&it up, but it's there,^making this incredibly strange&high pitched noise.^What is that?\x0B\x02",
+          "",
+          "",
+        }
+    );
+    u16 KokiriMsg = TextIDAllocator::Instance->allocateRange("kokiri", 20);
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Hey, you know, it's so strange what&happened to the Great Deku Tree.^Things haven't been growing&well in the forrest lately, but&hopefully that will change.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+1,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
           "Tee hee hee, a lot of Kokiri&are good at hiding secrets.^But some aren't as&good as it as others.",
@@ -236,7 +310,7 @@ extern "C" void OTRMessage_Init()
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x8002,
+        questMessageTableID, KokiriMsg+2,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
           "Hey, wouldn't it be funny, if \x14\x03someone\x14\x01&played a prank on Mido...^Saria is maybe a bit too nice to him&for his own good.",
@@ -254,7 +328,7 @@ extern "C" void OTRMessage_Init()
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x8004,
+        questMessageTableID, KokiriMsg+4,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
           "As it is, plants are barely&growing at all, and we're&only getting weeds.",
@@ -263,7 +337,7 @@ extern "C" void OTRMessage_Init()
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x8005,
+        questMessageTableID, KokiriMsg+5,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
           "Things are growing somewhat,&but there are still places&that could be better...",
@@ -272,7 +346,7 @@ extern "C" void OTRMessage_Init()
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x8006,
+        questMessageTableID, KokiriMsg+6,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
           "I've spent years tending to&the plants in this forest,&and would you look&at what's happened.^Bountiful foliage all around,&showing what results when&you put in the effort to&make things grow right.",
@@ -281,7 +355,7 @@ extern "C" void OTRMessage_Init()
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x8007,
+        questMessageTableID, KokiriMsg+7,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
           "You bet I'm proud! In fact,&since I'm feeling so generous,^I'm happy to share some of&the life the forest has in excess.",
@@ -289,17 +363,21 @@ extern "C" void OTRMessage_Init()
           "",
         }
     );
+    static u16 msg8 = KokiriMsg+9;
+    static std::string msg8Str = "You know, I think there are places&in the lost woods that no Kokiri&now remembers how to get to...&\x0D\x14\x03...except one...^Oops, I shouldn't have said that...\x07";
+    msg8Str.push_back((char)((msg8>>8)&0xFF));
+    msg8Str.push_back((char)((msg8)&0xFF));
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x8886,
+        questMessageTableID, KokiriMsg+8,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
-          "You know, I think there are places&in the lost woods that no Kokiri&now remembers how to get to...&\x0D\x14\x03...except one...^Oops, I shouldn't have said that...\x07\x88\x87",
+          msg8Str,
           "",
           "",
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x8887,
+        questMessageTableID, KokiriMsg+9,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
           "This is no longer a secret&to everyone anymore!",
@@ -308,10 +386,19 @@ extern "C" void OTRMessage_Init()
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x8888,
+        questMessageTableID, KokiriMsg+10,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
           "I'll give you this, if you&promise to never let anyone know.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+11,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Things are mostly growing&nicely, but I still can't help&but think that maybe just one&spot ought to have grown better...",
           "",
           "",
         }

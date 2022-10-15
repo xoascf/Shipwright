@@ -262,6 +262,10 @@ void EnWood02_Init(Actor* thisx, PlayState* play2) {
             this->actor.velocity.y = (Rand_ZeroOne() * 1.25f) + -3.1f;
     }
 
+    if ((this->actor.params & WOOD_DYNAMIC_PLANT) && !LINK_IS_ADULT) {
+        actorScale *= 0.2;
+    }
+
     if (plant_type <= WOOD_TREE_CONICAL_SPAWNED) {
         this->drawType = WOOD_DRAW_TREE_CONICAL;
     } else if (plant_type <= WOOD_TREE_OVAL_GREEN_SPAWNED) {
@@ -355,6 +359,8 @@ void EnWood02_Update(Actor* thisx, PlayState* play2) {
         if (Flags_GetEnv(play, 5) && !Flags_GetCollectible(play2,this->actor.home.rot.x)) {
             Flags_SetCollectible(play2, this->actor.home.rot.x);
             func_80078884(NA_SE_SY_CORRECT_CHIME);
+            Audio_PlayActorSound2(&this->actor, NA_SE_EV_TREE_SWING);
+            this->unk_14C = -0x15;
         }
     }
 
@@ -407,7 +413,7 @@ void EnWood02_Update(Actor* thisx, PlayState* play2) {
     } else if (plant_type < 0x17) { // Bush
         Player* player = GET_PLAYER(play);
 
-        if (this->unk_14C >= -1) {
+        if (this->unk_14C >= -1 && !(this->actor.params & WOOD_DYNAMIC_PLANT && !LINK_IS_ADULT)) {
             if (((player->rideActor == NULL) && (sqrt(this->actor.xyzDistToPlayerSq) < 20.0) &&
                  (player->linearVelocity != 0.0f)) ||
                 ((player->rideActor != NULL) && (sqrt(this->actor.xyzDistToPlayerSq) < 60.0) &&
