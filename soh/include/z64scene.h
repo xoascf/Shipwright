@@ -384,30 +384,30 @@ enum SceneID {
     /* 0x49 */ SCENE_TURIBORI,
     /* 0x4A */ SCENE_NAKANIWA,
     /* 0x4B */ SCENE_BOWLING,
-    /* 0x4C */ SCENE_SOUKO,
+    /* 0x4C */ SCENE_SOUKO,//Ranch House and Silo
     /* 0x4D */ SCENE_MIHARIGOYA,
     /* 0x4E */ SCENE_MAHOUYA,
     /* 0x4F */ SCENE_GANON_DEMO,
     /* 0x50 */ SCENE_KINSUTA,
     /* 0x51 */ SCENE_SPOT00,
     /* 0x52 */ SCENE_SPOT01,
-    /* 0x53 */ SCENE_SPOT02,
+    /* 0x53 */ SCENE_SPOT02,//Graveyard
     /* 0x54 */ SCENE_SPOT03,
     /* 0x55 */ SCENE_SPOT04,//Kokiri Forest
     /* 0x56 */ SCENE_SPOT05,//Sacred Forest Meadow
-    /* 0x57 */ SCENE_SPOT06,
-    /* 0x58 */ SCENE_SPOT07,
+    /* 0x57 */ SCENE_SPOT06,//Lake Hylia
+    /* 0x58 */ SCENE_SPOT07,//Zora's Domain
     /* 0x59 */ SCENE_SPOT08,
     /* 0x5A */ SCENE_SPOT09,
     /* 0x5B */ SCENE_SPOT10,
     /* 0x5C */ SCENE_SPOT11,
     /* 0x5D */ SCENE_SPOT12,
     /* 0x5E */ SCENE_SPOT13,
-    /* 0x5F */ SCENE_SPOT15,
+    /* 0x5F */ SCENE_SPOT15,//Hyrule Castle
     /* 0x60 */ SCENE_SPOT16,
     /* 0x61 */ SCENE_SPOT17,
     /* 0x62 */ SCENE_SPOT18,
-    /* 0x63 */ SCENE_SPOT20,
+    /* 0x63 */ SCENE_SPOT20,//Ranch
     /* 0x64 */ SCENE_GANON_TOU,
     // Debug only scenes
     /* 0x65 */ SCENE_TEST01,
