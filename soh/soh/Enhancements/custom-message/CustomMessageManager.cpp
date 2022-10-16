@@ -182,9 +182,10 @@ TextIDAllocator::~TextIDAllocator() {
 }
 
 uint16_t TextIDAllocator::allocateRange(std::string name, uint16_t num_ids) {
-    end += num_ids;
+    uint16_t current = end;
     labels.insert({name,end});
-    return end;
+    end += num_ids;
+    return current;
 }
 
 uint16_t TextIDAllocator::getId(std::string name) {
