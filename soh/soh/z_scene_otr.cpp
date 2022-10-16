@@ -82,17 +82,17 @@ bool Scene_CommandSpawnList(PlayState* play, Ship::SceneCommand* cmd)
 const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSpawnEntry>>>> sceneActorOverrides = {
     { 0x01, { // Dodongo's Cavern
         { 0x03, {
-            { -1, -1, { ACTOR_EN_ITEM00, 3558, 531, -1984, 0, 0, 0, 0x106 }},
+            //{ -1, -1, { ACTOR_EN_ITEM00, 3558, 531, -1984, 0, 0, 0, 0x106 }},
         } },
     } },
     { 0x02, { // Jabu Jabu's Belly
         { 0x0d, {
-            { -1, 3, { ACTOR_EN_ITEM00, -1150, -1113, -2248, 0, 0, 0, 0x106 }},
+            //{ -1, 3, { ACTOR_EN_ITEM00, -1150, -1113, -2248, 0, 0, 0, 0x106 }},
         } },
     } },
     { 0x3e, { // Grotto
         { 0x05, { // Octorok Grotto
-            { -1, 8, { ACTOR_EN_ITEM00, 32, -129, 852, 0, 0, 0, 0x406 }},
+            //{ -1, 8, { ACTOR_EN_ITEM00, 32, -129, 852, 0, 0, 0, 0x406 }},
         } },
     } },
     { 0x55, { // Kokiri Forest
@@ -102,6 +102,7 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
             //{ -1, -1, { ACTOR_EN_WOOD02, 0, -80, 870, 0, 0, 0, 0x0011 }},
             //{ -1, 72, { ACTOR_EN_ITEM00, 0, -80, 870, 0, 0, 0, 0x100+(uint16_t)ITEM00_HEART_PIECE }},
             //{ -1, -1, { ACTOR_EN_SA, -110, -80, 950, 0, 0, 0, 0x0}},
+            { 0, -1, { 0x01CF, -367,53,-770, 0, 0, 1, 0x0 }}, { 1, -1, { 0x01CF, -367,53,-770, 0, 0, 1, 0x0 }},
             { -1, -1, { 0x77, 355,0,1095, 1, 0, 0, 0x20 }},
             { -1, -1, { 0x77, 860,185,-475, 2, 0, 0, 0x20 }},
             { -1, -1, { 0x77, -565,120,880, 3, 0, 0, 0x20 }},
@@ -110,8 +111,8 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
             //{ -1, -1, { ACTOR_EN_ITEM00, 0, -80, 870, 0, 0, 0, 0x100+(uint16_t)ITEM00_HEART_PIECE }},
         } },
         { 0x01, {//Deku Tree
-            { -1, -1, { 0x77, 4365,-150,-2365, 5, 0, 0, 0x20 }},
-            { -1, -1, { 0x77, 3900,-175,-190, 6, 0, 0, 0x20 }},
+            //{ -1, -1, { 0x77, 4365,-150,-2365, 5, 0, 0, 0x20 }},
+            //{ -1, -1, { 0x77, 3900,-175,-190, 6, 0, 0, 0x20 }},
         } },
     } },
     { SCENE_LINK_HOME, {
@@ -122,20 +123,18 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
     } },
     { 0x09, { // Ice Cavern
         { 0x09, {
-            { -1, 9, { ACTOR_EN_ITEM00, 366, 213, -2036, 0, 0, 0, 0x406 }},
+            //{ -1, 9, { ACTOR_EN_ITEM00, 366, 213, -2036, 0, 0, 0, 0x406 }},
         } },
     } },
     { SCENE_SPOT00, { // Hyrule Field
         { 0x00, {
-            //{ 2, -1, { 0x77, 4870, -160, 8506, 0, 0, 0, 0x11 }},
-            { 2, -1, { 0x00A7, 116,192,6206, 0, 0, 0, 0x18a4 }},
-            //{ 3, -1, { 0x77, 4870, -160, 8506, 0, 0, 0, 0x11 }},
-            { 3, -1, { 0x00A7, 116,192,6206, 0, 0, 0, 0x18a4 }},
+            //{ 2, -1, { 0x77, 4870, -160, 8506, 0, 0, 0, 0x11 }}, //{ 3, -1, { 0x77, 4870, -160, 8506, 0, 0, 0, 0x11 }},
+            { 2, -1, { 0x00A7, 116,192,6206, 0, 0, 0, 0x18a4 }}, { 3, -1, { 0x00A7, 116,192,6206, 0, 0, 0, 0x18a4 }},
         } },
     } },
     { 0x52, { // Kakariko
         { 0x00, {
-            { -1, 18, { 0x95, -18,800,1800, 0,-32768,0, 0xb140 }},
+            //{ -1, 18, { 0x95, -18,800,1800, 0,-32768,0, 0xb140 }},
         } },
     } },
 };
@@ -173,7 +172,7 @@ bool Scene_CommandActorList(PlayState* play, Ship::SceneCommand* cmd) {
             play->numSetupActors = cmdActor->entries.size();
         }
 
-        SPDLOG_INFO("Scene: 0x{0:x}, Room: 0x{1:x}", (uint16_t)play->sceneNum, (uint16_t)play->roomCtx.curRoom.num);
+        SPDLOG_INFO("Scene: 0x{0:x}, Room: 0x{1:x}, Setup: 0x{2:x}", (uint16_t)play->sceneNum, (uint16_t)play->roomCtx.curRoom.num, (uint32_t)gSaveContext.sceneSetupIndex);
 
         ActorEntry* entries = (ActorEntry*)malloc(cmdActor->entries.size() * sizeof(ActorEntry));
 
