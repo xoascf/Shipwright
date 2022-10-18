@@ -101,6 +101,20 @@ bool CustomMessageManager::InsertCustomMessage(std::string tableID, uint16_t tex
     return messageInsertResult.second;
 }
 
+bool CustomMessageManager::ReplaceCustomMessage(std::string tableID, uint16_t textID, CustomMessageEntry messages) {
+    auto foundMessageTable = messageTables.find(tableID);
+    if (foundMessageTable == messageTables.end()) {
+        return false;
+    }
+    auto& messageTable = foundMessageTable->second;
+    auto foundMessage = messageTable.find(textID);
+    if (foundMessage == messageTable.end()) {
+        return false;
+    }
+    foundMessage->second = messages;
+    return true;
+}
+
 bool CustomMessageManager::CreateGetItemMessage(std::string tableID, uint16_t giid, ItemID iid,
                                                 CustomMessageEntry messageEntry) {
     FormatCustomMessage(messageEntry.english, iid);
@@ -115,6 +129,13 @@ bool CustomMessageManager::CreateMessage(std::string tableID, uint16_t textID, C
     FormatCustomMessage(messageEntry.german);
     FormatCustomMessage(messageEntry.french);
     return InsertCustomMessage(tableID, textID, messageEntry);
+}
+
+bool CustomMessageManager::ReplaceMessage(std::string tableID, uint16_t textID, CustomMessageEntry messageEntry) {
+    FormatCustomMessage(messageEntry.english);
+    FormatCustomMessage(messageEntry.german);
+    FormatCustomMessage(messageEntry.french);
+    return ReplaceCustomMessage(tableID, textID, messageEntry);
 }
 
 CustomMessageEntry CustomMessageManager::RetrieveMessage(std::string tableID, uint16_t textID) {

@@ -191,6 +191,7 @@ struct ExtensionEntry {
 extern uintptr_t clearMtx;
 extern "C" Mtx gMtxClear;
 extern "C" MtxF gMtxFClear;
+extern "C" void createFishString(int num);
 extern "C" void OTRMessage_Init();
 extern "C" void AudioMgr_CreateNextAudioBuffer(s16* samples, u32 num_samples);
 extern "C" void AudioPlayer_Play(const uint8_t* buf, uint32_t len);
@@ -422,6 +423,10 @@ extern "C" void OTRExtScanner() {
     }
 }
 
+extern "C" uint16_t GetTextID(const char* name) {
+    return TextIDAllocator::Instance->getId(name);
+}
+
 extern "C" void InitOTR() {
 #ifdef __SWITCH__
     Ship::Switch::Init(Ship::PreInitPhase);
@@ -464,10 +469,6 @@ extern "C" void InitOTR() {
     CrowdControl::Instance = new CrowdControl();
     CrowdControl::Instance->Init();
 #endif
-}
-
-extern "C" uint16_t GetTextID(const char* name) {
-    return TextIDAllocator::Instance->getId(name);
 }
 
 extern "C" void DeinitOTR() {
