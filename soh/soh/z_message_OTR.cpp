@@ -71,6 +71,30 @@ MessageTableEntry* OTRMessage_LoadTable(const char* filePath, bool isNES) {
 	return table;
 }
 
+static int numFish = 0;
+static std::string msgFishStr = "Now there are... %b"+std::to_string(numFish)+"%w of them&swishing around!";
+
+//For KokiriMsg+24
+extern "C" void createFishString(int num)
+{
+    //"Now there are \x14\x4"+std::to_string(numFish)+"\x14\x1of them swishing around!";
+    if (numFish != num)
+    {
+        u16 KokiriMsg = TextIDAllocator::Instance->getId("kokiri");
+        numFish = num;
+        msgFishStr = "Now there are... %b"+std::to_string(numFish)+"%w of them&swishing around!";
+        CustomMessageManager::Instance->ReplaceMessage(
+        questMessageTableID, KokiriMsg+24,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          msgFishStr,
+          "",
+          "",
+        }
+    );
+    }
+}
+
 extern "C" void OTRMessage_Init()
 {
     sNesMessageEntryTablePtr = OTRMessage_LoadTable("text/nes_message_data_static/nes_message_data_static", true);
@@ -155,7 +179,7 @@ extern "C" void OTRMessage_Init()
         }
     );
 
-    u16 SariaMsg = TextIDAllocator::Instance->allocateRange("saria", 20);
+    u16 SariaMsg = TextIDAllocator::Instance->allocateRange("saria", 30);
     CustomMessageManager::Instance->CreateMessage(
         questMessageTableID, SariaMsg,
         {
@@ -292,7 +316,73 @@ extern "C" void OTRMessage_Init()
         }
     );
 
-    u16 KokiriMsg = TextIDAllocator::Instance->allocateRange("kokiri", 20);
+    //Saria's 'regular' speach starts here
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+15,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Oh, hey \x0F, are you surprised to&see me? I did say I wanted to&come around some time, didn't I?^If it's ok with you, I'll help&myself to some of this fruit.&If there's anything on your mind,&feel free to bring it up.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+16,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "What are you curious about?\x1C&%gYou&Ocarina&Mido%w",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+17,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "I'm doing fine, as always,&that's Saria for you.&But, I have to confess,^though I shouldn't be, that I'm&somewhat jealous of how&you can come and leave the&forest whenever you want.^I know you are burdened&by so much though, and I&wish you every bit of luck.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+18,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Ohh, the ocarina I gave you&is a specialty of mine.^I'm able to make something&with enough power that its sound&can travel to wherever it&needs to be, even far away.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+19,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Oh, Mido can be a pain sometimes.&But don't worry to much about&him if you can help it.^Having said that, you might&want to know something&surprising about him, tee hee.^Mido is actually %yterrified%w of bugs.&He absolutely %r\x14\x05hates \x14\x01%wthem!",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+20,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Having said that, you might&want to know something&surprising about him, tee hee.^Mido is actually %yterrified%w of bugs.&He absolutely %r\x14\x05hates \x14\x01%wthem!",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+21,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Having said that, did you hear what happened?&Mido's house is absolutely crawling with bugs!&I hear he can hardly sleep at all.",
+          "",
+          "",
+        }
+    );
+
+
+    u16 KokiriMsg = TextIDAllocator::Instance->allocateRange("kokiri", 30);
     CustomMessageManager::Instance->CreateMessage(
         questMessageTableID, KokiriMsg,
         {
@@ -405,13 +495,157 @@ extern "C" void OTRMessage_Init()
           "",
         }
     );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+12,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Mido always works us so hard.&I keep having to work on patching up&the crack at the back of his house.^He constantly complains about how&it lets the weather in,&but no matter what I do,&it's never good enough!",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+13,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "I love that each of us&Kokiri have a unique musical&note of our own!^Well, most of us at least.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+14,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "It's great that fairy&magic allows us to disappear&when we want to.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+15,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Sometimes I wonder how powerful&our magic really is.^Maybe there are beings&far more powerful than us,&and even the Great Deku Tree.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+16,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "I'm probably going to go&to collect firewood from the&lost woods later on.^But you know, lately I've been&getting to thinking about&how strange that is.^This village used to have&enough trees that we seldom&had to do this before.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+17,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Wait, what's going on at Mido's place!&Why is nobody helping him?^I swear, I'll have to kick&somebody's pants for this!",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+18,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Gosh! What happened?&Mido has quite a problem on&his hands, doesn't he?",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+19,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Hahaha, wow! What happened?&Mido has quite a problem on&his hands, doesn't he?&\x14\x04Tee hee hee.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+20,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "So, it seems that Mido has&gotten over his little problem.&Nice!",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+21,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "So, it seems that Mido has&gotten over his little problem.&\x14\x10Nice!",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+22,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "It would be nice if we&had things that could&live in the water here.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+23,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Ohh, there's one swishing around.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+24,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          msgFishStr,
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+25,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "What's funny about Sodo&is that she seems to&forget things a lot.^Why is she like that I wonder?&She had a much better memory& before we started having festivals.^But there's no way we're&going to stop having those now!",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+26,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "What's funny about Sodo&is that she seems to&forget things a lot.^Why is she like that I wonder?",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+27,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "I've definitely gotten beter&at taking care of things after&getting so much practice.^I wish I had more things to&practice with though.",
+          "",
+          "",
+        }
+    );
 
     u16 MidoMsg = TextIDAllocator::Instance->allocateRange("mido", 10);
     CustomMessageManager::Instance->CreateMessage(
         questMessageTableID, MidoMsg,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
-          "Ahhhhhhhhrrrrrrgh!^Why are there so many bugs!?^Help me! I can't stop them&from crawling everywhere!",
+          "Ahhhhhhhhrrrrrrgh!!!^Why are there so many bugs!?^I can't stop them from&crawling everywhere!",
           "",
           "",
         }
@@ -420,7 +654,43 @@ extern "C" void OTRMessage_Init()
         questMessageTableID, MidoMsg+1,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
-          "Oh, phew.&Hmph, I'm glad you helped out there&as you'd expect from any Kokiri.",
+          "Oh, phew.^Hmph, I'm glad you helped&out there, although I'd&expect that from any Kokiri.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, MidoMsg+2,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Hey!!!&What do you think you're doing?^No way are you dumping&things on my floor!^The great Mido will see to it&that you are properly punished!",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, MidoMsg+3,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Actually, today Saria isn't&at her usual spot.^I heard she came around here,&but I'm honestly not sure&where she went.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, MidoMsg+4,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "I never got the opportunity&to express my gratitude to&him for everything.^So I can only hope that&you might do so in my place.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, MidoMsg+5,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "However, I still could never&forgive him for what he did.^\x0F, I wish you could have&redeemed yourself somehow.",
           "",
           "",
         }

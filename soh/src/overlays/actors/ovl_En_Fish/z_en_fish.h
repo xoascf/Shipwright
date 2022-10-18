@@ -29,4 +29,6 @@ typedef enum {
     /*  1 */ FISH_SWIMMING_UNIQUE // Used in grottos
 } EnFishType;
 
+u8 EnFish_isFishInWater(Actor* actor, PlayState* play);
+
 #endif

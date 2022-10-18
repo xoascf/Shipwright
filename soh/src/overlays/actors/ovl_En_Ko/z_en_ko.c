@@ -10,6 +10,7 @@
 #include "objects/object_km1/object_km1.h"
 #include "objects/object_kw1/object_kw1.h"
 #include "vt.h"
+#include "overlays/actors/ovl_En_Fish/z_en_fish.h"
 #include "soh/Enhancements/randomizer/adult_trade_shuffle.h"
 
 #define FLAGS (ACTOR_FLAG_0 | ACTOR_FLAG_3 | ACTOR_FLAG_4)
@@ -293,6 +294,9 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
     switch (ENKO_TYPE) {
         case ENKO_TYPE_CHILD_FADO:
             if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA)) {
+            if (gSaveContext.infTable[3] & 1)
+                return KokiriMsg+17;
+            else
                 return KokiriMsg;
             }
             if (gSaveContext.eventChkInf[4] & 1) {
@@ -303,6 +307,9 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
             }
             return (gSaveContext.infTable[11] & 0x80) ? 0x10D8 : 0x10D7;
         case ENKO_TYPE_CHILD_0:
+            if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA) && !IS_DAY) {
+                return KokiriMsg+16;
+            }
             if (gSaveContext.eventChkInf[4] & 1) {
                 return 0x1025;
             }
@@ -312,7 +319,22 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
             return 0x1004;
         case ENKO_TYPE_CHILD_1:
             if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA)) {
-                return KokiriMsg+8;
+                if (IS_DAY) {
+                    //EnFish* fish = (EnFish*)Actor_FindNearby(play, &this->actor, ACTOR_EN_FISH, ACTORCAT_ITEMACTION, 2000.0f);
+                    s32 numF = Actor_FindNumberOf(play, &this->actor, ACTOR_EN_FISH, ACTORCAT_ITEMACTION, 2000.0f,NULL,EnFish_isFishInWater);
+                    if (numF) {
+                        if (numF > 1) {
+                            createFishString(numF);
+                            return KokiriMsg+24;
+                        }
+                        else
+                            return KokiriMsg+23;
+                    }
+                    else
+                        return KokiriMsg+22;
+                }
+                else
+                    return KokiriMsg+14;
             }
             if (gSaveContext.eventChkInf[4] & 1) {
                 return 0x1023;
@@ -341,6 +363,12 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
             }
             return 0x1008;
         case ENKO_TYPE_CHILD_4:
+            if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA)) {
+                if (IS_DAY)
+                    return 0x1097;
+                else
+                    return KokiriMsg+12;
+            }
             if (gSaveContext.eventChkInf[4] & 1) {
                 return 0x1097;
             }
@@ -352,6 +380,9 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
             }
             return 0x100A;
         case ENKO_TYPE_CHILD_5:
+            if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA) && IS_DAY) {
+                return KokiriMsg+13;
+            }
             if (gSaveContext.eventChkInf[4] & 1) {
                 return 0x10B0;
             }
@@ -364,10 +395,24 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
             return 0x100C;
         case ENKO_TYPE_CHILD_6:
             if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA)) {
-                if (IS_DAY)
+                if ((gSaveContext.infTable[3] & (1<<1)) && !(gSaveContext.infTable[3] & 1)) {
+                    if (gSaveContext.infTable[3] & (1<<15))
+                        return KokiriMsg+21;
+                    else
+                        return KokiriMsg+20;
+                }
+                if ((gSaveContext.infTable[3] & 1)) {
+                    if (gSaveContext.infTable[3] & (1<<15))
+                        return KokiriMsg+19;
+                    else
+                        return KokiriMsg+18;
+                }
+                if (IS_DAY) {
                     return KokiriMsg+1;
-                else
+                }
+                else {
                     return KokiriMsg+2;
+                }
             }
             if (gSaveContext.eventChkInf[4] & 1) {
                 return 0x10B5;
@@ -384,6 +429,12 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
         case ENKO_TYPE_CHILD_8:
             return 0x1038;
         case ENKO_TYPE_CHILD_9:
+            if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA)) {
+                if (IS_DAY)
+                    return KokiriMsg+15;
+                else
+                    return KokiriMsg+8;
+            }
             if (CHECK_QUEST_ITEM(QUEST_KOKIRI_EMERALD)) {
                 return 0x104B;
             }
@@ -572,6 +623,9 @@ s16 func_80A97738(PlayState* play, Actor* thisx) {
                 case 0x10BA:
                     return 1;
             }
+            if (this->actor.textId == (KokiriMsg+2)){
+                gSaveContext.infTable[3] |= 1 << 15;
+            }
             return 0;
         case TEXT_STATE_DONE_FADING:
             switch (this->actor.textId) {
@@ -613,8 +667,8 @@ s16 func_80A97738(PlayState* play, Actor* thisx) {
             break;
         case TEXT_STATE_DONE:
             if (Message_ShouldAdvance(play)) {
-                if ((ENKO_TYPE == ENKO_TYPE_CHILD_1 && this->actor.textId == KokiriMsg+10 && !(gSaveContext.itemGetInf[1] & 0x10))
-                                || (ENKO_TYPE == ENKO_TYPE_CHILD_2 && this->actor.textId == KokiriMsg+7)) {
+                if (/*(ENKO_TYPE == ENKO_TYPE_CHILD_1 && this->actor.textId == KokiriMsg+10 && !(gSaveContext.itemGetInf[1] & 0x10))
+                                ||*/ (ENKO_TYPE == ENKO_TYPE_CHILD_2 && this->actor.textId == KokiriMsg+7)) {
                     func_8002F434(this, play, GI_HEART_PIECE, 100.0f, 100.0f);
                     this->actionFunc = heart_give;
                     return 3;
@@ -622,7 +676,7 @@ s16 func_80A97738(PlayState* play, Actor* thisx) {
 
                 if (ENKO_TYPE == ENKO_TYPE_CHILD_1 && this->actor.textId == KokiriMsg+8 &&
                     !(gSaveContext.itemGetInf[1] & 0x10)) {
-                    MSG_CONT(KokiriMsg+10);
+                    //MSG_CONT(KokiriMsg+10);
                 } else if ((ENKO_TYPE == ENKO_TYPE_CHILD_2)) {
                     u8 growth[NUM_TREES];
                     u8 numGrowth = 0;

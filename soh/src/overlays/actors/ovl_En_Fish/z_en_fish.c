@@ -88,6 +88,10 @@ f32 EnFish_XZDistanceSquared(Vec3f* v1, Vec3f* v2) {
     return SQ(v1->x - v2->x) + SQ(v1->z - v2->z);
 }
 
+u8 EnFish_isFishInWater(Actor* actor, PlayState* play) {
+    return ((EnFish*)actor)->actionFunc == EnFish_Dropped_SwimAway;
+}
+
 void EnFish_SetInWaterAnimation(EnFish* this) {
     Animation_Change(&this->skelAnime, &gFishInWaterAnim, 1.0f, 0.0f, Animation_GetLastFrame(&gFishInWaterAnim),
                      ANIMMODE_LOOP_INTERP, 2.0f);
@@ -484,6 +488,10 @@ void EnFish_Dropped_SetupSwimAway(EnFish* this) {
     this->unk_250 = 5;
 }
 
+u8 canSurvive(PlayState* play) {
+    return play->sceneNum == 0x55;
+}
+
 void EnFish_Dropped_SwimAway(EnFish* this, PlayState* play) {
     s32 pad;
 
@@ -508,8 +516,8 @@ void EnFish_Dropped_SwimAway(EnFish* this, PlayState* play) {
         Math_StepToF(&this->actor.world.pos.y, this->actor.home.pos.y - 10.0f, 2.0f);
     }
 
-    // Shrink when close to disappearing.
-    if (this->timer < 100) {
+    //Shrink when close to disappearing.
+    if (this->timer < 100 && !canSurvive(play)) {
         Actor_SetScale(&this->actor, this->actor.scale.x * 0.982f);
     }
 
@@ -517,7 +525,9 @@ void EnFish_Dropped_SwimAway(EnFish* this, PlayState* play) {
     SkelAnime_Update(&this->skelAnime);
 
     if (this->timer <= 0) {
-        Actor_Kill(&this->actor);
+        this->timer = 200;
+        if (!canSurvive(play))
+            Actor_Kill(&this->actor);
     }
 }
 

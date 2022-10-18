@@ -142,12 +142,23 @@ s16 func_80AF5560(EnSa* this, PlayState* play) {
 u16 func_80AF55E0(PlayState* play, Actor* thisx) {
     EnSa* this = (EnSa*)thisx;
     u16 reaction = Text_GetFaceReaction(play, 0x10);
+    u16 SariaMsg = GetTextID("saria");
 
     if (reaction != 0) {
         return reaction;
     }
     if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA)) {
-        return 0x10AD;
+        this->unk_208 = 0;
+        this->unk_209 = TEXT_STATE_NONE;
+        if (play->sceneNum == SCENE_LINK_HOME) {
+            if (gSaveContext.eventInf[3] & (1<<1)) {
+                return SariaMsg+16;
+            } else {
+                return SariaMsg+15;
+            }
+        } else {
+            return 0x10AD;
+        }
     }
     if (CHECK_QUEST_ITEM(QUEST_KOKIRI_EMERALD)) {
         this->unk_208 = 0;
@@ -182,6 +193,11 @@ u16 func_80AF55E0(PlayState* play, Actor* thisx) {
 s16 func_80AF56F4(PlayState* play, Actor* thisx) {
     s16 ret = 1;
     EnSa* this = (EnSa*)thisx;
+    MessageContext* msgCtx = &play->msgCtx;
+    u16 SariaMsg = GetTextID("saria");
+
+    if (gSaveContext.infTable[27]&1)
+        gSaveContext.infTable[27] &= ~1;
 
     switch (func_80AF5560(this, play)) {
         case TEXT_STATE_CLOSING:
@@ -203,11 +219,31 @@ s16 func_80AF56F4(PlayState* play, Actor* thisx) {
                     ret = 0;
                     break;
             }
+            if (SariaMsg+15 == this->actor.textId) {
+                gSaveContext.eventInf[3] |= (1<<1);
+            }
             break;
         case TEXT_STATE_NONE:
         case TEXT_STATE_DONE_HAS_NEXT:
         case TEXT_STATE_DONE_FADING:
+            break;
         case TEXT_STATE_CHOICE:
+            if (Message_ShouldAdvance(play)) {
+                switch (msgCtx->choiceIndex) {
+                    case 0:
+                    this->actor.textId = SariaMsg+17;
+                    break;
+                    case 1:
+                    this->actor.textId = SariaMsg+18;
+                    break;
+                    case 2:
+                    this->actor.textId = SariaMsg+19;
+                    break;
+                }
+                ret = 0;
+                Message_ContinueTextbox(play, this->actor.textId);
+            }
+            break;
         case TEXT_STATE_EVENT:
         case TEXT_STATE_SONG_DEMO_DONE:
         case TEXT_STATE_8:
@@ -386,7 +422,7 @@ s32 func_80AF5DFC(EnSa* this, PlayState* play) {
         INV_CONTENT(ITEM_OCARINA_FAIRY) == ITEM_OCARINA_FAIRY && !(gSaveContext.eventChkInf[4] & 1)) {
         return 1;
     }
-    if (play->sceneNum == SCENE_SPOT05 && (gSaveContext.eventChkInf[4] & 1)) {
+    if (play->sceneNum == SCENE_SPOT05 && (gSaveContext.eventChkInf[4] & 1) && !(gSaveContext.infTable[27]&1)) {
         if (gSaveContext.n64ddFlag) {
             return 5;
         }
@@ -398,7 +434,7 @@ s32 func_80AF5DFC(EnSa* this, PlayState* play) {
         }
         return 4;
     }
-    if (play->sceneNum == SCENE_LINK_HOME) {
+    if (play->sceneNum == SCENE_LINK_HOME && !LINK_IS_ADULT && (gSaveContext.infTable[27]&1)) {
             return 1;
     }
     return 0;
