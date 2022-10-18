@@ -547,6 +547,7 @@ void Actor_Noop(Actor* actor, PlayState* play);
 void Gfx_DrawDListOpa(PlayState* play, Gfx* dlist);
 void Gfx_DrawDListXlu(PlayState* play, Gfx* dlist);
 Actor* Actor_FindNearby(PlayState* play, Actor* refActor, s16 actorId, u8 actorCategory, f32 range);
+s32 Actor_FindNumberOf(PlayState* play, Actor* refActor, s16 actorId, u8 actorCategory, f32 range, Actor** closest, u8(*predicate)(Actor*, PlayState*));
 s32 func_800354B4(PlayState* play, Actor* actor, f32 range, s16 arg3, s16 arg4, s16 arg5);
 void func_8003555C(PlayState* play, Vec3f* pos, Vec3f* velocity, Vec3f* accel);
 void func_800355B8(PlayState* play, Vec3f* pos);
