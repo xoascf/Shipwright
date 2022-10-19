@@ -5108,7 +5108,7 @@ s32 func_8083B040(Player* this, PlayState* play) {
                             //Actor* mido = Actor_FindNearby(play, &this->actor, ACTOR_EN_MD, ACTORCAT_NPC, 10000.0f);
                             //if (mido)
                             //    func_80853148(play,mido);
-                            sp2C = this->itemActionParam - PLAYER_AP_LETTER_ZELDA;
+                            sp2C = this->itemAction - PLAYER_IA_LETTER_ZELDA;
                             func_80835DE4(play, this, func_8084F104, 0);
 
                             if (sp2C >= 0) {
