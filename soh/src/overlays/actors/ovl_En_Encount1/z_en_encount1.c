@@ -235,6 +235,10 @@ void EnEncount1_SpawnStalchildOrWolfos(EnEncount1* this, PlayState* play) {
         return;
     }
 
+    if (this->spawnType == SPAWNER_WOLFOS && getDayOfCycle() != 0) {
+        return;
+    }
+
     this->outOfRangeTimer = 0;
     spawnPos = this->actor.world.pos;
     // In authentic gameplay, the game checks how many Stalchildren were spawned and only spawns new ones

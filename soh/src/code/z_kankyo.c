@@ -1305,7 +1305,7 @@ u8 Moon_Colors[][2][3] = {
     {{220,180,120}, {65,60,20}},
 };
 
-s32 getDayOfCycle(PlayState* play) {
+s32 getDayOfCycle() {
     return gSaveContext.totalDays%DAYS_IN_CYCLE;
 }
 
@@ -1402,7 +1402,7 @@ void Environment_DrawSunAndMoon(PlayState* play) {
 
         alpha = temp * 255.0f;
 
-        s32 day = getDayOfCycle(play);
+        s32 day = getDayOfCycle();
 
         if (alpha > 0.0f) {
             gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_LOAD);
