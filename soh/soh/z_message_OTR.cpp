@@ -666,6 +666,15 @@ extern "C" void OTRMessage_Init()
           "",
         }
     );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg+28,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Man, this is so hard.&The trees here are&so thick and old.",
+          "",
+          "",
+        }
+    );
 
     u16 MidoMsg = TextIDAllocator::Instance->allocateRange("mido", 10);
     CustomMessageManager::Instance->CreateMessage(

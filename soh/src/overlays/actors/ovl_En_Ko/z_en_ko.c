@@ -245,17 +245,26 @@ s32 EnKo_AreObjectsAvailable(EnKo* this, PlayState* play) {
 
     this->legsObjectBankIdx = Object_GetIndex(&play->objectCtx, sSkeleton[legsId].objectId);
     if (this->legsObjectBankIdx < 0) {
-        return false;
+        Object_Spawn(&play->objectCtx, sSkeleton[legsId].objectId);
+        this->legsObjectBankIdx = Object_GetIndex(&play->objectCtx, sSkeleton[legsId].objectId);
+        if (this->legsObjectBankIdx < 0)
+            return false;
     }
 
-    this->bodyObjectBankIdx = Object_GetIndex(&play->objectCtx, sSkeleton[bodyId].objectId);
-    if (this->bodyObjectBankIdx < 0) {
-        return false;
+    this->legsObjectBankIdx = Object_GetIndex(&play->objectCtx, sSkeleton[bodyId].objectId);
+    if (this->legsObjectBankIdx < 0) {
+        Object_Spawn(&play->objectCtx, sSkeleton[bodyId].objectId);
+        this->legsObjectBankIdx = Object_GetIndex(&play->objectCtx, sSkeleton[bodyId].objectId);
+        if (this->legsObjectBankIdx < 0)
+            return false;
     }
 
-    this->headObjectBankIdx = Object_GetIndex(&play->objectCtx, sHead[headId].objectId);
-    if (this->headObjectBankIdx < 0) {
-        return false;
+    this->legsObjectBankIdx = Object_GetIndex(&play->objectCtx, sHead[headId].objectId);
+    if (this->legsObjectBankIdx < 0) {
+        Object_Spawn(&play->objectCtx, sHead[headId].objectId);
+        this->legsObjectBankIdx = Object_GetIndex(&play->objectCtx, sHead[headId].objectId);
+        if (this->legsObjectBankIdx < 0)
+            return false;
     }
     return true;
 }
@@ -276,7 +285,11 @@ s32 EnKo_AreObjectsLoaded(EnKo* this, PlayState* play) {
 s32 EnKo_IsOsAnimeAvailable(EnKo* this, PlayState* play) {
     this->osAnimeBankIndex = Object_GetIndex(&play->objectCtx, OBJECT_OS_ANIME);
     if (this->osAnimeBankIndex < 0) {
-        return false;
+        Object_Spawn(&play->objectCtx, OBJECT_OS_ANIME);
+        this->osAnimeBankIndex = Object_GetIndex(&play->objectCtx, OBJECT_OS_ANIME);
+        if (this->osAnimeBankIndex < 0) {
+            return false;
+        }
     }
     return true;
 }
@@ -286,6 +299,10 @@ s32 EnKo_IsOsAnimeLoaded(EnKo* this, PlayState* play) {
         return false;
     }
     return true;
+}
+
+u8 is0Chopping() {
+    return IS_DAY && (getDayOfCycle() % 3 == 2) && gSaveContext.infTable[3] & (1 << 14);;
 }
 
 u16 func_80A96FD0(PlayState* play, Actor* thisx) {
@@ -307,8 +324,11 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
             }
             return (gSaveContext.infTable[11] & 0x80) ? 0x10D8 : 0x10D7;
         case ENKO_TYPE_CHILD_0:
-            if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA) && !IS_DAY) {
-                return KokiriMsg+16;
+            if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA)) {
+                if (!IS_DAY)
+                    return KokiriMsg+16;
+                else if (is0Chopping())
+                    return KokiriMsg+28;
             }
             if (gSaveContext.eventChkInf[4] & 1) {
                 return 0x1025;
@@ -625,6 +645,8 @@ s16 func_80A97738(PlayState* play, Actor* thisx) {
             }
             if (this->actor.textId == (KokiriMsg+2)){
                 gSaveContext.infTable[3] |= 1 << 15;
+            } else if (this->actor.textId == KokiriMsg+16) {
+                gSaveContext.infTable[3] |= 1 << 14;
             }
             return 0;
         case TEXT_STATE_DONE_FADING:
@@ -895,6 +917,13 @@ s32 func_80A98124(EnKo* this, PlayState* play) {
     return 1;
 }
 
+s32 woodcutterAnimDrive(EnKo* this, PlayState* play) {
+    if (is0Chopping())
+        return func_80A98034(this,play);
+    else
+        return func_80A98124(this,play);
+}
+
 s32 func_80A98174(EnKo* this, PlayState* play) {
     if (this->unk_1E8.unk_00 != 0) {
         if (Animation_OnFrame(&this->skelAnime, 18.0f)) {
@@ -1006,7 +1035,7 @@ s32 EnKo_ChildSaria(EnKo* this, PlayState* play) {
 s32 EnKo_ChildPost(EnKo* this, PlayState* play) {
     switch (ENKO_TYPE) {
         case ENKO_TYPE_CHILD_0:
-            return func_80A98124(this, play);
+            return woodcutterAnimDrive(this, play);
         case ENKO_TYPE_CHILD_1:
             return func_80A98124(this, play);
         case ENKO_TYPE_CHILD_2:
@@ -1130,6 +1159,9 @@ s32 EnKo_CanSpawn(EnKo* this, PlayState* play) {
             if (ENKO_TYPE >= ENKO_TYPE_CHILD_7 && ENKO_TYPE != ENKO_TYPE_CHILD_FADO) {
                 return false;
             }
+            if (ENKO_TYPE == ENKO_TYPE_CHILD_0 && !LINK_IS_ADULT && is0Chopping()) {
+                return false;
+            }
             if (!CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST) && LINK_IS_ADULT) {
                 return false;
             }
@@ -1188,19 +1220,26 @@ s32 EnKo_CanSpawn(EnKo* this, PlayState* play) {
             }
 
         case SCENE_SPOT10:
-            if (gSaveContext.n64ddFlag && Randomizer_GetSettingValue(RSK_SHUFFLE_ADULT_TRADE)) {
-                // To explain the logic because Fado and Grog are linked:
-                // - If you have Cojiro, then spawn Grog and not Fado.
-                // - If you don't have Cojiro but do have Odd Potion, spawn Fado and not Grog.
-                // - If you don't have either, spawn Grog if you haven't traded the Odd Mushroom.
-                // - If you don't have either but have traded the mushroom, don't spawn either.
-                if (PLAYER_HAS_SHUFFLED_ADULT_TRADE_ITEM(ITEM_COJIRO)) {
-                    return false;
+            if (ENKO_TYPE == ENKO_TYPE_CHILD_FADO) {
+                if (gSaveContext.n64ddFlag && Randomizer_GetSettingValue(RSK_SHUFFLE_ADULT_TRADE)) {
+                    // To explain the logic because Fado and Grog are linked:
+                    // - If you have Cojiro, then spawn Grog and not Fado.
+                    // - If you don't have Cojiro but do have Odd Potion, spawn Fado and not Grog.
+                    // - If you don't have either, spawn Grog if you haven't traded the Odd Mushroom.
+                    // - If you don't have either but have traded the mushroom, don't spawn either.
+                    if (PLAYER_HAS_SHUFFLED_ADULT_TRADE_ITEM(ITEM_COJIRO)) {
+                        return false;
+                    } else {
+                        return PLAYER_HAS_SHUFFLED_ADULT_TRADE_ITEM(ITEM_ODD_POTION);
+                    }
                 } else {
-                    return PLAYER_HAS_SHUFFLED_ADULT_TRADE_ITEM(ITEM_ODD_POTION);
+                    return (INV_CONTENT(ITEM_TRADE_ADULT) == ITEM_ODD_POTION) ? true : false;
                 }
-            } else {
-                return (INV_CONTENT(ITEM_TRADE_ADULT) == ITEM_ODD_POTION) ? true : false;
+            } else if (ENKO_TYPE == ENKO_TYPE_CHILD_0) {
+                if (is0Chopping())
+                    return true;
+                else
+                    return false;
             }
         default:
             return false;
