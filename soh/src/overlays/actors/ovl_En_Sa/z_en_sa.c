@@ -419,10 +419,11 @@ s32 func_80AF5DFC(EnSa* this, PlayState* play) {
         }
     }
     if (play->sceneNum == SCENE_KOKIRI_HOME5 && !LINK_IS_ADULT &&
-        INV_CONTENT(ITEM_OCARINA_FAIRY) == ITEM_OCARINA_FAIRY && !(gSaveContext.eventChkInf[4] & 1)) {
+                ((INV_CONTENT(ITEM_OCARINA_FAIRY) == ITEM_OCARINA_FAIRY && !(gSaveContext.eventChkInf[4] & 1)) ||
+                 (getDayOfCycle() % 3 == 2 && CHECK_QUEST_ITEM(QUEST_SONG_SARIA) && !(gSaveContext.infTable[27]&1)))) {
         return 1;
     }
-    if (play->sceneNum == SCENE_SPOT05 && (gSaveContext.eventChkInf[4] & 1) && !(gSaveContext.infTable[27]&1)) {
+    if (play->sceneNum == SCENE_SPOT05 && (gSaveContext.eventChkInf[4] & 1) && (!CHECK_QUEST_ITEM(QUEST_SONG_SARIA) || (!(getDayOfCycle() % 3 == 2) && !(gSaveContext.infTable[27]&1)))) {
         if (gSaveContext.n64ddFlag) {
             return 5;
         }

@@ -72,7 +72,34 @@ MessageTableEntry* OTRMessage_LoadTable(const char* filePath, bool isNES) {
 }
 
 static int numFish = 0;
-static std::string msgFishStr = "Now there are... %b"+std::to_string(numFish)+"%w of them&swishing around!";
+static std::string msgFishStr = "Now there are"+std::to_string(numFish)+"\x14\x01 of them!";
+
+std::string provideCountingString(int num) {
+    if (num == 1)
+        return "...1";
+    else if (num == 2)
+        return "Now there are two of them!";
+    else
+    {
+        std::string accumulation = "Now there are...&\x14\x03...1&..2^\x14\x03";
+        for (int ii=3; ii<=num;ii++)
+        {
+            if (ii == num)
+            {
+                accumulation += ".\x14\x09..\x14\x01"+std::to_string(ii);
+            }
+            else
+            {
+                if ((ii-2)%3)
+                    accumulation += "..."+std::to_string(ii)+"&";
+                else
+                    accumulation += "..."+std::to_string(ii)+"^\x14\x03";
+            }
+        }
+        return accumulation+"\x14\x01 of them!";
+    }
+    return "none";
+}
 
 //For KokiriMsg+24
 extern "C" void createFishString(int num)
@@ -82,7 +109,7 @@ extern "C" void createFishString(int num)
     {
         u16 KokiriMsg = TextIDAllocator::Instance->getId("kokiri");
         numFish = num;
-        msgFishStr = "Now there are... %b"+std::to_string(numFish)+"%w of them&swishing around!";
+        msgFishStr = provideCountingString(numFish);
         CustomMessageManager::Instance->ReplaceMessage(
         questMessageTableID, KokiriMsg+24,
         {
@@ -411,7 +438,7 @@ extern "C" void OTRMessage_Init()
         }
     );
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, 0x1074,
+        questMessageTableID, KokiriMsg+3,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
           "You know, I wish the vegetation&around here had gotten&more water years ago.^If that had happened, there's no doubt&that things would have grown&a mighty lot greater, and the&forest would be a better place for it.",
@@ -691,6 +718,37 @@ extern "C" void OTRMessage_Init()
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
           "However, I still could never&forgive him for what he did.^\x0F, I wish you could have&redeemed yourself somehow.",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, MidoMsg+6,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Actually, today Saria isn't&at her place.^I heard she's around here somewhere,&but I'm honestly not sure&where she went.",
+          "",
+          "",
+        }
+    );
+    static u16 msgM8 = MidoMsg+8;
+    static std::string msgM8Str = "If you really need to know, Saria&should be in her house now.\x07";
+    msgM8Str.push_back((char)((msgM8>>8)&0xFF));
+    msgM8Str.push_back((char)((msgM8)&0xFF));
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, MidoMsg+7,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          msgM8Str,
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, MidoMsg+8,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_TOP,
+          "What business would YOU&have there though?",
           "",
           "",
         }

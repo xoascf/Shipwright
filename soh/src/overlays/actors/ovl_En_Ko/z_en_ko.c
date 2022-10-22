@@ -319,22 +319,18 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
             return 0x1004;
         case ENKO_TYPE_CHILD_1:
             if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA)) {
-                if (IS_DAY) {
-                    //EnFish* fish = (EnFish*)Actor_FindNearby(play, &this->actor, ACTOR_EN_FISH, ACTORCAT_ITEMACTION, 2000.0f);
-                    s32 numF = Actor_FindNumberOf(play, &this->actor, ACTOR_EN_FISH, ACTORCAT_ITEMACTION, 2000.0f,NULL,EnFish_isFishInWater);
-                    if (numF) {
-                        if (numF > 1) {
-                            createFishString(numF);
-                            return KokiriMsg+24;
-                        }
-                        else
-                            return KokiriMsg+23;
+                //EnFish* fish = (EnFish*)Actor_FindNearby(play, &this->actor, ACTOR_EN_FISH, ACTORCAT_ITEMACTION, 2000.0f);
+                s32 numF = Actor_FindNumberOf(play, &this->actor, ACTOR_EN_FISH, ACTORCAT_ITEMACTION, 2000.0f,NULL,EnFish_isFishInWater);
+                if (numF) {
+                    if (numF > 1) {
+                        createFishString(numF);
+                        return KokiriMsg+24;
                     }
                     else
-                        return KokiriMsg+22;
+                        return KokiriMsg+23;
                 }
                 else
-                    return KokiriMsg+14;
+                    return KokiriMsg+22;
             }
             if (gSaveContext.eventChkInf[4] & 1) {
                 return 0x1023;
@@ -469,7 +465,10 @@ u16 func_80A97338(PlayState* play, Actor* thisx) {
             return 0x1055;
         case ENKO_TYPE_CHILD_1:
             if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
-                return 0x1073;
+                if (IS_DAY)
+                    return 0x1073;
+                else
+                    return KokiriMsg+14;
             }
             return 0x105A;
         case ENKO_TYPE_CHILD_2:
@@ -489,7 +488,8 @@ u16 func_80A97338(PlayState* play, Actor* thisx) {
                 return KokiriMsg+6;
             }
             if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
-                return 0x1074;
+                //return 0x1074;
+                return KokiriMsg+3;
             }
             if (gSaveContext.infTable[4] & 0x80) {
                 return 0x105E;
@@ -508,12 +508,12 @@ u16 func_80A97338(PlayState* play, Actor* thisx) {
         case ENKO_TYPE_CHILD_5:
             return 0x1057;
         case ENKO_TYPE_CHILD_6:
-            if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
+            if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST) && IS_DAY) {
                 return 0x1077;
             }
-            if (gSaveContext.infTable[5] & 2) {
-                return 0x1059;
-            }
+            //if (gSaveContext.infTable[5] & 2) {
+            //return 0x1059;
+            //}
             return 0x1058;
         case ENKO_TYPE_CHILD_7:
             if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
@@ -524,9 +524,9 @@ u16 func_80A97338(PlayState* play, Actor* thisx) {
             if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
                 return 0x107A;
             }
-            if (gSaveContext.infTable[5] & 0x200) {
-                return 0x1050;
-            }
+            //if (gSaveContext.infTable[5] & 0x200) {
+            //    return 0x1050;
+            //}
             return 0x104F;
         case ENKO_TYPE_CHILD_9:
             if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
@@ -542,9 +542,9 @@ u16 func_80A97338(PlayState* play, Actor* thisx) {
             if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
                 return 0x107C;
             }
-            if (gSaveContext.infTable[6] & 2) {
-                return 0x1054;
-            }
+            //if (gSaveContext.infTable[6] & 2) {
+            //    return 0x1054;
+            //}
             return 0x1053;
         default:
             return 0;
@@ -691,7 +691,7 @@ s16 func_80A97738(PlayState* play, Actor* thisx) {
                         allGrowth  = allGrowth && growth[ii];
                     }
 
-                    if (this->actor.textId == 0x1074) {
+                    if (this->actor.textId == KokiriMsg+3) {
                         if (numGrowth == NUM_TREES-1) {
                             MSG_CONT(KokiriMsg+11);
                         } else if (someGrowth) {

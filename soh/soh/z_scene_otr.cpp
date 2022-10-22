@@ -123,6 +123,11 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
             { 0, -1, { ACTOR_EN_SA, 100,0,1, 0,-12350,0, 0x0}},
         } },
     } },
+    { SCENE_SPOT10, { // Lost Woods
+        { 0x5, {//Bridge
+            //{ -1, -1, { ACTOR_EN_KO, -1150,-300,1152, 0,1200,0, 0xff00 }},
+        } },
+    } },
     { 0x09, { // Ice Cavern
         { 0x09, {
             //{ -1, 9, { ACTOR_EN_ITEM00, 366, 213, -2036, 0, 0, 0, 0x406 }},

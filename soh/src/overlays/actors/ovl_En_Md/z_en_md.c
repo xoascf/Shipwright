@@ -406,10 +406,14 @@ u16 EnMd_GetTextKokiriHome(PlayState* play, EnMd* this) {
                 return MidoMsg+1;
         }
         else {
-            if (0 /*Saria is at Link's*/)
-                return MidoMsg+3;
-            else if (gSaveContext.infTable[27]&1)
-                return MidoMsg+3;
+            if (gSaveContext.infTable[27]&1) {//Saria is at Link's
+                if (getDayOfCycle() % 3 == 2)//Saria's day home
+                    return MidoMsg+6;
+                else
+                    return MidoMsg+3;
+            }
+            else if (getDayOfCycle() % 3 == 2)//Saria's day home
+                return MidoMsg+7;
             else
                 return 0x1028;
         }
