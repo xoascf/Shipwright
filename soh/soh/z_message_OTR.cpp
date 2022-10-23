@@ -71,6 +71,17 @@ MessageTableEntry* OTRMessage_LoadTable(const char* filePath, bool isNES) {
 	return table;
 }
 
+#define MakeNormalMsgEng(txtID, text) \
+    CustomMessageManager::Instance->CreateMessage(\
+        questMessageTableID, (txtID) ,\
+        {\
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,\
+          (text) ,\
+          "",\
+          "",\
+        }\
+    );
+
 static int numFish = 0;
 static std::string msgFishStr = "Now there are"+std::to_string(numFish)+"\x14\x01 of them!";
 
@@ -211,7 +222,7 @@ extern "C" void OTRMessage_Init()
         questMessageTableID, SariaMsg,
         {
           TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
-          "It's nice that you are dropping by the&village again. I've heard the twins have&been arranging something special!\x0B\x02",
+          "It's nice that you are dropping&by the village again.^I've heard the twins have been&arranging something special!\x0B\x02",
           "",
           "",
         }
@@ -220,7 +231,7 @@ extern "C" void OTRMessage_Init()
         questMessageTableID, SariaMsg+1,
         {
           TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
-          "\x0F, you've been collecting a lot of&things in your place, haven't you?&Maybe I should come around sometime.\x0B\x02",
+          "\x0F, you've been collecting&a lot of things in your place,&haven't you?^Maybe I should come&around sometime.\x0B\x02",
           "",
           "",
         }
@@ -407,18 +418,64 @@ extern "C" void OTRMessage_Init()
           "",
         }
     );
-
-
-    u16 KokiriMsg = TextIDAllocator::Instance->allocateRange("kokiri", 30);
     CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, KokiriMsg,
+        questMessageTableID, SariaMsg+22,
         {
-          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
-          "Hey, you know, it's so strange what&happened to the Great Deku Tree.^Things haven't been growing&well in the forrest lately, but&hopefully that will change.",
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "Oh, so the party isn't&happening anymore?&What a bummer.^Well, I'd hope we could&find something else to&do instead I guess.\x0B\x02",
           "",
           "",
         }
     );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+23,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "You know, you can drop&by my house anytime.^I might be there sometimes.\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+24,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "You know, you can drop&by my house anytime.^I'm here right now.\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+25,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "Tell Reido I'm looking&forward to the party!\x0B\x02",
+          "",
+          "",
+        }
+    );
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, SariaMsg+26,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+          "Oh, hey \x0F, I'll just be&dropping over if that's&OK with you.^Looking forward to seeing you.\x0B\x02",
+          "",
+          "",
+        }
+    );
+
+
+    u16 KokiriMsg = TextIDAllocator::Instance->allocateRange("kokiri", 40);
+    /*CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, KokiriMsg,
+        {
+          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+          "Hey, you know, it's so strange what&happened to the Great Deku Tree.^Things haven't been growing&well in the forest lately, but&hopefully that will change.",
+          "",
+          "",
+        }
+    );*/
+    MakeNormalMsgEng(KokiriMsg, "Hey, you know, it's so strange what&happened to the Great Deku Tree.^Things haven't been growing&well in the forest lately, but&hopefully that will change.");
     CustomMessageManager::Instance->CreateMessage(
         questMessageTableID, KokiriMsg+1,
         {
@@ -441,7 +498,7 @@ extern "C" void OTRMessage_Init()
         questMessageTableID, KokiriMsg+3,
         {
           TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
-          "You know, I wish the vegetation&around here had gotten&more water years ago.^If that had happened, there's no doubt&that things would have grown&a mighty lot greater, and the&forest would be a better place for it.",
+          "You know, I wish the vegetation&around here had gotten more&water back when it began budding.^If that had happened, there's no doubt&that things would have grown&a mighty lot greater, and the&forest would be a better place for it.",
           "",
           "",
         }
@@ -675,44 +732,26 @@ extern "C" void OTRMessage_Init()
           "",
         }
     );
+    MakeNormalMsgEng(KokiriMsg+29, "I've been chopping up&wood for years,&and after doing it for so long,^I've got to say,&there's got to be,&a better way.^Please help me if you&can, your body looks&strong enough.");
+
+    MakeNormalMsgEng(KokiriMsg+30, "I've been chopping up&wood for years,&and after doing it for so long,^I've got to proclaim,&that things can be lame,&if they stay the same.^I've been managing ok myself,&but the more help the merrier.");
+
+    MakeNormalMsgEng(KokiriMsg+31, "I've been chopping up&wood for years,&and after doing it for&so long, I feel so strong.^Not as strong as you would be,&but I don't need to be to&hack up fresh young wood!");
+
+    MakeNormalMsgEng(KokiriMsg+32, "I would tell Saria that I've&canceled our anniversary party,&but I'm afraid to let&her down to her face.^I know she was really&looking forward to it.");
+
+    MakeNormalMsgEng(KokiriMsg+33, "Hey, I know you went through&the Lost Woods, and you probably&encountered Mido there,&looking out for Saria.^Mido had always given&\x0F a hard time and&I think he somewhat regretted&that once he realised \x0F^wouldn't be returning,&and especialy now that we&know he did not cause the&Great Deku Tree to wither.^But at the same time,&there seems to be&some reason why he continued&to hold a grudge against \x0F^that he has never let go of,&and I can only speculate&on why.");
 
     u16 MidoMsg = TextIDAllocator::Instance->allocateRange("mido", 10);
-    CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, MidoMsg,
-        {
-          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
-          "Ahhhhhhhhrrrrrrgh!!!^Why are there so many bugs!?^I can't stop them from&crawling everywhere!",
-          "",
-          "",
-        }
-    );
-    CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, MidoMsg+1,
-        {
-          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
-          "Oh, phew.^Hmph, I'm glad you helped&out there, although I'd&expect that from any Kokiri.",
-          "",
-          "",
-        }
-    );
-    CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, MidoMsg+2,
-        {
-          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
-          "Hey!!!&What do you think you're doing?^No way are you dumping&things on my floor!^The great Mido will see to it&that you are properly punished!",
-          "",
-          "",
-        }
-    );
-    CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, MidoMsg+3,
-        {
-          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
-          "Actually, today Saria isn't&at her usual spot.^I heard she came around here,&but I'm honestly not sure&where she went.",
-          "",
-          "",
-        }
-    );
+
+    MakeNormalMsgEng(MidoMsg, "Ahhhhhhhhrrrrrrgh!!!^Why are there so many bugs!?^I can't stop them from&crawling everywhere!");
+
+    MakeNormalMsgEng(MidoMsg+1,"Oh, phew.^Hmph, I'm glad you helped&out there, although I'd&expect that from any Kokiri.");
+
+    MakeNormalMsgEng(MidoMsg+2,"Hey!!!&What do you think you're doing?^No way are you dumping&things on my floor!^The great Mido will see to it&that you are properly punished!");
+
+    MakeNormalMsgEng(MidoMsg+3, "Actually, today Saria isn't&at her usual spot.^I heard she came around here,&but I'm honestly not sure&where she went.");
+
     CustomMessageManager::Instance->CreateMessage(
         questMessageTableID, MidoMsg+4,
         {

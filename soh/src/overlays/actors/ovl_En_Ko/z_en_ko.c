@@ -396,9 +396,6 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
             }
             return 0x100A;
         case ENKO_TYPE_CHILD_5:
-            if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA) && IS_DAY) {
-                return KokiriMsg+13;
-            }
             if (gSaveContext.eventChkInf[4] & 1) {
                 return 0x10B0;
             }
@@ -447,7 +444,7 @@ u16 func_80A96FD0(PlayState* play, Actor* thisx) {
         case ENKO_TYPE_CHILD_9:
             if (CHECK_QUEST_ITEM(QUEST_SONG_SARIA)) {
                 if (IS_DAY)
-                    return KokiriMsg+15;
+                    return KokiriMsg+32;
                 else
                     return KokiriMsg+8;
             }
@@ -471,13 +468,32 @@ u16 func_80A97338(PlayState* play, Actor* thisx) {
     EnKo* this = (EnKo*)thisx;
     u16 KokiriMsg = GetTextID("kokiri");
 
+    u8 growth[NUM_TREES];
+    u8 someGrowth = 0;
+    u8 numGrowth = 0;
+    u8 allGrowth = 1;
+    for (u32 ii = 0; ii<NUM_TREES; ii++) {
+        growth[ii] = Flags_GetCollectible(play,ii+1);
+        someGrowth  = someGrowth || growth[ii];
+        if (growth[ii])
+            numGrowth++;
+        allGrowth  = allGrowth && growth[ii];
+    }
+
     switch (ENKO_TYPE) {
         case ENKO_TYPE_CHILD_FADO:
             player->exchangeItemId = EXCH_ITEM_ODD_POTION;
             return 0x10B9;
         case ENKO_TYPE_CHILD_0:
+            if (allGrowth) {
+                return KokiriMsg+31;
+            }
             if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
-                return 0x1072;
+                //return 0x1072;
+                if (someGrowth)
+                    return KokiriMsg+30;
+                else
+                    return KokiriMsg+29;
             }
             if (gSaveContext.infTable[4] & 2) {
                 return 0x1056;
@@ -486,24 +502,12 @@ u16 func_80A97338(PlayState* play, Actor* thisx) {
         case ENKO_TYPE_CHILD_1:
             if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
                 if (IS_DAY)
-                    return 0x1073;
+                    return KokiriMsg+15; //0x1073;
                 else
                     return KokiriMsg+14;
             }
             return 0x105A;
         case ENKO_TYPE_CHILD_2:
-            u8 growth[NUM_TREES];
-            u8 someGrowth = 0;
-            u8 numGrowth = 0;
-            u8 allGrowth = 1;
-            for (u32 ii = 0; ii<NUM_TREES; ii++) {
-                growth[ii] = Flags_GetCollectible(play,ii+1);
-                someGrowth  = someGrowth || growth[ii];
-                if (growth[ii])
-                    numGrowth++;
-                allGrowth  = allGrowth && growth[ii];
-            }
-
             if (allGrowth) {
                 return KokiriMsg+6;
             }
@@ -521,12 +525,13 @@ u16 func_80A97338(PlayState* play, Actor* thisx) {
             }
             return 0x105B;
         case ENKO_TYPE_CHILD_4:
-            if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
+            if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST) && IS_DAY) {
                 return 0x1076;
             }
             return 0x105F;
         case ENKO_TYPE_CHILD_5:
-            return 0x1057;
+            return KokiriMsg+13;
+            //return 0x1057;
         case ENKO_TYPE_CHILD_6:
             if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST) && IS_DAY) {
                 return 0x1077;
@@ -537,7 +542,8 @@ u16 func_80A97338(PlayState* play, Actor* thisx) {
             return 0x1058;
         case ENKO_TYPE_CHILD_7:
             if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
-                return 0x1079;
+                //return 0x1079;
+                return KokiriMsg+33;
             }
             return 0x104E;
         case ENKO_TYPE_CHILD_8:
@@ -555,7 +561,7 @@ u16 func_80A97338(PlayState* play, Actor* thisx) {
             return 0x1051;
         case ENKO_TYPE_CHILD_10:
             if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
-                return 0x107C;
+                return 0x1057;
             }
             return 0x1052;
         case ENKO_TYPE_CHILD_11:
@@ -647,6 +653,8 @@ s16 func_80A97738(PlayState* play, Actor* thisx) {
                 gSaveContext.infTable[3] |= 1 << 15;
             } else if (this->actor.textId == KokiriMsg+16) {
                 gSaveContext.infTable[3] |= 1 << 14;
+            } else if (this->actor.textId == KokiriMsg+32) {
+                gSaveContext.infTable[27] |= 1 << 1;
             }
             return 0;
         case TEXT_STATE_DONE_FADING:
@@ -924,6 +932,13 @@ s32 woodcutterAnimDrive(EnKo* this, PlayState* play) {
         return func_80A98124(this,play);
 }
 
+s32 backflipperAnimDrive(EnKo* this, PlayState* play) {
+    if (IS_DAY)
+        return func_80A98174(this,play);
+    else
+        return func_80A97F70(this,play);
+}
+
 s32 func_80A98174(EnKo* this, PlayState* play) {
     if (this->unk_1E8.unk_00 != 0) {
         if (Animation_OnFrame(&this->skelAnime, 18.0f)) {
@@ -1043,7 +1058,7 @@ s32 EnKo_ChildPost(EnKo* this, PlayState* play) {
         case ENKO_TYPE_CHILD_3:
             return func_80A97EB0(this, play);
         case ENKO_TYPE_CHILD_4:
-            return func_80A98174(this, play);
+            return backflipperAnimDrive(this, play);
         case ENKO_TYPE_CHILD_5:
             return func_80A97EB0(this, play);
         case ENKO_TYPE_CHILD_6:

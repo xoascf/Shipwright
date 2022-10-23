@@ -123,9 +123,15 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
             { 0, -1, { ACTOR_EN_SA, 100,0,1, 0,-12350,0, 0x0}},
         } },
     } },
+    { 0x29, {//Saria's
+        { 0x00, {
+            //{ -1, -1, { ACTOR_EN_ITEM00, 0, 0, 0, 0, 0, 0, 0x100+(uint16_t)ITEM00_HEART_PIECE}},
+            { -1, -1, { ACTOR_EN_WONDER_ITEM, -79,0,-151, 0,0,1, 0x1241}},
+        } },
+    } },
     { SCENE_SPOT10, { // Lost Woods
         { 0x5, {//Bridge
-            { -1, -1, { ACTOR_EN_KO, -1150,-340,1152, 0,1200,0, 0xff00 }},
+            { -1, -1, { ACTOR_EN_KO, -1150,-360,1152, 0,1200,0, 0xff00 }},
         } },
     } },
     { 0x09, { // Ice Cavern

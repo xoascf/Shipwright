@@ -155,17 +155,37 @@ u16 ElfMessage_GetSariaText(PlayState* play) {
 
     if (!LINK_IS_ADULT) {
         if (Actor_FindNearby(play, &player->actor, ACTOR_EN_SA, 4, 800.0f) == NULL) {
-            if (play->sceneNum == SCENE_SPOT04)//Kokiri Village
-                return SariaMsg;
+            if (play->sceneNum == SCENE_SPOT04) {//Kokiri Village
+                if (gSaveContext.infTable[27] & (1<<0))
+                    return SariaMsg+26;
+                else {
+                    if (gSaveContext.infTable[27] & (1<<2)) {
+                        if (getDayOfCycle() % 3 == 2)
+                            return SariaMsg+24;
+                        else
+                            return SariaMsg+23;
+                    } else
+                        return SariaMsg;
+                }
+            }
             else if (play->sceneNum == SCENE_LINK_HOME) {//Link's House
-                gSaveContext.infTable[27] |= 1;
+                gSaveContext.infTable[27] |= (1<<0);
                 return SariaMsg+1;
             }
             else if (play->sceneNum == SCENE_KOKIRI_SHOP)
                 return SariaMsg+2;
-            else if (play->sceneNum == SCENE_KOKIRI_HOME3)
-                return SariaMsg+3;
-            else if (play->sceneNum == SCENE_KOKIRI_HOME4)
+            else if (play->sceneNum == SCENE_KOKIRI_HOME3) {
+                if (gSaveContext.infTable[27] & (1<<2))
+                    return SariaMsg+3;
+                else {
+                    if (gSaveContext.infTable[27] & (1<<1)) {
+                        gSaveContext.infTable[27] |= (1<<2);
+                        return SariaMsg+22;
+                    } else {
+                        return SariaMsg+25;
+                    }
+                }
+            } else if (play->sceneNum == SCENE_KOKIRI_HOME4)
                 return SariaMsg+4;
             else if (play->sceneNum == SCENE_KOKIRI_HOME5)
                 return SariaMsg+5;
