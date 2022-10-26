@@ -427,12 +427,22 @@ u16 EnMd_GetTextKokiriHome(PlayState* play, EnMd* this) {
 u16 EnMd_GetTextLostWoods(PlayState* play, EnMd* this) {
     this->unk_208 = 0;
     this->unk_209 = TEXT_STATE_NONE;
+    u16 MidoMsg = GetTextID("mido");
 
     if (gSaveContext.eventChkInf[4] & 0x100) {
         if (gSaveContext.infTable[1] & 0x200) {
-            return 0x1071;
+            // 0x1071;
+            if (gSaveContext.infTable[3] & (1<<1) && !(gSaveContext.infTable[3] & (1<<0))) {
+                if (gSaveContext.itemGetInf[3] & 0x40)
+                    return MidoMsg+15;
+                else
+                    return MidoMsg+14;
+            }
+            else
+                return MidoMsg+11;
         }
-        return 0x1070;
+        //return 0x1070;
+        return MidoMsg+9;
     }
 
     if (gSaveContext.eventChkInf[0] & 0x400) {
@@ -465,14 +475,14 @@ s16 func_80AAAF04(PlayState* play, Actor* thisx) {
     EnMd* this = (EnMd*)thisx;
     u16 MidoMsg = GetTextID("mido");
 
-    if (this->actor.textId == 0x1070 || this->actor.textId == 0x1071 || this->actor.textId == 0x10D6 || this->actor.textId == MidoMsg+4 || this->actor.textId == MidoMsg+5) {
+    if (this->actor.textId == 0x1070 || this->actor.textId == 0x1071 || this->actor.textId == 0x10D6 || this->actor.textId == MidoMsg+4 || this->actor.textId == MidoMsg+5 || (this->actor.textId >= MidoMsg+9 && this->actor.textId <= MidoMsg+16)) {
         //Audio_SetGameVolume(0,0.0f);
         if (this->musicState == 0 || this->musicState == 1)
             gAudioContext.seqPlayers[0].fadeTimer = 100;
         if (this->musicState == 0) {
             this->storedVolume = gAudioContext.seqPlayers[0].fadeVolume;
             this->musicState = 1;
-            gAudioContext.seqPlayers[0].fadeVolume = 0.1f;
+            gAudioContext.seqPlayers[0].fadeVolume = 0.0f;
             Audio_SequencePlayerProcessSound(&gAudioContext.seqPlayers[0]);
         }
     }
@@ -504,9 +514,36 @@ s16 func_80AAAF04(PlayState* play, Actor* thisx) {
                             Message_ContinueTextbox(play,this->actor.textId);
                         }
                 }
-                if (this->actor.textId == MidoMsg+15) {
-                    this->actor.textId = MidoMsg+16;
+                if (this->actor.textId == MidoMsg+9 || this->actor.textId == MidoMsg+10) {
+                    if (gSaveContext.infTable[3] & (1<<1) && !(gSaveContext.infTable[3] & (1<<0)))
+                        this->actor.textId = MidoMsg+14;
+                    else
+                        this->actor.textId = MidoMsg+11;
                     Message_ContinueTextbox(play,this->actor.textId);
+                    return 1;
+                }
+                if (this->actor.textId == MidoMsg+11) {
+                    if (gSaveContext.infTable[3] & (1<<0))
+                        this->actor.textId = MidoMsg+13;
+                    else
+                        this->actor.textId = MidoMsg+12;
+                    Message_ContinueTextbox(play,this->actor.textId);
+                    return 1;
+                }
+                if (this->actor.textId == MidoMsg+14) {
+                    this->actor.textId = MidoMsg+4;
+                    Message_ContinueTextbox(play,this->actor.textId);
+                    return 1;
+                }
+                if (this->actor.textId == MidoMsg+16 || this->actor.textId == MidoMsg+17) {
+                    this->actor.textId = MidoMsg+18;
+                    Message_ContinueTextbox(play,this->actor.textId);
+                    return 1;
+                }
+                if (this->actor.textId == MidoMsg+18 ||this->actor.textId == MidoMsg+19) {
+                    this->actor.textId = MidoMsg+20;
+                    Message_ContinueTextbox(play,this->actor.textId);
+                    return 1;
                 }
                 if (this->actor.textId == MidoMsg+4) {
                     func_8002F434(this, play, GI_HEART_PIECE, 100.0f, 100.0f);
@@ -552,7 +589,13 @@ s16 func_80AAAF04(PlayState* play, Actor* thisx) {
             if (this->actor.textId == MidoMsg+1) {
                 gSaveContext.infTable[3] &= ~1;
             }
-
+            if (this->actor.textId >= MidoMsg+9 || this->actor.textId <= MidoMsg+15) {
+                gSaveContext.infTable[1] |= 0x200;
+            }
+            if (this->actor.textId == MidoMsg+15) {
+                gSaveContext.infTable[3] |= 0x8;
+                this->actionFunc = waitForFinalMessage;
+            }
             return 0;
         case TEXT_STATE_EVENT:
             if (Message_ShouldAdvance(play)) {
@@ -917,7 +960,7 @@ void receiveFinalMessage(EnMd* this, PlayState* play) {
         play->msgCtx.ocarinaMode = OCARINA_MODE_04;
     } else if (play->msgCtx.ocarinaMode == OCARINA_MODE_03) {
         Audio_PlaySoundGeneral(NA_SE_SY_CORRECT_CHIME, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
-        this->actor.textId = MidoMsg+15;
+        this->actor.textId = MidoMsg+16;
         func_8002F2CC(&this->actor, play, this->collider.dim.radius + 30.0f);
 
         this->actionFunc = func_80AAB874;

@@ -543,7 +543,10 @@ u16 func_80A97338(PlayState* play, Actor* thisx) {
         case ENKO_TYPE_CHILD_7:
             if (CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
                 //return 0x1079;
-                return KokiriMsg+33;
+                if (gSaveContext.infTable[3] & (1<<1) && !(gSaveContext.infTable[3] & (1<<0)))
+                    return KokiriMsg+34;
+                else
+                    return KokiriMsg+33;
             }
             return 0x104E;
         case ENKO_TYPE_CHILD_8:

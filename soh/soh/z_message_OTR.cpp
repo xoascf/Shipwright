@@ -750,9 +750,10 @@ extern "C" void OTRMessage_Init()
     MakeNormalMsgEng(KokiriMsg+32, "I would tell Saria that I've&canceled our anniversary party,&but I'm afraid to let&her down to her face.^I know she was really&looking forward to it.");
 
     MakeNormalMsgEng(KokiriMsg+33, "Hey, I know you went through&the Lost Woods, and you probably&encountered Mido there,&looking out for Saria.^Mido had always given&\x0F a hard time and&I think he somewhat regretted&that once he realised \x0F^wouldn't be returning,&and especialy now that we&know he did not cause the&Great Deku Tree to wither.^But at the same time,&there seems to be&some reason why he continued&to hold a grudge against \x0F^that he has never let go of,&and I can only speculate&on why.");
+    MakeNormalMsgEng(KokiriMsg+34, "Hey, I know you went through&the Lost Woods, and you probably&encountered Mido there,&looking out for Saria.^Mido had always given&\x0F a hard time and&I think he somewhat regretted&that once he realised \x0F^wouldn't be returning,&and especialy now that we&know he did not cause the&Great Deku Tree to wither.^Mido seems to have always been&jealous of \x0F for some reason,&but now I have no doubt^that he would put&aside those old feelings,&were he to meet \x0F again.");
 
 
-    u16 MidoMsg = TextIDAllocator::Instance->allocateRange("mido", 20);
+    u16 MidoMsg = TextIDAllocator::Instance->allocateRange("mido", 30);
 
     MakeNormalMsgEng(MidoMsg, "Ahhhhhhhhrrrrrrgh!!!^Why are there so many bugs!?^I can't stop them from&crawling everywhere!");
 
@@ -802,21 +803,32 @@ extern "C" void OTRMessage_Init()
         }
     );
 
-    MakeContinuingMsgEng(MidoMsg+9, "What's happening?^Everything seems to have&returned to normal..&but what about Saria?^Saria must be comming back,&I refuse to accept anything else!^There's no way I could break&the promise made to her!", MidoMsg+10, msgM10);
-    MakeNormalMsgEng(MidoMsg+10,"The promise,&I should probably tell you,&in case there's any chance&you could fulfil it for me.^It's about someone we knew& years ago, who left us.^I swore to Saria that,&if he ever appeared again,&I would tell him she had been&waiting for him,&and that he should&wait for her return.^His name was \x0F.");
-    MakeNormalMsgEng(MidoMsg+11,"In a way, I regret&making that promise to her.^I could never bring myself to trust \x0F,&no matter how much Saria&would swear by his innocence.^I just cannot shake the feeling&in my gut that he was&responsible for taking&away everything I held dear.^But I am a man of my word&and would never back down and&break a promise I made to Saria&...before she left.^So, please, if you ever&encounter him on your travels,&please tell him what&Saria said, for her sake.");
+    MakeContinuingMsgEng(MidoMsg+9, "What's happening?^Everything seems to have&returned to normal...&but what about Saria?^Saria must be coming back,&I refuse to accept anything else!", MidoMsg+10, msgM10);
+    MakeNormalMsgEng(MidoMsg+10,"But at least, maybe there's&a chance you could fulfil&the promise I made.^It's about someone we knew&years ago, who left us.^I promised Saria that,&if he ever appeared again,^I would tell him she had been&waiting for him,&and that he should&await her return.^His name was \x0F.");
+    MakeNormalMsgEng(MidoMsg+11,"In a way, I regret&making that promise to her.^I could never bring myself to trust \x0F,&no matter how much Saria&would swear by his innocence.^I just cannot shake the feeling&in my gut that he was&responsible for taking&away everything I held dear.^But I am a man of my word&and would never back down and&break a promise I made to Saria^So, please, if you ever&encounter him on your travels,&please tell him what&Saria said, for her sake.");
     MakeNormalMsgEng(MidoMsg+12,"\x0F, how I wish you could have&shown you were deserving&of my forgiveness.");
-    MakeNormalMsgEng(MidoMsg+13,"\x0F, how that name fills me with anger!&What could you possibly do&that I could even hope of forgiving you?");
-    MakeNormalMsgEng(MidoMsg+14,"\x0F, how I wish I could have understood you.&I don't know what he was doing&but Saria trusted him&and he always treated us well.");
-    MakeNormalMsgEng(MidoMsg+15,"But now I can no longer&even speak to Saria through the power of her music...^All I wanted was to&just to talk to her&\x14\x03one...last...time.");
-    MakeNormalMsgEng(MidoMsg+16,"Saria\x14\x05...?!");
+    MakeNormalMsgEng(MidoMsg+13,"\x0F, how that name fills me&with anger! How could I&even hope of forgiving you?");
+    MakeNormalMsgEng(MidoMsg+14,"\x0F, how I wish I could have&understood you.^I don't know what he was&doing, but Saria trusted him&and he always treated us well.");
+    MakeNormalMsgEng(MidoMsg+15,"But now I can no longer&even speak to Saria through&the power of her music...^All I wanted was to&just to talk to her&\x14\x03one...last...time.");
+    MakeContinuingMsgEng(MidoMsg+16,"Saria\x14\x05...?!", MidoMsg+17, msgM17);
     CustomMessageManager::Instance->CreateMessage(
         questMessageTableID, MidoMsg+17,
         {
           TEXTBOX_TYPE_BLUE, TEXTBOX_POS_TOP,
-          "Mido, it's me.",
+          "Mido, it's me.&Don't worry, I'm safe, but I can no longer&come back to the forest.",
           "",
           "",
         }
     );
+    MakeContinuingMsgEng(MidoMsg+18,"I'm so glad you're safe,&but why aren't you coming back?", MidoMsg+19, msgM19);
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, MidoMsg+19,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_TOP,
+          "Because Mido, I need to&aid the person who&is saving this land.^Mido,&that is \x0F.",
+          "",
+          "",
+        }
+    );
+    MakeNormalMsgEng(MidoMsg+20, "...^Thank you...for everything.");
 }
