@@ -150,6 +150,11 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
             //{ -1, 18, { 0x95, -18,800,1800, 0,-32768,0, 0xb140 }},
         } },
     } },
+    { SCENE_SPOT18, {//Goron City
+        { 0x03, {
+            //{ -1, -1, { ACTOR_EN_GO2, 1028,480,-375, 0,0,0, 0xffeb }}
+        } },
+    } },
 };
 
 //Dynamic plant locations

@@ -82,6 +82,15 @@ MessageTableEntry* OTRMessage_LoadTable(const char* filePath, bool isNES) {
         }\
     );
 
+#define MakeContinuingMsgEng(txtID, text, nextID, staticVar)\
+    u16 staticVar = (nextID) ;\
+    static std::string staticVar##Str = text ;\
+    staticVar##Str.push_back((char) 0x07); \
+    staticVar##Str.push_back((char)(( staticVar >>8)&0xFF));\
+    staticVar##Str.push_back((char)(( staticVar )&0xFF));\
+    MakeNormalMsgEng(txtID, staticVar##Str);\
+
+
 static int numFish = 0;
 static std::string msgFishStr = "Now there are"+std::to_string(numFish)+"\x14\x01 of them!";
 
@@ -742,7 +751,8 @@ extern "C" void OTRMessage_Init()
 
     MakeNormalMsgEng(KokiriMsg+33, "Hey, I know you went through&the Lost Woods, and you probably&encountered Mido there,&looking out for Saria.^Mido had always given&\x0F a hard time and&I think he somewhat regretted&that once he realised \x0F^wouldn't be returning,&and especialy now that we&know he did not cause the&Great Deku Tree to wither.^But at the same time,&there seems to be&some reason why he continued&to hold a grudge against \x0F^that he has never let go of,&and I can only speculate&on why.");
 
-    u16 MidoMsg = TextIDAllocator::Instance->allocateRange("mido", 10);
+
+    u16 MidoMsg = TextIDAllocator::Instance->allocateRange("mido", 20);
 
     MakeNormalMsgEng(MidoMsg, "Ahhhhhhhhrrrrrrgh!!!^Why are there so many bugs!?^I can't stop them from&crawling everywhere!");
 
@@ -779,24 +789,32 @@ extern "C" void OTRMessage_Init()
           "",
         }
     );
-    static u16 msgM8 = MidoMsg+8;
-    static std::string msgM8Str = "If you really need to know, Saria&should be in her house now.\x07";
-    msgM8Str.push_back((char)((msgM8>>8)&0xFF));
-    msgM8Str.push_back((char)((msgM8)&0xFF));
-    CustomMessageManager::Instance->CreateMessage(
-        questMessageTableID, MidoMsg+7,
-        {
-          TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
-          msgM8Str,
-          "",
-          "",
-        }
-    );
+
+    MakeContinuingMsgEng(MidoMsg+7, "If you really need to know, Saria&should be in her house now.", MidoMsg+8, msgM8);
+
     CustomMessageManager::Instance->CreateMessage(
         questMessageTableID, MidoMsg+8,
         {
           TEXTBOX_TYPE_BLUE, TEXTBOX_POS_TOP,
           "What business would YOU&have there though?",
+          "",
+          "",
+        }
+    );
+
+    MakeContinuingMsgEng(MidoMsg+9, "What's happening?^Everything seems to have&returned to normal..&but what about Saria?^Saria must be comming back,&I refuse to accept anything else!^There's no way I could break&the promise made to her!", MidoMsg+10, msgM10);
+    MakeNormalMsgEng(MidoMsg+10,"The promise,&I should probably tell you,&in case there's any chance&you could fulfil it for me.^It's about someone we knew& years ago, who left us.^I swore to Saria that,&if he ever appeared again,&I would tell him she had been&waiting for him,&and that he should&wait for her return.^His name was \x0F.");
+    MakeNormalMsgEng(MidoMsg+11,"In a way, I regret&making that promise to her.^I could never bring myself to trust \x0F,&no matter how much Saria&would swear by his innocence.^I just cannot shake the feeling&in my gut that he was&responsible for taking&away everything I held dear.^But I am a man of my word&and would never back down and&break a promise I made to Saria&...before she left.^So, please, if you ever&encounter him on your travels,&please tell him what&Saria said, for her sake.");
+    MakeNormalMsgEng(MidoMsg+12,"\x0F, how I wish you could have&shown you were deserving&of my forgiveness.");
+    MakeNormalMsgEng(MidoMsg+13,"\x0F, how that name fills me with anger!&What could you possibly do&that I could even hope of forgiving you?");
+    MakeNormalMsgEng(MidoMsg+14,"\x0F, how I wish I could have understood you.&I don't know what he was doing&but Saria trusted him&and he always treated us well.");
+    MakeNormalMsgEng(MidoMsg+15,"But now I can no longer&even speak to Saria through the power of her music...^All I wanted was to&just to talk to her&\x14\x03one...last...time.");
+    MakeNormalMsgEng(MidoMsg+16,"Saria\x14\x05...?!");
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, MidoMsg+17,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_TOP,
+          "Mido, it's me.",
           "",
           "",
         }
