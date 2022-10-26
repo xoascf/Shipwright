@@ -588,8 +588,9 @@ s16 func_80AAAF04(PlayState* play, Actor* thisx) {
             }
             if (this->actor.textId == MidoMsg+1) {
                 gSaveContext.infTable[3] &= ~1;
+                gSaveContext.infTable[1] &= ~0x200;//Change this later so that the variable is reset on returning to the child era
             }
-            if (this->actor.textId >= MidoMsg+9 || this->actor.textId <= MidoMsg+15) {
+            if (this->actor.textId >= MidoMsg+9 && this->actor.textId <= MidoMsg+15) {
                 gSaveContext.infTable[1] |= 0x200;
             }
             if (this->actor.textId == MidoMsg+15) {
