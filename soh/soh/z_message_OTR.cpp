@@ -831,4 +831,10 @@ extern "C" void OTRMessage_Init()
         }
     );
     MakeNormalMsgEng(MidoMsg+20, "...^Thank you...for everything.");
+
+
+    u16 GoronMsg = TextIDAllocator::Instance->allocateRange("goron", 30);
+
+    MakeNormalMsgEng(GoronMsg+0, "Ahhh, this is the best&spot to take a nice bath.&So warm and relaxing...");
+    MakeNormalMsgEng(GoronMsg+1, "Oh, this stone at least&is warm enough to rest on.&So I'll just keep napping...");
 }

@@ -152,7 +152,7 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
     } },
     { SCENE_SPOT18, {//Goron City
         { 0x03, {
-            //{ -1, -1, { ACTOR_EN_GO2, 1028,480,-375, 0,0,0, 0xffeb }}
+            { -1, -1, { ACTOR_EN_GO2, 1030,480,-380, 0,0,0, 0xffeb | 0x10 }}
         } },
     } },
 };

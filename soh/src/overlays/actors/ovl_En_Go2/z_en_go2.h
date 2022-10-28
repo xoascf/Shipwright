@@ -23,7 +23,7 @@ typedef enum {
     /* 0x0A */ GORON_CITY_STAIRWELL,
     /* 0x0B */ GORON_CITY_LOST_WOODS,
     /* 0x0C */ GORON_DMT_FAIRY_HINT,
-    /* 0x0D */ GORON_MARKET_BAZAAR
+    /* 0x0D */ GORON_MARKET_BAZAAR,
 } GoronType;
 
 // WIP fire temple type docs
@@ -105,6 +105,7 @@ typedef struct EnGo2 {
     /* 0x059A */ s16 camId;
     /* 0x059C */ s16 unk_59C;
     /*        */ GetItemEntry getItemEntry;
+    /*        */ Actor* timeBlock;
 } EnGo2; // size = 0x05A0
 
 #endif
