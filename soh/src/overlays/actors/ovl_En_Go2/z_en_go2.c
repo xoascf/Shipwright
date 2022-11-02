@@ -1740,8 +1740,8 @@ void EnGo2_Init(Actor* thisx, PlayState* play) {
         case GORON_DMT_ROLLING_SMALL:
             this->collider.dim.height = (D_80A4816C[this->actor.params & GORON_IDENTITY_PARAM].height * 0.6f);
             EnGo2_SetupRolling(this, play);
-            //if (LINK_IS_ADULT && !CHECK_QUEST_ITEM(QUEST_MEDALLION_FIRE))
-            //    Actor_Kill(&this->actor);
+            if (LINK_IS_ADULT && !CHECK_QUEST_ITEM(QUEST_MEDALLION_FIRE))
+                Actor_Kill(&this->actor);
             break;
         case GORON_FIRE_GENERIC:
             if (Flags_GetSwitch(play, (this->actor.params & 0xFC00) >> 0xA)) {
