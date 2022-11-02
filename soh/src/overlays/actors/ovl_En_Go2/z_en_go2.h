@@ -106,6 +106,7 @@ typedef struct EnGo2 {
     /* 0x059C */ s16 unk_59C;
     /*        */ GetItemEntry getItemEntry;
     /*        */ Actor* timeBlock;
+    /*        */ u8 raceStatus;
 } EnGo2; // size = 0x05A0
 
 #endif

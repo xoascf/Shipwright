@@ -152,7 +152,19 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
     } },
     { SCENE_SPOT18, {//Goron City
         { 0x03, {
-            { -1, -1, { ACTOR_EN_GO2, 1030,480,-380, 0,0,0, 0xffeb | 0x10 }}
+            { -1, -1, { ACTOR_EN_GO2, 1030,480,-380, 0,0,0, 0xffeb | 0x10 }},
+            { 2, -1, { ACTOR_EN_GO2, /*-20,-3,330,*/ 520,399,565,  0,-17295,0, /*0xffe0*/ 0x03e0 | (0x0<<10)}},
+            { 3, -1, { ACTOR_EN_GO2, /*-20,-3,330,*/ 520,399,565,  0,-17295,0, /*0xffe0*/ 0x03e0 | (0x0<<10)}},
+        } },
+    } },
+    { 0x60, {//Goron Trail
+        { 0x00, {
+            { 2, -1, { ACTOR_EN_GO2, -282,1258,-1585, 0,-4915,0, 0x03e5 | (0x1<<10)}},
+            { 3, -1, { ACTOR_EN_GO2, -282,1258,-1585, 0,-4915,0, 0x03e5 | (0x1<<10)}},
+            { 2, -1, { ACTOR_EN_GO2, -522,1264,-1560, 0,-4915,0, 0x03e5 | (0x2<<10)}},
+            { 3, -1, { ACTOR_EN_GO2, -522,1264,-1560, 0,-4915,0, 0x03e5 | (0x2<<10)}},
+            //{ 2, -1, { ACTOR_EN_GO2, /*-20,-3,330,*/ 520,399,565,  0,-17295,0, /*0xffe0*/ 0x03e0 | (0x3<<10)}},
+            //{ 3, -1, { ACTOR_EN_GO2, /*-20,-3,330,*/ 520,399,565,  0,-17295,0, /*0xffe0*/ 0x03e0 | (0x3<<10)}},
         } },
     } },
 };
@@ -164,6 +176,18 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
 -565,120,880
 10,180,-10
 5330,-190,-1720
+
+Roling Goron locations
+Scene: 0x62, Room: 0x3, Setup: 0x0
+Entity 17	 ID: 0x1ae, 	Params: 0xfc00, 	pos: 520,399,565, 	0,-12925,0
+
+Scene: 0x60, Room: 0x0, Setup: 0x0
+Entity 40	 ID: 0x1ae, 	Params: 0xfc25, 	pos: -311,1500,-393, 	0,-4915,0
+
+-154,1369,-1073
+-273,1500,-403
+-441,1460,-61
+-673,1192,747
 */
 
 bool Scene_CommandActorList(PlayState* play, Ship::SceneCommand* cmd) {

@@ -837,4 +837,10 @@ extern "C" void OTRMessage_Init()
 
     MakeNormalMsgEng(GoronMsg+0, "Ahhh, this is the best&spot to take a nice bath.&So warm and relaxing...");
     MakeNormalMsgEng(GoronMsg+1, "Oh, this stone at least&is warm enough to rest on.&So I'll just keep napping...");
+    MakeNormalMsgEng(GoronMsg+2, "Ohh, how did I stuff that up?");
+    MakeNormalMsgEng(GoronMsg+3, "Argh, why do I keep losing?");
+    MakeNormalMsgEng(GoronMsg+4, "It feels good to be fast!");
+    MakeNormalMsgEng(GoronMsg+5, "It feels bad to not&be fast enough!");
+    MakeNormalMsgEng(GoronMsg+6, "Finaly, victory is mine!&I feel so proud of myself.&I really do.\x0B\x02");
+    MakeNormalMsgEng(GoronMsg+7, "I am just so overflowing&with energy!^You must take some!\x0B\x02");
 }
