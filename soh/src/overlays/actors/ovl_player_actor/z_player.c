@@ -4,6 +4,7 @@
  * Description: Link
  */
 
+//#define INCLUDE_GAME_PRINTF
 #include "ultra64.h"
 #include "global.h"
 
@@ -10979,6 +10980,8 @@ void Player_Update(Actor* thisx, PlayState* play) {
     s32 pad;
     Input sp44;
     Actor* dog;
+
+    osSyncPrintf("LinkPos: {%d,%d,%d},",(s16)this->actor.world.pos.x,(s16)this->actor.world.pos.y,(s16)this->actor.world.pos.z);
 
     if (func_8084FCAC(this, play)) {
         if (gSaveContext.dogParams < 0) {
