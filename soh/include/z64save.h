@@ -274,6 +274,8 @@ typedef struct {
     /*        */ u16 randomizerInf[9];
     /*        */ u16 adultTradeItems;
     // #endregion
+    u16 goronTimeStatus;
+    s32 goronTimeDay;
 } SaveContext; // size = 0x1428
 
 typedef enum {

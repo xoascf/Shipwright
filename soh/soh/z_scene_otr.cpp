@@ -145,14 +145,32 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
             { 2, -1, { 0x00A7, 116,192,6206, 0, 0, 0, 0x18a4 }}, { 3, -1, { 0x00A7, 116,192,6206, 0, 0, 0, 0x18a4 }},
         } },
     } },
+    { SCENE_MARKET_DAY, { // Castle Town Square - Day
+        { 0x00, {
+            { -1, -1, { ACTOR_EN_GO2, -288,0,188, 0,0,0, 0x03eb | 0x10 | (0x0<<10)}},
+        } },
+    } },
+    { SCENE_MARKET_NIGHT, { // Castle Town Square - Night
+        { 0x00, {
+            { -1, -1, { ACTOR_EN_GO2, 298,0,234, 0,0,0, 0x03eb | 0x10 | (0x1<<10)}},
+        } },
+    } },
+    { SCENE_MARKET_RUINS, { // Castle Town Square - Ruined
+        { 0x00, {
+            { -1, -1, { ACTOR_EN_GO2, -288,0,188, 0,0,0, 0x03eb | 0x10 | (0x0<<10)}},
+        } },
+    } },
     { 0x52, { // Kakariko
         { 0x00, {
             //{ -1, 18, { 0x95, -18,800,1800, 0,-32768,0, 0xb140 }},
         } },
     } },
     { SCENE_SPOT18, {//Goron City
+        { 0x00, {
+            { -1, -1, { ACTOR_EN_GO2, -1232,520,-1190, 0,0,0, 0x03eb | 0x10 | (0x0<<10)}},
+        } },
         { 0x03, {
-            { -1, -1, { ACTOR_EN_GO2, 1030,480,-380, 0,0,0, 0xffeb | 0x10 }},
+            { -1, -1, { ACTOR_EN_GO2, 1030,480,-380, 0,0,0, 0x03eb | 0x10 | (0x1<<10)}},
             { 2, -1, { ACTOR_EN_GO2, /*-20,-3,330,*/ 520,399,565,  0,-17295,0, /*0xffe0*/ 0x03e0 | (0x0<<10)}},
             { 3, -1, { ACTOR_EN_GO2, /*-20,-3,330,*/ 520,399,565,  0,-17295,0, /*0xffe0*/ 0x03e0 | (0x0<<10)}},
         } },

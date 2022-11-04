@@ -488,6 +488,13 @@ s16 EnGo2_GetStateGoronDmtDcEntrance(PlayState* play, EnGo2* this) {
 }
 
 u16 EnGo2_GetTextIdGoronCityEntrance(PlayState* play, EnGo2* this) {
+    if ((gSaveContext.goronTimeStatus & (1<<1)) && !(gSaveContext.goronTimeStatus & (1<<2)) && (LINK_IS_ADULT ^ !!(gSaveContext.goronTimeStatus & (1<<0)))) {
+        u16 GoronMsg = GetTextID("goron");
+        if (LINK_IS_ADULT)
+            return GoronMsg+11;
+        else
+            return GoronMsg+12;
+    }
     if (((!gSaveContext.n64ddFlag && CHECK_QUEST_ITEM(QUEST_MEDALLION_FIRE)) ||
          (gSaveContext.n64ddFlag && Flags_GetRandomizerInf(RAND_INF_DUNGEONS_DONE_FIRE_TEMPLE))) && LINK_IS_ADULT) {
         return 0x3043;
@@ -775,7 +782,11 @@ s16 EnGo2_GetStateGoronCityStairwell(PlayState* play, EnGo2* this) {
 
 // Goron in child market bazaar after obtaining Goron Ruby
 u16 EnGo2_GetTextIdGoronMarketBazaar(PlayState* play, EnGo2* this) {
-    return 0x7122;
+    u16 GoronMsg = GetTextID("goron");
+    if (IS_DAY)
+        return 0x7122;
+    else
+        return GoronMsg+16;
 }
 
 s16 EnGo2_GetStateGoronMarketBazaar(PlayState* play, EnGo2* this) {
@@ -789,10 +800,25 @@ s16 EnGo2_GetStateGoronMarketBazaar(PlayState* play, EnGo2* this) {
 u16 EnGo2_GetTextIdGoronCityLostWoods(PlayState* play, EnGo2* this) {
     u16 GoronMsg = GetTextID("goron");
     if (this->actor.params & GORON_SPECIAL) {
-        if (this->timeBlock)
-            return GoronMsg+1;
-        else
-            return GoronMsg+0;
+        if (play->sceneNum == SCENE_SPOT18) {
+            if (IS_DAY) {
+                return GoronMsg+8;
+            } else {
+                if (this->timeBlock)
+                    return GoronMsg+1;
+                else
+                    return GoronMsg+0;
+            }
+        } else {
+            if (LINK_IS_ADULT)
+                return GoronMsg+13;
+            else {
+                if (IS_DAY)
+                    return GoronMsg+14;
+                else
+                    return GoronMsg+15;
+            }
+        }
     }
     else if (!LINK_IS_ADULT) {
         if (Flags_GetSwitch(play, 0x1C)) {
@@ -806,11 +832,29 @@ u16 EnGo2_GetTextIdGoronCityLostWoods(PlayState* play, EnGo2* this) {
 }
 
 s16 EnGo2_GetStateGoronCityLostWoods(PlayState* play, EnGo2* this) {
-    if (Message_GetState(&play->msgCtx) == TEXT_STATE_CLOSING) {
+    s32 msgState = EnGo2_GetDialogState(this, play);//Message_GetState(&play->msgCtx);
+    if (msgState == TEXT_STATE_CLOSING) {
         if (this->actor.textId == 0x3024) {
             gSaveContext.infTable[14] |= 0x40;
         }
         return 0;
+    } else if  (msgState == TEXT_STATE_CHOICE) {
+        if (Message_ShouldAdvance(play)) {
+            u16 GoronMsg = GetTextID("goron");
+            if (this->actor.textId == GoronMsg+8) {
+                if (play->msgCtx.choiceIndex == 0) {
+                    gSaveContext.goronTimeStatus |= (1<<1);//Sets outing indicator
+                    gSaveContext.goronTimeStatus |= (1<<2);//Sets moved indicator (this resets whenever a scene with this actor is loaded)
+                    gSaveContext.goronTimeDay = gSaveContext.totalDays;
+                    this->actor.textId = GoronMsg+9;
+                } else {
+                    gSaveContext.goronTimeStatus &= ~(1<<1);
+                    this->actor.textId = GoronMsg+10;
+                }
+                Message_ContinueTextbox(play, this->actor.textId);
+            }
+        }
+        return 1;
     } else {
         return 1;
     }
@@ -1638,7 +1682,7 @@ void findCloseTimeblock(Actor* thisx, PlayState* play) {
     //if (closestValidBlock) {
         //ObjTimeblock* timeblock = (ObjTimeblock*)closestValidBlock;
     if (this->timeBlock && !closestValidBlock) {
-        gSaveContext.infTable[28] ^= 1;
+        gSaveContext.goronTimeStatus ^= 1;
         Actor_Kill(&this->actor);
     }
     this->timeBlock = closestValidBlock;
@@ -1709,8 +1753,21 @@ void EnGo2_Init(Actor* thisx, PlayState* play) {
                  (gSaveContext.n64ddFlag && !Flags_GetRandomizerInf(RAND_INF_DUNGEONS_DONE_FIRE_TEMPLE))) && LINK_IS_ADULT) {
                 Actor_Kill(&this->actor);
             }
-            if ((this->actor.params & GORON_SPECIAL) && (!LINK_IS_ADULT ^ !!(gSaveContext.infTable[28] & (1<<0)))) {
-                Actor_Kill(&this->actor);
+            if ((this->actor.params & GORON_SPECIAL)) {
+                gSaveContext.goronTimeStatus &= ~(1<<2);//Reset moved indicator
+                if (gSaveContext.goronTimeDay+1 < gSaveContext.totalDays)
+                    gSaveContext.goronTimeStatus &= ~(1<<1);
+                if ((!LINK_IS_ADULT ^ !!(gSaveContext.goronTimeStatus & (1<<0))) ||
+                    (((play->sceneNum == SCENE_SPOT18) &&
+                             ((HIGH_PATH ^ !IS_DAY) || (gSaveContext.goronTimeStatus & (1<<1))))
+                    || ((play->sceneNum == SCENE_MARKET_DAY || play->sceneNum == SCENE_MARKET_NIGHT || play->sceneNum == SCENE_MARKET_RUINS) &&
+                            !(gSaveContext.goronTimeStatus & (1<<1))))) {
+                    Actor_Kill(&this->actor);
+                }
+                // if (play->sceneNum != SCENE_SPOT18) {
+                //     EnGo2_GetItemAnimation(this, play);
+                //     break;
+                // }
             }
             this->actionFunc = EnGo2_CurledUp;
             break;

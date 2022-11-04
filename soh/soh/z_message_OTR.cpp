@@ -843,4 +843,19 @@ extern "C" void OTRMessage_Init()
     MakeNormalMsgEng(GoronMsg+5, "It feels bad to not&be fast enough!");
     MakeNormalMsgEng(GoronMsg+6, "Finaly, victory is mine!&I feel so proud of myself.&I really do.\x0B\x02");
     MakeNormalMsgEng(GoronMsg+7, "I am just so overflowing&with energy!^You must take some!\x0B\x02");
+    MakeNormalMsgEng(GoronMsg+8, "Ah, I like it here.&It's so peaceful and quiet.^You know, I think it's&about time I went shopping.^I can't even remember the last&time I went, but now might be as^good as any, don't you think?&\x1B&%gYes&No%w\x02");
+    MakeNormalMsgEng(GoronMsg+9, "Ok, shopping it is,&I'll try to get back soon.&At least in a couple of days.");
+    MakeNormalMsgEng(GoronMsg+10, "Oh well, I'll just go&and take my bath this&evening as usual then.");
+    MakeNormalMsgEng(GoronMsg+11, "Oh, our brother just went out&to get supplies.^I'm not sure from where though.");
+    MakeNormalMsgEng(GoronMsg+12, "Hmm...that's strange, I just&saw brother traveling&out for trade.^But I thought I already saw&him leave earlier.");
+    MakeNormalMsgEng(GoronMsg+13, "Hmmm...the market doesn't&seem to be doing too well today.^I can't buy or sell&much here now.^I'll have to come back&some other time.");
+    MakeNormalMsgEng(GoronMsg+14, "Ohh, the market is so crowded.&I hardly get a chance to buy anything.");
+    MakeNormalMsgEng(GoronMsg+15, "Things are quiet now.&I'm surprised nobody seems to&be open at this time of day anymore.");
+    MakeNormalMsgEng(GoronMsg+16, "Wait, how did you get in&here at this time?");
+
+    u16 HylianMsg = TextIDAllocator::Instance->allocateRange("hylian", 30);
+
+    MakeNormalMsgEng(HylianMsg+0, "Oh, so I guess you're here&for the night trade then.^We normally don't let&kids get involved, but&you seem savy enough.");
+    MakeNormalMsgEng(HylianMsg+1, "Here's our special night offers.\x0B\x02");
+    MakeNormalMsgEng(HylianMsg+2, "I don't typically take&guests during the day.^That's why I lock my door,&as you'd know.^If you have business here,&please let that be known&ahead of time.");
 }

@@ -426,7 +426,7 @@ u16 func_80A6F810(PlayState* play, Actor* thisx) {
         }
         return textId;
     }
-
+    u16 HylianMsg = GetTextID("hylian");
     switch (this->actor.params & 0x7F) {
         case ENHY_TYPE_AOB:
             if (play->sceneNum == SCENE_KAKARIKO) {
@@ -521,6 +521,9 @@ u16 func_80A6F810(PlayState* play, Actor* thisx) {
         case ENHY_TYPE_AHG_13:
             return 0x7055;
         case ENHY_TYPE_BOJ_14:
+        if (IS_DAY)
+            return HylianMsg+2;
+        else
             return 0x7089;
         case ENHY_TYPE_BJI_15:
             return 0x708A;
@@ -547,7 +550,10 @@ u16 func_80A6F810(PlayState* play, Actor* thisx) {
         case ENHY_TYPE_BJI_19:
             return 0x7120;
         case ENHY_TYPE_AHG_20:
-            return 0x7121;
+            if (IS_DAY)
+                return 0x7121;
+            else
+                return HylianMsg+0;
         default:
             return 0;
     }
