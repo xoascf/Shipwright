@@ -147,17 +147,17 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
     } },
     { SCENE_MARKET_DAY, { // Castle Town Square - Day
         { 0x00, {
-            { -1, -1, { ACTOR_EN_GO2, -288,0,188, 0,0,0, 0x03eb | 0x10 | (0x0<<10)}},
+            { -1, -1, { ACTOR_EN_GO2, -288,0,188, 0,0x4000,0, 0x03ed | 0x10 | (0x0<<10)}},
         } },
     } },
     { SCENE_MARKET_NIGHT, { // Castle Town Square - Night
         { 0x00, {
-            { -1, -1, { ACTOR_EN_GO2, 298,0,234, 0,0,0, 0x03eb | 0x10 | (0x1<<10)}},
+            { -1, -1, { ACTOR_EN_GO2, 298,0,234, 0,0x4000,0, 0x03ed | 0x10 | (0x1<<10)}},
         } },
     } },
     { SCENE_MARKET_RUINS, { // Castle Town Square - Ruined
         { 0x00, {
-            { -1, -1, { ACTOR_EN_GO2, -288,0,188, 0,0,0, 0x03eb | 0x10 | (0x0<<10)}},
+            { -1, -1, { ACTOR_EN_GO2, -288,0,188, 0,0x4000,0, 0x03ed | 0x10 | (0x0<<10)}},
         } },
     } },
     { 0x52, { // Kakariko

@@ -852,6 +852,11 @@ extern "C" void OTRMessage_Init()
     MakeNormalMsgEng(GoronMsg+14, "Ohh, the market is so crowded.&I hardly get a chance to buy anything.");
     MakeNormalMsgEng(GoronMsg+15, "Things are quiet now.&I'm surprised nobody seems to&be open at this time of day anymore.");
     MakeNormalMsgEng(GoronMsg+16, "Wait, how did you get in&here at this time?");
+    MakeNormalMsgEng(GoronMsg+17, "Some brothers are off racing.&It's quite a spectacle&if you want to see it.^The races are usually quite close.");
+    MakeNormalMsgEng(GoronMsg+18, "Look at our big brother's&refined rolling.^He's matured quite a bit&since his wilder days.");
+    MakeNormalMsgEng(GoronMsg+19, "I still miss the shiny&red stone that sat here.&Oh how it glowed.");
+    MakeNormalMsgEng(GoronMsg+20, "Sorry! Let me express my feelings&with more refined rolling!");
+    MakeNormalMsgEng(GoronMsg+21, "Big brother isn't here now.&I wonder where he went.");
 
     u16 HylianMsg = TextIDAllocator::Instance->allocateRange("hylian", 30);
 

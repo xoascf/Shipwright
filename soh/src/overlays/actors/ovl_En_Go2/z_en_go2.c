@@ -341,6 +341,9 @@ u16 EnGo2_GoronFireGenericGetTextId(EnGo2* this) {
 }
 
 u16 EnGo2_GetTextIdGoronCityRollingBig(PlayState* play, EnGo2* this) {
+    u16 GoronMsg = GetTextID("goron");
+    if (LINK_IS_ADULT)
+        return GoronMsg+20;
     if (gSaveContext.infTable[17] & 0x4000) {
         return 0x3013;
     } else if ((CUR_CAPACITY(UPG_BOMB_BAG) >= 20 || gSaveContext.n64ddFlag) && this->waypoint > 7 && this->waypoint < 12) {
@@ -488,8 +491,8 @@ s16 EnGo2_GetStateGoronDmtDcEntrance(PlayState* play, EnGo2* this) {
 }
 
 u16 EnGo2_GetTextIdGoronCityEntrance(PlayState* play, EnGo2* this) {
+    u16 GoronMsg = GetTextID("goron");
     if ((gSaveContext.goronTimeStatus & (1<<1)) && !(gSaveContext.goronTimeStatus & (1<<2)) && (LINK_IS_ADULT ^ !!(gSaveContext.goronTimeStatus & (1<<0)))) {
-        u16 GoronMsg = GetTextID("goron");
         if (LINK_IS_ADULT)
             return GoronMsg+11;
         else
@@ -497,7 +500,7 @@ u16 EnGo2_GetTextIdGoronCityEntrance(PlayState* play, EnGo2* this) {
     }
     if (((!gSaveContext.n64ddFlag && CHECK_QUEST_ITEM(QUEST_MEDALLION_FIRE)) ||
          (gSaveContext.n64ddFlag && Flags_GetRandomizerInf(RAND_INF_DUNGEONS_DONE_FIRE_TEMPLE))) && LINK_IS_ADULT) {
-        return 0x3043;
+        return GoronMsg+17;
     } else if ((!gSaveContext.n64ddFlag && CHECK_QUEST_ITEM(QUEST_GORON_RUBY)) ||
                (gSaveContext.n64ddFlag && Flags_GetRandomizerInf(RAND_INF_DUNGEONS_DONE_DODONGOS_CAVERN))) {
         return 0x3027;
@@ -518,9 +521,17 @@ s16 EnGo2_GetStateGoronCityEntrance(PlayState* play, EnGo2* this) {
 }
 
 u16 EnGo2_GetTextIdGoronCityIsland(PlayState* play, EnGo2* this) {
+    u16 GoronMsg = GetTextID("goron");
     if (((!gSaveContext.n64ddFlag && CHECK_QUEST_ITEM(QUEST_MEDALLION_FIRE)) ||
          (gSaveContext.n64ddFlag && Flags_GetRandomizerInf(RAND_INF_DUNGEONS_DONE_FIRE_TEMPLE))) && LINK_IS_ADULT) {
-        return 0x3043;
+        if (IS_DAY) {
+            if (!(gSaveContext.goronTimeStatus & (1<<5)))
+                return GoronMsg+18;
+            else
+                return GoronMsg+21;
+        }
+        else
+            return GoronMsg+19;
     } else if ((!gSaveContext.n64ddFlag && CHECK_QUEST_ITEM(QUEST_GORON_RUBY)) ||
                (gSaveContext.n64ddFlag && Flags_GetRandomizerInf(RAND_INF_DUNGEONS_DONE_DODONGOS_CAVERN))) {
         return 0x3027;
@@ -783,10 +794,21 @@ s16 EnGo2_GetStateGoronCityStairwell(PlayState* play, EnGo2* this) {
 // Goron in child market bazaar after obtaining Goron Ruby
 u16 EnGo2_GetTextIdGoronMarketBazaar(PlayState* play, EnGo2* this) {
     u16 GoronMsg = GetTextID("goron");
-    if (IS_DAY)
-        return 0x7122;
-    else
-        return GoronMsg+16;
+    if (play->sceneNum == SCENE_SHOP1) {
+        if (IS_DAY)
+            return 0x7122;
+        else
+            return GoronMsg+16;
+    } else {
+        if (LINK_IS_ADULT)
+            return GoronMsg+13;
+        else {
+            if (IS_DAY)
+                return GoronMsg+14;
+            else
+                return GoronMsg+15;
+        }
+    }
 }
 
 s16 EnGo2_GetStateGoronMarketBazaar(PlayState* play, EnGo2* this) {
@@ -1051,6 +1073,38 @@ s32 func_80A44AB0(EnGo2* this, PlayState* play) {
     return false;
 }
 
+Vec3s EnGo2_Special_Points0[] = {{450,398,554},{504,398,98},{390,398,-273},{257,196,-106},{300,196,307},{204,196,368},{11,196,503},{-286,196,338},{-263,196,43},{-306,196,-141},{-576,199,-149},{-752,280,-147},{-809,280,-65},{-843,320,20},{-1056,400,115},{-1155,442,282},{-1099,599,593},{-798,600,667},{-400,398,584},{152,398,716},{313,397,640}};
+Vec3s EnGo2_Special_Points1[] = {{-282,1258,-1580},{-154,1369,-1073},{-273,1500,-403},{-441,1460,-61},{-663,1259,554},{-685,1220,663}};//,{-673,1192,747},{-1252,1100,1304},{-282,1258,-1580}};
+Vec3s EnGo2_Special_Points2[] = {{-522,1264,-1557},{-624,1375,-1003},{-360,1464,-582},{-273,1500,-403},{-441,1460,-61},{-570,1259,568},{-685,1220,663}};//,{-968,1170,835},{-1364,1130,1106},{-1543,1048,1258},{-282,1258,-1580}};
+Vec3s EnGo2_Special_Points3[] = {{560,399,73},{786,400,103},{959,480,102},{1035,480,173},{1036,520,264},{965,520,333},{798,600,339},{644,600,484},{560,600,793},{432,600,747},{336,397,627}};
+Vec3s EnGo2_Special_Points4[] = {{959,480,102},{1056,480,0},{1030,440,-720},{1030,440,-930},{959,480,102}};
+//{450,398,554}
+Path EnGo2_Special_Path[] = {{21, &EnGo2_Special_Points0},{6, &EnGo2_Special_Points1},{7, &EnGo2_Special_Points2},{11, &EnGo2_Special_Points3},{5, &EnGo2_Special_Points4}};
+
+//Actor* explosive = Actor_FindNearby(play, &this->actor, -1, ACTORCAT_EXPLOSIVE, 1000.0f);
+s32 EnGo2_Alter_BigRoller_Path(EnGo2* this, PlayState* play) {
+    Path* oldPath = this->path;
+
+    if (oldPath == &EnGo2_Special_Path[0]) {
+        if ((this->waypoint == 2) && this->actor.xzDistToPlayer < 300.0f) {
+            this->path = &EnGo2_Special_Path[3];
+            this->waypoint = 0;
+        }
+    } else if (oldPath == &EnGo2_Special_Path[3]) {
+        if (this->waypoint == 0)
+            this->path = &EnGo2_Special_Path[0];
+        else if (this->waypoint == 3 && this->actor.xzDistToPlayer < 250.0f) {
+            this->path = &EnGo2_Special_Path[4];
+            this->waypoint = 1;
+        }
+    } //else if (oldPath == &EnGo2_Special_Path[4]) {
+    //     if (this->waypoint == 0) {
+    //         this->path = &EnGo2_Special_Path[3];
+    //         this->waypoint = 3;
+    //     }
+    // }
+}
+
 s32 EnGo2_UpdateWaypoint(EnGo2* this, PlayState* play) {
     s32 change;
 
@@ -1068,6 +1122,10 @@ s32 EnGo2_UpdateWaypoint(EnGo2* this, PlayState* play) {
         this->waypoint++;
         if (this->waypoint >= change) {
             this->waypoint = 0;
+        }
+
+        if ((this->actor.params & GORON_IDENTITY_PARAM) == GORON_CITY_ROLLING_BIG) {
+            EnGo2_Alter_BigRoller_Path(this,play);
         }
     }
 
@@ -1673,27 +1731,49 @@ u8 isTimeblockVisible(Actor* timeblock, PlayState* play) {
     return this->isVisible;
 }
 
-void findCloseTimeblock(Actor* thisx, PlayState* play) {
+Actor* EnGo2_findCloseTimeblock(Actor* thisx, PlayState* play, f32 dist) {
+    EnGo2* this = (EnGo2*)thisx;
+    Actor* closestValidBlock = NULL;
+    s32 numBlocks = Actor_FindNumberOf(play, thisx, ACTOR_OBJ_TIMEBLOCK, ACTORCAT_ITEMACTION, dist,
+                        &closestValidBlock, isTimeblockVisible);
+
+    this->timeBlock = closestValidBlock;
+    return closestValidBlock;
+}
+
+void EnGo2_evaluateCloseTimeblock(Actor* thisx, PlayState* play) {
     EnGo2* this = (EnGo2*)thisx;
     Actor* closestValidBlock = NULL;
     s32 numBlocks = Actor_FindNumberOf(play, thisx, ACTOR_OBJ_TIMEBLOCK, ACTORCAT_ITEMACTION, 100.0f,
                         &closestValidBlock, isTimeblockVisible);
 
-    //if (closestValidBlock) {
-        //ObjTimeblock* timeblock = (ObjTimeblock*)closestValidBlock;
     if (this->timeBlock && !closestValidBlock) {
         gSaveContext.goronTimeStatus ^= 1;
         Actor_Kill(&this->actor);
     }
     this->timeBlock = closestValidBlock;
-    //}
 }
 
-Vec3s EnGo2_Special_Points0[] = {{450,398,554},{504,398,98},{390,398,-273},{257,196,-106},{300,196,307},{204,196,368},{11,196,503},{-286,196,338},{-263,196,43},{-306,196,-141},{-576,199,-149},{-752,280,-147},{-809,280,-65},{-843,320,20},{-1056,400,115},{-1155,442,282},{-1099,599,593},{-798,600,667},{-400,398,584},{152,398,716},{313,397,640}};
-Vec3s EnGo2_Special_Points1[] = {{-282,1258,-1580},{-154,1369,-1073},{-273,1500,-403},{-441,1460,-61},{-663,1259,554},{-685,1220,663}};//,{-673,1192,747},{-1252,1100,1304},{-282,1258,-1580}};
-Vec3s EnGo2_Special_Points2[] = {{-522,1264,-1557},{-624,1375,-1003},{-360,1464,-582},{-273,1500,-403},{-441,1460,-61},{-570,1259,568},{-685,1220,663}};//,{-968,1170,835},{-1364,1130,1106},{-1543,1048,1258},{-282,1258,-1580}};
+void EnGo2_evaluateCloseTimeblock_Big(Actor* thisx, PlayState* play) {
+    EnGo2* this = (EnGo2*)thisx;
+    Actor* closestValidBlock = NULL;
+    s32 numBlocks = Actor_FindNumberOf(play, thisx, ACTOR_OBJ_TIMEBLOCK, ACTORCAT_ITEMACTION, 150.0f,
+                        &closestValidBlock, isTimeblockVisible);
 
-Path EnGo2_Special_Path[] = {{21, &EnGo2_Special_Points0},{6, &EnGo2_Special_Points1},{7, &EnGo2_Special_Points2}};
+    if (this->timeBlock) {
+        if (!closestValidBlock && (this->actor.world.pos.y > this->timeBlock->world.pos.y+90.0f) &&
+                    (this->actionFunc != EnGo2_SlowRolling && this->actionFunc != EnGo2_ReverseRolling && this->actionFunc != EnGo2_ContinueRolling)) {
+            gSaveContext.goronTimeStatus ^= (1<<5);//Big roller's time status
+            Actor_Kill(&this->actor);
+        }
+    } else {
+        if (closestValidBlock) {
+            this->actor.world.pos.y = closestValidBlock->world.pos.y+100.0f;
+        }
+    }
+
+    this->timeBlock = closestValidBlock;
+}
 
 void EnGo2_Init(Actor* thisx, PlayState* play) {
     EnGo2* this = (EnGo2*)thisx;
@@ -1742,7 +1822,21 @@ void EnGo2_Init(Actor* thisx, PlayState* play) {
     this->getItemEntry = (GetItemEntry)GET_ITEM_NONE;
     this->timeBlock = NULL;
     this->raceStatus = 0; //Normal race ending
-    findCloseTimeblock(thisx,play);
+    EnGo2_findCloseTimeblock(thisx,play,100.0f);
+
+    if ((this->actor.params & GORON_SPECIAL)) {
+        gSaveContext.goronTimeStatus &= ~(1<<2);//Reset moved indicator
+        if (gSaveContext.goronTimeDay+1 < gSaveContext.totalDays)
+            gSaveContext.goronTimeStatus &= ~(1<<1);
+        if ((!LINK_IS_ADULT ^ !!(gSaveContext.goronTimeStatus & (1<<0))) ||
+            (((play->sceneNum == SCENE_SPOT18) &&
+                        ((HIGH_PATH ^ !IS_DAY) || (gSaveContext.goronTimeStatus & (1<<1))))
+            || ((play->sceneNum == SCENE_MARKET_DAY || play->sceneNum == SCENE_MARKET_NIGHT || play->sceneNum == SCENE_MARKET_RUINS) &&
+                    !(gSaveContext.goronTimeStatus & (1<<1))))) {
+            Actor_Kill(&this->actor);
+        }
+    }
+
     switch (this->actor.params & GORON_IDENTITY_PARAM) {
         case GORON_CITY_ENTRANCE:
         case GORON_CITY_ISLAND:
@@ -1753,26 +1847,10 @@ void EnGo2_Init(Actor* thisx, PlayState* play) {
                  (gSaveContext.n64ddFlag && !Flags_GetRandomizerInf(RAND_INF_DUNGEONS_DONE_FIRE_TEMPLE))) && LINK_IS_ADULT) {
                 Actor_Kill(&this->actor);
             }
-            if ((this->actor.params & GORON_SPECIAL)) {
-                gSaveContext.goronTimeStatus &= ~(1<<2);//Reset moved indicator
-                if (gSaveContext.goronTimeDay+1 < gSaveContext.totalDays)
-                    gSaveContext.goronTimeStatus &= ~(1<<1);
-                if ((!LINK_IS_ADULT ^ !!(gSaveContext.goronTimeStatus & (1<<0))) ||
-                    (((play->sceneNum == SCENE_SPOT18) &&
-                             ((HIGH_PATH ^ !IS_DAY) || (gSaveContext.goronTimeStatus & (1<<1))))
-                    || ((play->sceneNum == SCENE_MARKET_DAY || play->sceneNum == SCENE_MARKET_NIGHT || play->sceneNum == SCENE_MARKET_RUINS) &&
-                            !(gSaveContext.goronTimeStatus & (1<<1))))) {
-                    Actor_Kill(&this->actor);
-                }
-                // if (play->sceneNum != SCENE_SPOT18) {
-                //     EnGo2_GetItemAnimation(this, play);
-                //     break;
-                // }
-            }
             this->actionFunc = EnGo2_CurledUp;
             break;
         case GORON_MARKET_BAZAAR:
-            if ((LINK_IS_ADULT) || !CHECK_QUEST_ITEM(QUEST_GORON_RUBY)) {
+            if (!(this->actor.params & GORON_SPECIAL) && ((LINK_IS_ADULT) || !CHECK_QUEST_ITEM(QUEST_GORON_RUBY))) {
                 Actor_Kill(&this->actor);
             }
             EnGo2_GetItemAnimation(this, play);
@@ -1794,6 +1872,8 @@ void EnGo2_Init(Actor* thisx, PlayState* play) {
             }
             break;
         case GORON_CITY_ROLLING_BIG:
+            if (LINK_IS_ADULT && ((!LINK_IS_ADULT ^ !!(gSaveContext.goronTimeStatus & (1<<5))) || ((play->sceneNum == SCENE_SPOT18) && IS_NIGHT)))
+                Actor_Kill(&this->actor);
         case GORON_DMT_ROLLING_SMALL:
             this->collider.dim.height = (D_80A4816C[this->actor.params & GORON_IDENTITY_PARAM].height * 0.6f);
             EnGo2_SetupRolling(this, play);
@@ -1949,6 +2029,12 @@ void EnGo2_SlowRolling(EnGo2* this, PlayState* play) {
         if (index != GORON_CITY_LINK) {
             if ((index == GORON_DMT_ROLLING_SMALL) && (orientation == 1) && (this->waypoint == 0)) {
                 EnGo2_StopRolling(this, play);
+                return;
+            }
+            if ((index == GORON_CITY_ROLLING_BIG) && (orientation == 1) && (this->path == &EnGo2_Special_Path[4]) && ((this->waypoint == 0) || (this->waypoint == 3 && EnGo2_findCloseTimeblock(&this->actor,play,250.0f)))) {
+                EnGo2_StopRolling(this, play);
+                this->path = &EnGo2_Special_Path[3];
+                this->waypoint = 3;
                 return;
             }
         } else if ((orientation == 2) && (this->waypoint == 1)) {
@@ -2204,7 +2290,9 @@ void EnGo2_Update(Actor* thisx, PlayState* play) {
     EnGo2* this = (EnGo2*)thisx;
 
     if (this->actor.params & GORON_SPECIAL)
-        findCloseTimeblock(thisx,play);
+        EnGo2_evaluateCloseTimeblock(thisx,play);
+    else if ((this->actor.params & GORON_IDENTITY_PARAM) == GORON_CITY_ROLLING_BIG)
+        EnGo2_evaluateCloseTimeblock_Big(thisx,play);
     func_80A45360(this, &this->alpha);
     EnGo2_SitDownAnimation(this);
     SkelAnime_Update(&this->skelAnime);
