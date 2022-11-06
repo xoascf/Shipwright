@@ -1165,18 +1165,24 @@ s32 func_80A44AB0(EnGo2* this, PlayState* play) {
     return false;
 }
 
-Vec3s EnGo2_Special_Points0[] = {{450,398,554},{504,398,98},{390,398,-273},{257,196,-106},{300,196,307},{204,196,368},{11,196,503},{-286,196,338},{-263,196,43},{-306,196,-141},{-576,199,-149},{-752,280,-147},{-809,280,-65},{-843,320,20},{-1056,400,115},{-1155,442,282},{-1099,599,593},{-798,600,667},{-400,398,584},{152,398,716},{313,397,640}};
+Vec3s EnGo2_Special_Points0[] = {{450,398,554},{504,398,98},{497,397,-122},{390,398,-273},{316,396,-267},{257,196,-106},{300,196,307},{204,196,368},{11,196,503},{-286,196,338},{-263,196,43},{-306,196,-141},{-576,199,-149},{-752,280,-147},{-809,280,-65},{-843,320,20},{-1056,400,115},{-1155,442,282},{-1099,599,593},{-798,600,667},{-400,398,584},{152,398,716},{313,397,640}};
 Vec3s EnGo2_Special_Points1[] = {{-282,1258,-1580},{-154,1369,-1073},{-273,1500,-403},{-441,1460,-61},{-663,1259,554},{-685,1220,663}};//,{-673,1192,747},{-1252,1100,1304},{-282,1258,-1580}};
 Vec3s EnGo2_Special_Points2[] = {{-522,1264,-1557},{-624,1375,-1003},{-360,1464,-582},{-273,1500,-403},{-441,1460,-61},{-570,1259,568},{-685,1220,663}};//,{-968,1170,835},{-1364,1130,1106},{-1543,1048,1258},{-282,1258,-1580}};
 Vec3s EnGo2_Special_Points3[] = {{560,399,73},{786,400,103},{959,480,102},{1035,480,173},{1036,520,264},{965,520,333},{798,600,339},{644,600,484},{560,600,793},{432,600,747},{336,397,627}};
 Vec3s EnGo2_Special_Points4[] = {{959,480,102},{1056,480,0},{1030,440,-720},{1030,440,-930},{959,480,102}};
+Vec3s EnGo2_Special_Points5[] = {{350,396,-463},{306,397,-616},{59,400,-823},{-305,398,-687},{-476,397,-431},{-484,397,-85},{-505,398,34},{-485,397,283},{-441,397,493},{-132,397,674}};//From 0:3, to 0:0 //Round path
+Vec3s EnGo2_Special_Points6[] = {{-369,398,-617},{-338,396,-521},{-299,395,-406},{-287,196,-226},{-401,195,-166}};//Link from 5:3, to 0:12 //Drop from round path to shortcut
+Vec3s EnGo2_Special_Points7[] = {{-518,398,36},{-578,400,79},{-733,322,89},};//Link from 5:6, link to 0:16 //Round path to high road
+Vec3s EnGo2_Special_Points8[] = {{-674,600,621},{-689,600,374},{-734,600,180},{-709,600,69},{-645,600,-5}};//Link from 0:20, to 5:6 //High path between ropes
+Vec3s EnGo2_Special_Points9[] = {{5,-3,291},{-74,-3,590},{-122,71,747},{-219,76,790},{-331,113,719},{-355,125,611},{-304,193,485}};//Link from 0:5-6 to 0:9 //Bottom out
 //{450,398,554}
-Path EnGo2_Special_Path[] = {{21, &EnGo2_Special_Points0},{6, &EnGo2_Special_Points1},{7, &EnGo2_Special_Points2},{11, &EnGo2_Special_Points3},{5, &EnGo2_Special_Points4}};
+Path EnGo2_Special_Path[] = {{23, &EnGo2_Special_Points0},{6, &EnGo2_Special_Points1},{7, &EnGo2_Special_Points2},{11, &EnGo2_Special_Points3},{5, &EnGo2_Special_Points4}};
 
 SlantCylinder scForward0 = {{512,398,15},{399,396,-291},100.0f};
 SlantCylinder scAlts0[] = {{{575,399,96},{796,400,105},100.0f},{{796,400,105},{959,480,102},100.0f},{{959,480,102},{1100,480,100},100.0f}};
 SlantCylinder scForwards3[] = {{{1050,480,180},{1040,520,260},100.0f},{{1040,520,260},{1040,520,420},100.0f}};
-SlantCylinder scAlt3 = {{1040,480,30},{1040,480,-220},100.0f};
+SlantCylinder scAlt3[] = {{{1040,480,30},{1040,480,-220},100.0f}};
+SlantCylinder scForwardsDrop1[] = {{{390,398,-273},{1040,520,260},90.0f},{{1040,520,260},{1040,520,420},100.0f}};
 
 void EnGo2_PerformPathSelection(EnGo2* this, PlayState* play, Path *switchPath, s8 switchWaypoint, SlantCylinder* scForward, u32 lengthForward, SlantCylinder* scAlt, u32 lengthAlt) {
             Player* player = GET_PLAYER(play);
@@ -1184,17 +1190,17 @@ void EnGo2_PerformPathSelection(EnGo2* this, PlayState* play, Path *switchPath, 
             u8 altCollision = 0;
 
             //Find if player is in paths
-            if (SCAPointCollision2D(&player->actor.world.pos,&scForward,lengthForward))
+            if (SCAPointCollision2D(&player->actor.world.pos,scForward,lengthForward))
                 forwardCollision = 1;
-            if (SCAPointCollision2D(&player->actor.world.pos,&scAlt,lengthAlt))
+            if (SCAPointCollision2D(&player->actor.world.pos,scAlt,lengthAlt))
                 altCollision = 1;
 
             //Find if a bomb in in paths
             Actor* bomb = play->actorCtx.actorLists[ACTORCAT_EXPLOSIVE].head;
             while (bomb != NULL) {
-                if (SCAPointCollision2D(&bomb->world.pos,&scForward,lengthForward))
+                if (SCAPointCollision2D(&bomb->world.pos,scForward,lengthForward))
                     forwardCollision = 1;
-                if (SCAPointCollision2D(&bomb->world.pos,&scAlt,lengthAlt))
+                if (SCAPointCollision2D(&bomb->world.pos,scAlt,lengthAlt))
                     altCollision = 1;
 
                 bomb = bomb->next;
@@ -1214,7 +1220,7 @@ void EnGo2_PerformPathSelection(EnGo2* this, PlayState* play, Path *switchPath, 
 }
 
 //Actor* explosive = Actor_FindNearby(play, &this->actor, -1, ACTORCAT_EXPLOSIVE, 1000.0f);
-s32 EnGo2_Alter_BigRoller_Path(EnGo2* this, PlayState* play) {
+void EnGo2_Alter_BigRoller_Path(EnGo2* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     Path* oldPath = this->path;
 
@@ -1257,41 +1263,11 @@ s32 EnGo2_Alter_BigRoller_Path(EnGo2* this, PlayState* play) {
         if (this->waypoint == 0)
             this->path = &EnGo2_Special_Path[0];
         else if (this->waypoint == 3) {
-            u8 forwardCollision = 0;
-            u8 altCollision = 0;
-            //SlantCylinder sccForward = {2,{{{1050,480,180},{1040,520,260},100.0f},{{1040,520,260},{1040,520,420},100.0f}}};
-            //SlantCylinder scAlt = {{1040,480,30},{1040,480,-220},100.0f};
-
-            //Find if player is in paths
-            if (SCAPointCollision2D(&player->actor.world.pos,&scForwards3,2))
-                forwardCollision = 1;
-            if (SCPointCollision2D(&player->actor.world.pos,&scAlt3))
-                altCollision = 1;
-
-            //Find if a bomb in in paths
-            Actor* bomb = play->actorCtx.actorLists[ACTORCAT_EXPLOSIVE].head;
-            while (bomb != NULL) {
-                if (SCAPointCollision2D(&bomb->world.pos,&scForwards3,2))
-                    forwardCollision = 1;
-                if (SCPointCollision2D(&bomb->world.pos,&scAlt3))
-                    altCollision = 1;
-
-                bomb = bomb->next;
-            }
-
-            if (forwardCollision) {
-                if (altCollision) {
-                    Audio_PlayActorSound2(&this->actor, NA_SE_EN_GOLON_CRY);
-                } else {
-                    Audio_PlayActorSound2(&this->actor, NA_SE_EN_GOLON_SIT_DOWN);
-                    this->path = &EnGo2_Special_Path[4];
-                    this->waypoint = 1;
-                }
-            } else if (altCollision) {
-                Audio_PlayActorSound2(&this->actor, NA_SE_EN_GOLON_WAKE_UP);
-            }
+            EnGo2_PerformPathSelection(this,play,&EnGo2_Special_Path[4],1,scForwards3,2,scAlt3,1);
         }
-    } //else if (oldPath == &EnGo2_Special_Path[4]) {
+    }
+    //This section is now handled by EnGo2_SlowRolling
+    //else if (oldPath == &EnGo2_Special_Path[4]) {
     //     if (this->waypoint == 0) {
     //         this->path = &EnGo2_Special_Path[3];
     //         this->waypoint = 3;
