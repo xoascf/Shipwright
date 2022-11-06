@@ -46,11 +46,13 @@ Gorons only move when this->unk_194.unk_00 == 0
 */
 
 #define GORON_IDENTITY_PARAM 0XF
+#define GORON_IDENTITY (this->actor.params & GORON_IDENTITY_PARAM)
 #define GORON_SPECIAL 0X10
 #define TEMP_PATH ((this->actor.params & 0x3E0) >> 5)
 #define HIGH_PATH ((this->actor.params & 0xFC00) >> 0xA)
 
 #define IS_RACING LINK_IS_ADULT
+#define IS_REFINED_ROLLING ((GORON_IDENTITY == GORON_CITY_ROLLING_BIG) && LINK_IS_ADULT)
 
 void EnGo2_Init(Actor* thisx, PlayState* play);
 void EnGo2_Destroy(Actor* thisx, PlayState* play);
@@ -179,6 +181,96 @@ static EnGo2DustEffectData sDustEffectData[2][4] = {
 };
 
 static Vec3f sZeroVec = { 0.0f, 0.0f, 0.0f };
+
+typedef struct SlantCylinder {
+    Vec3f base;
+    Vec3f head;
+    f32 radius;
+} SlantCylinder;
+
+typedef struct SlantCylinderComplex {
+    u32 length;
+    SlantCylinder *cylinders;
+} SlantCylinderComplex;
+
+s8 SCPointCollision(Vec3f *point, SlantCylinder *sc) {
+    Vec3f modPoint;
+    Vec3f modHead;
+    f32 modPointAbs;
+    f32 modHeadAbs;
+    f32 invModHeadAbs;
+    Math_Vec3f_Diff(point,&sc->base,&modPoint);
+    Math_Vec3f_Diff(&sc->head,&sc->base,&modHead);
+    modPointAbs = sqrt(SQXYZ(modPoint));
+    modHeadAbs = sqrt(SQXYZ(modHead));
+    invModHeadAbs = 1/modHeadAbs;
+
+    f32 dot = DOTXYZ(modPoint, modHead);
+    f32 normedDot = dot*invModHeadAbs;
+    if (normedDot < 0.0f || modHeadAbs < normedDot)
+        return false;
+
+    normedDot *= invModHeadAbs;
+    Vec3f projection;
+    projection.x = normedDot*modHead.x;
+    projection.y = normedDot*modHead.y;
+    projection.z = normedDot*modHead.z;
+
+    return (Math_Vec3f_DistXYZ(&projection,&modPoint) < sc->radius);
+}
+
+s8 SCPointCollision2D( Vec3f *point, SlantCylinder *sc) {
+    Vec3f modPoint;
+    Vec3f modHead;
+    f32 modPointAbs;
+    f32 modHeadAbs;
+    f32 invModHeadAbs;
+    Math_Vec3f_Diff(point,&sc->base,&modPoint);
+    Math_Vec3f_Diff(&sc->head,&sc->base,&modHead);
+    modPointAbs = sqrt(SQXZ(modPoint));
+    modHeadAbs = sqrt(SQXZ(modHead));
+    invModHeadAbs = 1/modHeadAbs;
+
+    f32 dot = DOTXZ(modPoint, modHead);
+    f32 normedDot = dot*invModHeadAbs;
+    if (normedDot < 0.0f || modHeadAbs < normedDot)
+        return false;
+
+    normedDot *= invModHeadAbs;
+    Vec3f projection;
+    projection.x = normedDot*modHead.x;
+    projection.y = normedDot*modHead.y;
+    projection.z = normedDot*modHead.z;
+
+    return (Math_Vec3f_DistXZ(&projection,&modPoint) < sc->radius);
+}
+
+s8 SCAPointCollision(Vec3f *point,SlantCylinder *scArray, u32 length) {
+    for (u32 ii = 0; ii < length; ii++) {
+        if (SCPointCollision(point,&scArray[ii]))
+            return 1;
+    }
+    return 0;
+}
+
+s8 SCAPointCollision2D(Vec3f *point,SlantCylinder *scArray, u32 length) {
+    for (u32 ii = 0; ii < length; ii++) {
+        if (SCPointCollision2D(point,&scArray[ii]))
+            return 1;
+    }
+    return 0;
+}
+
+void testSCPointCollision() {
+    SlantCylinder ace = {{10.0f,10.0f,10.0f},{20.0f,20.0f,20.0f},1.0f};
+    Vec3f testPoints[] = {{15.0f,15.0f,15.0f},{0.0f,0.0f,0.0f},{15.0f,15.0f,13.0f},{20.0f,19.0f,20.0f}};
+    s8 results[4] = {0,0,0,0};
+
+    results[0] = SCPointCollision(&testPoints[0],&ace);
+    results[1] = SCPointCollision(&testPoints[1],&ace);
+    results[2] = SCPointCollision(&testPoints[2],&ace);
+    results[3] = SCPointCollision(&testPoints[3],&ace);
+}
 
 void EnGo2_AddDust(EnGo2* this, Vec3f* pos, Vec3f* velocity, Vec3f* accel, u8 initialTimer, f32 scale, f32 scaleStep) {
     EnGoEffect* dustEffect = this->dustEffects;
@@ -1045,7 +1137,7 @@ s32 func_80A44AB0(EnGo2* this, PlayState* play) {
             (this->actionFunc != EnGo2_ContinueRolling)) {
             return false;
         } else {
-            if (this->collider.base.acFlags & 2) {
+            if (!IS_REFINED_ROLLING && this->collider.base.acFlags & 2) {
                 Audio_PlaySoundGeneral(NA_SE_SY_CORRECT_CHIME, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
                 this->actor.flags &= ~ACTOR_FLAG_24;
                 this->collider.base.acFlags &= ~0x2;
@@ -1081,21 +1173,123 @@ Vec3s EnGo2_Special_Points4[] = {{959,480,102},{1056,480,0},{1030,440,-720},{103
 //{450,398,554}
 Path EnGo2_Special_Path[] = {{21, &EnGo2_Special_Points0},{6, &EnGo2_Special_Points1},{7, &EnGo2_Special_Points2},{11, &EnGo2_Special_Points3},{5, &EnGo2_Special_Points4}};
 
+SlantCylinder scForward0 = {{512,398,15},{399,396,-291},100.0f};
+SlantCylinder scAlts0[] = {{{575,399,96},{796,400,105},100.0f},{{796,400,105},{959,480,102},100.0f},{{959,480,102},{1100,480,100},100.0f}};
+SlantCylinder scForwards3[] = {{{1050,480,180},{1040,520,260},100.0f},{{1040,520,260},{1040,520,420},100.0f}};
+SlantCylinder scAlt3 = {{1040,480,30},{1040,480,-220},100.0f};
+
+void EnGo2_PerformPathSelection(EnGo2* this, PlayState* play, Path *switchPath, s8 switchWaypoint, SlantCylinder* scForward, u32 lengthForward, SlantCylinder* scAlt, u32 lengthAlt) {
+            Player* player = GET_PLAYER(play);
+            u8 forwardCollision = 0;
+            u8 altCollision = 0;
+
+            //Find if player is in paths
+            if (SCAPointCollision2D(&player->actor.world.pos,&scForward,lengthForward))
+                forwardCollision = 1;
+            if (SCAPointCollision2D(&player->actor.world.pos,&scAlt,lengthAlt))
+                altCollision = 1;
+
+            //Find if a bomb in in paths
+            Actor* bomb = play->actorCtx.actorLists[ACTORCAT_EXPLOSIVE].head;
+            while (bomb != NULL) {
+                if (SCAPointCollision2D(&bomb->world.pos,&scForward,lengthForward))
+                    forwardCollision = 1;
+                if (SCAPointCollision2D(&bomb->world.pos,&scAlt,lengthAlt))
+                    altCollision = 1;
+
+                bomb = bomb->next;
+            }
+
+            if (forwardCollision) {
+                if (altCollision) {
+                    Audio_PlayActorSound2(&this->actor, NA_SE_EN_GOLON_CRY);
+                } else {
+                    Audio_PlayActorSound2(&this->actor, NA_SE_EN_GOLON_SIT_DOWN);
+                    this->path = switchPath;
+                    this->waypoint = switchWaypoint;
+                }
+            } else if (altCollision) {
+                Audio_PlayActorSound2(&this->actor, NA_SE_EN_GOLON_WAKE_UP);
+            }
+}
+
 //Actor* explosive = Actor_FindNearby(play, &this->actor, -1, ACTORCAT_EXPLOSIVE, 1000.0f);
 s32 EnGo2_Alter_BigRoller_Path(EnGo2* this, PlayState* play) {
+    Player* player = GET_PLAYER(play);
     Path* oldPath = this->path;
 
     if (oldPath == &EnGo2_Special_Path[0]) {
-        if ((this->waypoint == 2) && this->actor.xzDistToPlayer < 300.0f) {
-            this->path = &EnGo2_Special_Path[3];
-            this->waypoint = 0;
+        if ((this->waypoint == 2)) {
+            //s32 numBombs = Actor_FindNumberOf(play,&this->actor,-1,ACTORCAT_EXPLOSIVE,2000.0f,NULL,NULL);
+            u8 forwardCollision = 0;
+            u8 altCollision = 0;
+            //Find if player is in paths
+            if (SCPointCollision(&player->actor.world.pos,&scForward0))
+                forwardCollision = 1;
+            if (SCAPointCollision2D(&player->actor.world.pos,&scAlts0,3) && ((player->actor.world.pos.y < 590.0f) || !(player->actor.world.pos.x < 800.0f)))
+                altCollision = 1;
+
+            //Find if a bomb in in paths
+            Actor* bomb = play->actorCtx.actorLists[ACTORCAT_EXPLOSIVE].head;
+            while (bomb != NULL) {
+                if (SCPointCollision(&bomb->world.pos,&scForward0))
+                    forwardCollision = 1;
+                if (SCAPointCollision2D(&bomb->world.pos,&scAlts0,3) && ((bomb->world.pos.y < 590.0f) || !(bomb->world.pos.x < 800.0f)))
+                    altCollision = 1;
+
+                bomb = bomb->next;
+            }
+
+            if (forwardCollision){
+                if (altCollision){
+                    Audio_PlayActorSound2(&this->actor, NA_SE_EN_GOLON_CRY);
+                }
+                else {
+                    Audio_PlayActorSound2(&this->actor, NA_SE_EN_GOLON_SIT_DOWN);
+                    this->path = &EnGo2_Special_Path[3];
+                    this->waypoint = 0;
+                }
+            } else if (altCollision) {
+                Audio_PlayActorSound2(&this->actor, NA_SE_EN_GOLON_WAKE_UP);
+            }
         }
     } else if (oldPath == &EnGo2_Special_Path[3]) {
         if (this->waypoint == 0)
             this->path = &EnGo2_Special_Path[0];
-        else if (this->waypoint == 3 && this->actor.xzDistToPlayer < 250.0f) {
-            this->path = &EnGo2_Special_Path[4];
-            this->waypoint = 1;
+        else if (this->waypoint == 3) {
+            u8 forwardCollision = 0;
+            u8 altCollision = 0;
+            //SlantCylinder sccForward = {2,{{{1050,480,180},{1040,520,260},100.0f},{{1040,520,260},{1040,520,420},100.0f}}};
+            //SlantCylinder scAlt = {{1040,480,30},{1040,480,-220},100.0f};
+
+            //Find if player is in paths
+            if (SCAPointCollision2D(&player->actor.world.pos,&scForwards3,2))
+                forwardCollision = 1;
+            if (SCPointCollision2D(&player->actor.world.pos,&scAlt3))
+                altCollision = 1;
+
+            //Find if a bomb in in paths
+            Actor* bomb = play->actorCtx.actorLists[ACTORCAT_EXPLOSIVE].head;
+            while (bomb != NULL) {
+                if (SCAPointCollision2D(&bomb->world.pos,&scForwards3,2))
+                    forwardCollision = 1;
+                if (SCPointCollision2D(&bomb->world.pos,&scAlt3))
+                    altCollision = 1;
+
+                bomb = bomb->next;
+            }
+
+            if (forwardCollision) {
+                if (altCollision) {
+                    Audio_PlayActorSound2(&this->actor, NA_SE_EN_GOLON_CRY);
+                } else {
+                    Audio_PlayActorSound2(&this->actor, NA_SE_EN_GOLON_SIT_DOWN);
+                    this->path = &EnGo2_Special_Path[4];
+                    this->waypoint = 1;
+                }
+            } else if (altCollision) {
+                Audio_PlayActorSound2(&this->actor, NA_SE_EN_GOLON_WAKE_UP);
+            }
         }
     } //else if (oldPath == &EnGo2_Special_Path[4]) {
     //     if (this->waypoint == 0) {
