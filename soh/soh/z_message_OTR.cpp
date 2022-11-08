@@ -858,9 +858,12 @@ extern "C" void OTRMessage_Init()
     MakeNormalMsgEng(GoronMsg+20, "Sorry! Let me express my feelings&with more refined rolling!");
     MakeNormalMsgEng(GoronMsg+21, "Big brother isn't here now.&I wonder where he went.");
     MakeNormalMsgEng(GoronMsg+22, "Big brother is both courteous and&tough. He tries to avoid hitting&anyone if he can help it,^and is barely phased by the&explosions of our special crop anymore.^I hear he still dislikes being&hit by them though.");
-    MakeNormalMsgEng(GoronMsg+23, "Oh, I give up,&I might as well ask you&to pawn this off for me.\x0B\x02");
+    MakeNormalMsgEng(GoronMsg+23, "Oh, I give up,&I might as well ask you&to pawn this off for me.^I'll take %g200 rupees%w for it.&\x1B&%gYes&No%w\x02");
     MakeNormalMsgEng(GoronMsg+24, "Ah, I like it here.&It's so peaceful and quiet.^You know, I think it's&about time I went shopping again.^I remember the last time I went,&and hope it goes better this time.^Should I try again?&\x1B&%gYes&No%w\x02");
     MakeNormalMsgEng(GoronMsg+25, "Oh, you expected this to&lead to something didn't you?^Well sorry, that's what&you get for playing&the beta of this mod!");
+    MakeNormalMsgEng(GoronMsg+26, "Aww, too bad.");
+    MakeNormalMsgEng(GoronMsg+27, "What, you don't have enough either?");
+    MakeNormalMsgEng(GoronMsg+28, "We have a deal then.\x0B\x02");
 
     u16 HylianMsg = TextIDAllocator::Instance->allocateRange("hylian", 30);
 

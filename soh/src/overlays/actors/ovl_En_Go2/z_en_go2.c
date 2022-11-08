@@ -922,9 +922,27 @@ s16 EnGo2_GetStateGoronMarketBazaar(PlayState* play, EnGo2* this) {
             gSaveContext.goronTimeStatus |= (1<<5);
         }
         return 0;
-    } else if (msgState == TEXT_STATE_EVENT) {
+    }
+    else if (msgState == TEXT_STATE_CHOICE) {
         if (Message_ShouldAdvance(play)) {
             if (this->actor.textId == GoronMsg+23) {
+                if (play->msgCtx.choiceIndex == 0) {
+                    if (gSaveContext.rupees < 200) {
+                        this->actor.textId = GoronMsg+27;
+                    } else{
+                        Rupees_ChangeBy(-200);
+                        this->actor.textId = GoronMsg+28;
+                    }
+                } else {
+                    this->actor.textId = GoronMsg+26;
+                }
+                Message_ContinueTextbox(play, this->actor.textId);
+            }
+        }
+        return 1;
+    } else if (msgState == TEXT_STATE_EVENT) {
+        if (Message_ShouldAdvance(play)) {
+            if (this->actor.textId == GoronMsg+28) {
                 this->actionFunc = EnGo2_SetupGetItem;
                 EnGo2_GetItem(this, play, GI_HEART_PIECE);
                 Message_CloseTextbox(play);
@@ -981,7 +999,7 @@ s16 EnGo2_GetStateGoronCityLostWoods(PlayState* play, EnGo2* this) {
             gSaveContext.infTable[14] |= 0x40;
         }
         return 0;
-    } else if  (msgState == TEXT_STATE_CHOICE) {
+    } else if (msgState == TEXT_STATE_CHOICE) {
         if (Message_ShouldAdvance(play)) {
             u16 GoronMsg = GetTextID("goron");
             if (this->actor.textId == GoronMsg+8 || this->actor.textId == GoronMsg+24) {
