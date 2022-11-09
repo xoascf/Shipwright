@@ -88,7 +88,8 @@ typedef enum {
     /* 0x30 */ SI_RED_POTION_R40,
     /* 0x31 */ SI_RED_POTION_R50,
     /* 0x32 */ SI_RANDOMIZED_ITEM,
-    /* 0x33 */ SI_MAX
+    /* 0x33 */ SI_PIECE_OF_HEART,
+    /* 0x34 */ SI_MAX
 } EnGirlAShopItem;
 
 typedef enum {
