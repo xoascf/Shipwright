@@ -351,6 +351,11 @@ void BgSpot08Iceblock_Init(Actor* thisx, PlayState* play) {
 
 void BgSpot08Iceblock_Destroy(Actor* thisx, PlayState* play) {
     BgSpot08Iceblock* this = (BgSpot08Iceblock*)thisx;
+    if (thisx->child)
+        (thisx->child)->parent = NULL;
+
+    if (thisx->parent)
+        (thisx->parent)->child = NULL;
 
     DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
 }
