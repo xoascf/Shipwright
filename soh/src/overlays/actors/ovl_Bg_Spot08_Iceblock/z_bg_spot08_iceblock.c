@@ -8,6 +8,7 @@
 #include "objects/object_spot08_obj/object_spot08_obj.h"
 
 #define FLAGS 0
+#define MIN_SIZE_INC 0.003f
 
 void BgSpot08Iceblock_Init(Actor* thisx, PlayState* play);
 void BgSpot08Iceblock_Destroy(Actor* thisx, PlayState* play);
@@ -281,6 +282,8 @@ static InitChainEntry sInitChain[] = {
     ICHAIN_F32(uncullZoneDownward, 2200, ICHAIN_STOP),
 };
 
+f32 scaleTargets[] = {0.0f,0.05f,0.1f,0.2f};
+
 void BgSpot08Iceblock_Init(Actor* thisx, PlayState* play) {
     BgSpot08Iceblock* this = (BgSpot08Iceblock*)thisx;
     CollisionHeader* colHeader;
@@ -318,13 +321,20 @@ void BgSpot08Iceblock_Init(Actor* thisx, PlayState* play) {
     switch (this->dyna.actor.params & 0xF0) {
         case 0:
             Actor_SetScale(&this->dyna.actor, 0.2f);
+            this->targetSize = 3;
             break;
         case 0x10:
             Actor_SetScale(&this->dyna.actor, 0.1f);
+            this->targetSize = 2;
             break;
         case 0x20:
             Actor_SetScale(&this->dyna.actor, 0.05f);
+            this->targetSize = 1;
             break;
+    }
+
+    if (this->dyna.actor.params & 0xF000){
+        Actor_SetScale(&this->dyna.actor, MIN_SIZE_INC);
     }
 
     this->bobPhaseSlow = (s32)(Rand_ZeroOne() * (0xFFFF + 0.5f));
@@ -351,6 +361,12 @@ void BgSpot08Iceblock_Init(Actor* thisx, PlayState* play) {
 
 void BgSpot08Iceblock_Destroy(Actor* thisx, PlayState* play) {
     BgSpot08Iceblock* this = (BgSpot08Iceblock*)thisx;
+
+    if (thisx->parent && (((BgSpot08Iceblock*)(thisx->parent))->dyna.actor.params & 0xF) == 0x3) {
+        ((BgSpot08Iceblock*)(thisx->parent))->dyna.actor.params |= 0x100;
+        //((BgSpot08Iceblock*)(actor1->child))->dyna.actor.world.rot.y += 0x8000;
+    }
+
     if (thisx->child)
         (thisx->child)->parent = NULL;
 
@@ -426,6 +442,28 @@ void BgSpot08Iceblock_Update(Actor* thisx, PlayState* play) {
     if (Rand_ZeroOne() < 0.05f) {
         this->bobIncrSlow = Rand_S16Offset(300, 100);
         this->bobIncrFast = Rand_S16Offset(800, 400);
+    }
+
+    if (this->dyna.actor.params & 0x200)
+        this->targetSize = 2;
+    if (this->targetSize < 0)
+        this->targetSize = 0;
+    else if (this->targetSize > 3)
+        this->targetSize = 3;
+
+    if (thisx->scale.z < scaleTargets[this->targetSize]) {
+        Actor_SetScale(thisx, thisx->scale.z+MIN_SIZE_INC);
+        if (thisx->scale.z >= scaleTargets[this->targetSize])
+            Actor_SetScale(thisx, scaleTargets[this->targetSize]);
+    }
+
+    if (thisx->scale.z > scaleTargets[this->targetSize]) {
+        Actor_SetScale(thisx, thisx->scale.z-MIN_SIZE_INC);
+        if (thisx->scale.z <= scaleTargets[this->targetSize]){
+            Actor_SetScale(thisx, scaleTargets[this->targetSize]);
+            if (this->targetSize == 0)
+                Actor_Kill(&this->dyna.actor);
+        }
     }
 
     this->bobPhaseSlow += this->bobIncrSlow;
