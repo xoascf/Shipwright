@@ -495,6 +495,8 @@ s8 BgSpot08Iceblock_thaw(Actor* thisx) {
     return 0;
 }
 
+//#define ICE_WILL_MOVE 1
+
 void BgSpot08Iceblock_Update(Actor* thisx, PlayState* play) {
     BgSpot08Iceblock* this = (BgSpot08Iceblock*)thisx;
 
@@ -515,6 +517,7 @@ void BgSpot08Iceblock_Update(Actor* thisx, PlayState* play) {
         BgActor* bgActor = &(play->colCtx).dyna.bgActors[this->dyna.bgId];
         VEC_SET(centerPoint,bgActor->boundingSphere.center.x,bgActor->boundingSphere.center.y,bgActor->boundingSphere.center.z);
         if (BgCheck_SphVsFirstPolyImpl(&play->colCtx,0,&colPol,&backgroundID,&centerPoint,bgActor->boundingSphere.radius*(1.0f/1.1f),thisx,0)) {
+#ifdef ICE_WILL_MOVE
             Vec3f vertices[3];
             Vec3f avg;
             CollisionPoly_GetVerticesByBgId(colPol,backgroundID,&play->colCtx,vertices);
@@ -534,12 +537,15 @@ void BgSpot08Iceblock_Update(Actor* thisx, PlayState* play) {
             centerPoint.x += avg.x*distToMove;
             centerPoint.z += avg.z*distToMove;
             if (BgCheck_SphVsFirstPolyImpl(&play->colCtx,0,&colPol,&backgroundID,&centerPoint,bgActor->boundingSphere.radius*(1.0f/1.1f),thisx,0)) {
+#endif
                 Actor_SetScale(thisx, thisx->scale.z-MIN_SIZE_INC);
                 DECR(this->targetSize);
+#ifdef ICE_WILL_MOVE
             } else {
                 this->dyna.actor.world.pos.x += avg.x*distToMove;
                 this->dyna.actor.world.pos.z += avg.z*distToMove;
             }
+#endif
         }
     }
 
