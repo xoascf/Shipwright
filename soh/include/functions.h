@@ -639,6 +639,8 @@ s32 BgCheck_AnyLineTest2(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec
 s32 BgCheck_AnyLineTest3(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult, CollisionPoly** outPoly,
                          s32 chkWall, s32 chkFloor, s32 chkCeil, s32 chkOneFace, s32* bgId);
 s32 BgCheck_SphVsFirstPoly(CollisionContext* colCtx, Vec3f* center, f32 radius);
+s32 BgCheck_SphVsFirstPolyImpl(CollisionContext* colCtx, u16 xpFlags, CollisionPoly** outPoly, s32* outBgId,
+                               Vec3f* center, f32 radius, Actor* actor, u16 bciFlags);
 void SSNodeList_Initialize(SSNodeList*);
 void SSNodeList_Alloc(PlayState* play, SSNodeList* this, s32 tblMax, s32 numPolys);
 u16 SSNodeList_GetNextNodeIdx(SSNodeList* this);

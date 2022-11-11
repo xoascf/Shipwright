@@ -21,7 +21,11 @@ typedef struct BgSpot08Iceblock {
     /* 0x0194 */ f32 sinkOffset;
     /* 0x0198 */ f32 bobOffset;
                  s8 targetSize;
+                 s8 isThawing;
 } BgSpot08Iceblock; // size = 0x019C
+
+s8 BgSpot08Iceblock_freeze(Actor* thisx);
+s8 BgSpot08Iceblock_thaw(Actor* thisx);
 
 // Params
 /**

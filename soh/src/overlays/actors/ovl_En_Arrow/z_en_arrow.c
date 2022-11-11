@@ -386,19 +386,12 @@ void EnArrow_Fly(EnArrow* this, PlayState* play) {
 
                 while (actor1 != NULL) {
                     if (ACTOR_BG_SPOT08_ICEBLOCK == actor1->id) {
-                        //BgSpot08Iceblock* iceblock = (BgSpot08Iceblock*)actor1;
                         if (dyna1 == &((BgSpot08Iceblock*)actor1)->dyna) {
-                            // if (actor1->parent && (((BgSpot08Iceblock*)(actor1->parent))->dyna.actor.params & 0xF) == 0x3) {
-                            //     ((BgSpot08Iceblock*)(actor1->parent))->dyna.actor.params |= 0x100;
-                            //     //((BgSpot08Iceblock*)(actor1->child))->dyna.actor.world.rot.y += 0x8000;
-                            // }
-                            //Actor_Kill(actor1);
-                            //Actor_Kill(&this->actor);
                             if (this->actor.params == ARROW_FIRE) {
-                                ((BgSpot08Iceblock*)actor1)->targetSize--;
-                                Actor_Kill(&this->actor);
+                                if (BgSpot08Iceblock_thaw(actor1))
+                                    Actor_Kill(&this->actor);
                             } else if (this->actor.params == ARROW_ICE) {
-                                ((BgSpot08Iceblock*)actor1)->targetSize++;
+                                BgSpot08Iceblock_freeze(actor1);
                             }
                         }
                     }
