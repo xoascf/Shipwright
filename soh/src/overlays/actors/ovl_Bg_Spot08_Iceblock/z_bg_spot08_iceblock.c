@@ -515,8 +515,31 @@ void BgSpot08Iceblock_Update(Actor* thisx, PlayState* play) {
         BgActor* bgActor = &(play->colCtx).dyna.bgActors[this->dyna.bgId];
         VEC_SET(centerPoint,bgActor->boundingSphere.center.x,bgActor->boundingSphere.center.y,bgActor->boundingSphere.center.z);
         if (BgCheck_SphVsFirstPolyImpl(&play->colCtx,0,&colPol,&backgroundID,&centerPoint,bgActor->boundingSphere.radius*(1.0f/1.1f),thisx,0)) {
-            Actor_SetScale(thisx, thisx->scale.z-MIN_SIZE_INC);
-            DECR(this->targetSize);
+            Vec3f vertices[3];
+            Vec3f avg;
+            CollisionPoly_GetVerticesByBgId(colPol,backgroundID,&play->colCtx,vertices);
+            Math_Vec3f_Sum(&vertices[0],&vertices[1],&avg);
+            Math_Vec3f_Scale(&avg,0.5);
+            Math_Vec3f_Sum(&avg,&vertices[2],&avg);
+            Math_Vec3f_Scale(&avg,0.5);
+            avg.x = centerPoint.x-avg.x;
+            avg.z = centerPoint.z-avg.z;
+            avg.y = 0;
+            f32 abs = sqrt(SQXZ(avg));
+            avg.x /= abs;
+            avg.z /= abs;
+            const f32 FUDGE_FACTOR = 2.0F;
+            f32 distToMove = bgActor->boundingSphere.radius*(1.0f/1.1f)*(MIN_SIZE_INC/thisx->scale.z);
+            distToMove *= FUDGE_FACTOR;
+            centerPoint.x += avg.x*distToMove;
+            centerPoint.z += avg.z*distToMove;
+            if (BgCheck_SphVsFirstPolyImpl(&play->colCtx,0,&colPol,&backgroundID,&centerPoint,bgActor->boundingSphere.radius*(1.0f/1.1f),thisx,0)) {
+                Actor_SetScale(thisx, thisx->scale.z-MIN_SIZE_INC);
+                DECR(this->targetSize);
+            } else {
+                this->dyna.actor.world.pos.x += avg.x*distToMove;
+                this->dyna.actor.world.pos.z += avg.z*distToMove;
+            }
         }
     }
 
