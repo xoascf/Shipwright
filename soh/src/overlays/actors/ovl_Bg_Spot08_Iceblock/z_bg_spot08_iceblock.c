@@ -336,6 +336,7 @@ void BgSpot08Iceblock_Init(Actor* thisx, PlayState* play) {
 
     if (this->dyna.actor.params & 0xF000){
         Actor_SetScale(&this->dyna.actor, MIN_SIZE_INC);
+        this->targetSize = -1;//Prevent collision detection on first frame, before bounding sphere initialization
     }
 
     this->bobPhaseSlow = (s32)(Rand_ZeroOne() * (0xFFFF + 0.5f));
@@ -505,67 +506,71 @@ void BgSpot08Iceblock_Update(Actor* thisx, PlayState* play) {
         this->bobIncrFast = Rand_S16Offset(800, 400);
     }
 
-    if (thisx->scale.z < scaleTargets[this->targetSize]) {
-        Actor_SetScale(thisx, thisx->scale.z+MIN_SIZE_INC);
-        if (thisx->scale.z >= scaleTargets[this->targetSize])
-            Actor_SetScale(thisx, scaleTargets[this->targetSize]);
-        if (play->gameplayFrames % 3)
-            Audio_PlayActorSound2(thisx, NA_SE_PL_FREEZE_S);
-        CollisionPoly* colPol;
-        s32 backgroundID;
-        Vec3f centerPoint;
-        BgActor* bgActor = &(play->colCtx).dyna.bgActors[this->dyna.bgId];
-        VEC_SET(centerPoint,bgActor->boundingSphere.center.x,bgActor->boundingSphere.center.y,bgActor->boundingSphere.center.z);
-        if (BgCheck_SphVsFirstPolyImpl(&play->colCtx,0,&colPol,&backgroundID,&centerPoint,bgActor->boundingSphere.radius*(1.0f/1.1f),thisx,0)) {
-#ifdef ICE_WILL_MOVE
-            Vec3f vertices[3];
-            Vec3f avg;
-            CollisionPoly_GetVerticesByBgId(colPol,backgroundID,&play->colCtx,vertices);
-            Math_Vec3f_Sum(&vertices[0],&vertices[1],&avg);
-            Math_Vec3f_Scale(&avg,0.5);
-            Math_Vec3f_Sum(&avg,&vertices[2],&avg);
-            Math_Vec3f_Scale(&avg,0.5);
-            avg.x = centerPoint.x-avg.x;
-            avg.z = centerPoint.z-avg.z;
-            avg.y = 0;
-            f32 abs = sqrt(SQXZ(avg));
-            avg.x /= abs;
-            avg.z /= abs;
-            const f32 FUDGE_FACTOR = 2.0F;
-            f32 distToMove = bgActor->boundingSphere.radius*(1.0f/1.1f)*(MIN_SIZE_INC/thisx->scale.z);
-            distToMove *= FUDGE_FACTOR;
-            centerPoint.x += avg.x*distToMove;
-            centerPoint.z += avg.z*distToMove;
+    if (this->targetSize < 0) {
+        this->targetSize = 1;
+    } else {
+        if (thisx->scale.z < scaleTargets[this->targetSize]) {
+            Actor_SetScale(thisx, thisx->scale.z+MIN_SIZE_INC);
+            if (thisx->scale.z >= scaleTargets[this->targetSize])
+                Actor_SetScale(thisx, scaleTargets[this->targetSize]);
+            if (play->gameplayFrames % 3)
+                Audio_PlayActorSound2(thisx, NA_SE_PL_FREEZE_S);
+            CollisionPoly* colPol;
+            s32 backgroundID;
+            Vec3f centerPoint;
+            BgActor* bgActor = &(play->colCtx).dyna.bgActors[this->dyna.bgId];
+            VEC_SET(centerPoint,bgActor->boundingSphere.center.x,bgActor->boundingSphere.center.y,bgActor->boundingSphere.center.z);
             if (BgCheck_SphVsFirstPolyImpl(&play->colCtx,0,&colPol,&backgroundID,&centerPoint,bgActor->boundingSphere.radius*(1.0f/1.1f),thisx,0)) {
-#endif
-                Actor_SetScale(thisx, thisx->scale.z-MIN_SIZE_INC);
-                DECR(this->targetSize);
 #ifdef ICE_WILL_MOVE
-            } else {
-                this->dyna.actor.world.pos.x += avg.x*distToMove;
-                this->dyna.actor.world.pos.z += avg.z*distToMove;
-            }
+                Vec3f vertices[3];
+                Vec3f avg;
+                CollisionPoly_GetVerticesByBgId(colPol,backgroundID,&play->colCtx,vertices);
+                Math_Vec3f_Sum(&vertices[0],&vertices[1],&avg);
+                Math_Vec3f_Scale(&avg,0.5);
+                Math_Vec3f_Sum(&avg,&vertices[2],&avg);
+                Math_Vec3f_Scale(&avg,0.5);
+                avg.x = centerPoint.x-avg.x;
+                avg.z = centerPoint.z-avg.z;
+                avg.y = 0;
+                f32 abs = sqrt(SQXZ(avg));
+                avg.x /= abs;
+                avg.z /= abs;
+                const f32 FUDGE_FACTOR = 2.0F;
+                f32 distToMove = bgActor->boundingSphere.radius*(1.0f/1.1f)*(MIN_SIZE_INC/thisx->scale.z);
+                distToMove *= FUDGE_FACTOR;
+                centerPoint.x += avg.x*distToMove;
+                centerPoint.z += avg.z*distToMove;
+                if (BgCheck_SphVsFirstPolyImpl(&play->colCtx,0,&colPol,&backgroundID,&centerPoint,bgActor->boundingSphere.radius*(1.0f/1.1f),thisx,0)) {
 #endif
+                    Actor_SetScale(thisx, thisx->scale.z-MIN_SIZE_INC);
+                    DECR(this->targetSize);
+#ifdef ICE_WILL_MOVE
+                } else {
+                    this->dyna.actor.world.pos.x += avg.x*distToMove;
+                    this->dyna.actor.world.pos.z += avg.z*distToMove;
+                }
+#endif
+            }
         }
-    }
 
-    if (thisx->scale.z > scaleTargets[this->targetSize]) {
-        Actor_SetScale(thisx, thisx->scale.z-MIN_SIZE_INC);
-        Vec3f smokePos;
-        smokePos.y = thisx->world.pos.y +10.0f;
-        smokePos.x = thisx->world.pos.x +thisx->scale.x*Rand_Centered()*1500.0f;
-        smokePos.z = thisx->world.pos.z +thisx->scale.z*Rand_Centered()*1500.0f;
-        static Vec3f velocity = {0.0f,3.0f,0.0f};
-        static Vec3f accel = {0.0f,-0.02f,0.0f};
-        if (this->isThawing == 2)
-            EffectSsIceSmoke_Spawn(play,&smokePos,&velocity,&accel,300*(5*thisx->scale.z+0.3f));
-        else
-            this->isThawing = 1;
-        if (thisx->scale.z <= scaleTargets[this->targetSize]){
-            Actor_SetScale(thisx, scaleTargets[this->targetSize]);
-            this->isThawing = 0;
-            if (this->targetSize == 0)
-                Actor_Kill(&this->dyna.actor);
+        if (thisx->scale.z > scaleTargets[this->targetSize]) {
+            Actor_SetScale(thisx, thisx->scale.z-MIN_SIZE_INC);
+            Vec3f smokePos;
+            smokePos.y = thisx->world.pos.y +10.0f;
+            smokePos.x = thisx->world.pos.x +thisx->scale.x*Rand_Centered()*1500.0f;
+            smokePos.z = thisx->world.pos.z +thisx->scale.z*Rand_Centered()*1500.0f;
+            static Vec3f velocity = {0.0f,3.0f,0.0f};
+            static Vec3f accel = {0.0f,-0.02f,0.0f};
+            if (this->isThawing == 2)
+                EffectSsIceSmoke_Spawn(play,&smokePos,&velocity,&accel,300*(5*thisx->scale.z+0.3f));
+            else
+                this->isThawing = 1;
+            if (thisx->scale.z <= scaleTargets[this->targetSize]){
+                Actor_SetScale(thisx, scaleTargets[this->targetSize]);
+                this->isThawing = 0;
+                if (this->targetSize == 0)
+                    Actor_Kill(&this->dyna.actor);
+            }
         }
     }
 
