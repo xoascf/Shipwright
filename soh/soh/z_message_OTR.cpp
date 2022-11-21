@@ -872,4 +872,8 @@ extern "C" void OTRMessage_Init()
     MakeNormalMsgEng(HylianMsg+2, "I don't typically take&guests during the day.^That's why I lock my door,&as you'd know.^If you have business here,&please let that be known&ahead of time.");
     MakeNormalMsgEng(0xF000, "\x08%rPiece of Heart   200 Rupees%w&Adds a quarter of a section&to your heart container.&4 together will improve your life!\t\n\x02")
     MakeNormalMsgEng(0xF001, "\x08Piece of Heart   200 Rupees&\x09\x1B&%gBuy&Don't buy%w\x02")
+
+    u16 ZoraMsg = TextIDAllocator::Instance->allocateRange("zora", 30);
+
+    MakeNormalMsgEng(ZoraMsg+0, "Wow! I never suspected that&anyone who was not a&Zora could dive like that!^You cannot refuse this token&of my awe!\x0B\x02");
 }

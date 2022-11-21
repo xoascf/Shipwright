@@ -58,7 +58,8 @@ typedef enum {
 typedef enum {
     /* 0 */ ENDIVINGGAME_STATE_NOTPLAYING,
     /* 1 */ ENDIVINGGAME_STATE_AWARDPRIZE, // Waiting to give the scale to player.
-    /* 2 */ ENDIVINGGAME_STATE_PLAYING
+    /* 2 */ ENDIVINGGAME_STATE_PLAYING,
+    /* 3 */ ENDIVINGGAME_STATE_AWARDHEART
 } EnDivingGameState;
 
 #endif
