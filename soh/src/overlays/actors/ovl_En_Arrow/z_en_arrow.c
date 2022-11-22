@@ -370,10 +370,40 @@ void EnArrow_Fly(EnArrow* this, PlayState* play) {
             }
         }
     } else {
+        u8 didFormIce = false;
+        WaterBox* outWaterBox;
+        f32 ySurface = this->actor.world.pos.y;
+        Vec3f piorPosition;
+        if (this->actor.params == ARROW_ICE) {
+	        if (WaterBox_GetSurfaceImpl(play, &play->colCtx, this->actor.world.pos.x,
+                                 this->actor.world.pos.z, &ySurface, &outWaterBox) &&
+                                 (this->actor.world.pos.y <= ySurface && ySurface < this->unk_210.y)) {
+                didFormIce = true;
+            }
+        }
+
+        Math_Vec3f_Copy(&piorPosition, &this->unk_210);
         Math_Vec3f_Copy(&this->unk_210, &this->actor.world.pos);
         Actor_MoveForward(&this->actor);
 
-        if ((this->touchedPoly =
+        if (didFormIce) {
+                Vec3f diff;
+                Math_Vec3f_Diff(&piorPosition, &this->unk_210, &diff);
+                f32 ydiff1 = ySurface - this->unk_210.y;
+                f32 ydiff2 = piorPosition.y - this->unk_210.y;
+                f32 yRatio = (ydiff2 > 0.0f) ? ydiff1/ydiff2 : 0.0f;
+                Vec3f finalPos = {yRatio*diff.x+this->unk_210.x,ySurface,yRatio*diff.z+this->unk_210.z};
+
+                BgSpot08Iceblock* iceblock = (BgSpot08Iceblock*)Actor_Spawn(&play->actorCtx, play,ACTOR_BG_SPOT08_ICEBLOCK,
+                    finalPos.x,finalPos.y,finalPos.z,
+                    0x0000,this->actor.world.rot.y,0x0000,0x1020, true);
+                iceblock->water = outWaterBox;
+                this->unk_210 = finalPos;
+                EnArrow_SetupAction(this, func_809B45E0);
+                Audio_PlayActorSound2(&this->actor, NA_SE_IT_ARROW_STICK_OBJ);
+                this->timer = 20;
+                this->hitFlags |= 1;
+        } else if ((this->touchedPoly =
                  BgCheck_ProjectileLineTest(&play->colCtx, &this->actor.prevPos, &this->actor.world.pos, &hitPoint,
                                             &this->actor.wallPoly, true, true, true, true, &bgId))) {
             func_8002F9EC(play, &this->actor, this->actor.wallPoly, bgId, &hitPoint);
@@ -397,29 +427,6 @@ void EnArrow_Fly(EnArrow* this, PlayState* play) {
                     }
                     actor1 = actor1->next;
                 }
-            }
-        } else if (this->actor.params == ARROW_ICE) {
-            WaterBox* outWaterBox;
-            f32 ySurface = this->actor.world.pos.y;
-
-	        if (WaterBox_GetSurfaceImpl(play, &play->colCtx, this->actor.world.pos.x,
-                                 this->actor.world.pos.z, &ySurface, &outWaterBox) &&
-                                 (this->actor.world.pos.y <= ySurface && ySurface < this->actor.prevPos.y)) {
-                Vec3f diff;
-                Math_Vec3f_Diff(&this->actor.prevPos, &this->actor.world.pos, &diff);
-                f32 ydiff1 = ySurface - this->actor.world.pos.y;
-                f32 ydiff2 = this->actor.prevPos.y - this->actor.world.pos.y;
-                f32 yRatio = (ydiff2 > 0.0f) ? ydiff1/ydiff2 : 0.0f;
-                Vec3f finalPos = {yRatio*diff.x+this->actor.world.pos.x,ySurface,yRatio*diff.z+this->actor.world.pos.z};
-
-                Actor_Spawn(&play->actorCtx, play, ACTOR_BG_SPOT08_ICEBLOCK,
-                    finalPos.x,finalPos.y,finalPos.z,
-                    0x0000,this->actor.world.rot.y,0x0000,0x1020, true);
-                this->actor.world.pos = finalPos;
-                EnArrow_SetupAction(this, func_809B45E0);
-                Audio_PlayActorSound2(&this->actor, NA_SE_IT_ARROW_STICK_OBJ);
-                this->timer = 20;
-                this->hitFlags |= 1;
             }
         }
 
