@@ -82,7 +82,7 @@ bool Scene_CommandSpawnList(PlayState* play, Ship::SceneCommand* cmd)
 const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSpawnEntry>>>> sceneActorOverrides = {
     { 0x01, { // Dodongo's Cavern
         { 0x03, {
-            //{ -1, -1, { ACTOR_EN_ITEM00, 3558, 531, -1984, 0, 0, 0, 0x106 }},
+            { -1, 4, { ACTOR_EN_ITEM00, 4266,100,-1575, 0, -21299, 0, 0x100+(uint16_t)ITEM00_HEART_PIECE  }},
         } },
     } },
     { 0x02, { // Jabu Jabu's Belly
