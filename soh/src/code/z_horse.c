@@ -47,7 +47,7 @@ void func_8006D0EC(PlayState* play, Player* player) {
         { SCENE_SPOT20, 928, 0, -2280, 0, 2 },
     };
 
-    if ((AREG(6) != 0) && (Flags_GetEventChkInf(0x18) || (DREG(1) != 0))) {
+    if ((AREG(6) != 0) && ((Flags_GetEventChkInf(0x18) || (DREG(1) != 0)) || !LINK_IS_ADULT)) {
         player->rideActor = Actor_Spawn(&play->actorCtx, play, ACTOR_EN_HORSE, player->actor.world.pos.x,
                                         player->actor.world.pos.y, player->actor.world.pos.z, player->actor.shape.rot.x,
                                         player->actor.shape.rot.y, player->actor.shape.rot.z, 9, true);
@@ -98,7 +98,7 @@ void func_8006D0EC(PlayState* play, Player* player) {
         Actor* horseActor =
             Actor_Spawn(&play->actorCtx, play, ACTOR_EN_HORSE, 0.0f, 0.0f, -500.0f, 0, 0, 0, 1, true);
         ASSERT(horseActor != NULL);
-    } else if (Flags_GetEventChkInf(0x18) || (DREG(1) != 0)) {
+    } else if (Flags_GetEventChkInf(0x18) || (DREG(1) != 0) || !LINK_IS_ADULT) {
         for (i = 0; i < ARRAY_COUNT(horseSpawns); i++) {
             HorseSpawn* horseSpawn = &horseSpawns[i];
             if (horseSpawn->scene == play->sceneNum) {
@@ -237,28 +237,28 @@ void func_8006D684(PlayState* play, Player* player) {
 }
 
 void func_8006DC68(PlayState* play, Player* player) {
-    if (LINK_IS_ADULT) {
-        if (!func_8006CFC0(gSaveContext.horseData.scene)) {
-            osSyncPrintf(VT_COL(RED, WHITE));
-            // "Horse_Set_Check():%d set spot is no good."
-            osSyncPrintf("Horse_Set_Check():%d セットスポットまずいです。\n", gSaveContext.horseData.scene);
-            osSyncPrintf(VT_RST);
-            func_8006D074(play);
-        }
+    //if (LINK_IS_ADULT) {
+    if (!func_8006CFC0(gSaveContext.horseData.scene)) {
+        osSyncPrintf(VT_COL(RED, WHITE));
+        // "Horse_Set_Check():%d set spot is no good."
+        osSyncPrintf("Horse_Set_Check():%d セットスポットまずいです。\n", gSaveContext.horseData.scene);
+        osSyncPrintf(VT_RST);
+        func_8006D074(play);
+    }
 
-        if (func_8006CFC0(play->sceneNum)) {
-            if ((gSaveContext.sceneSetupIndex > 3) ||
-                ((gSaveContext.entranceIndex == 0x028A || gSaveContext.entranceIndex == 0x028E ||
-                  gSaveContext.entranceIndex == 0x0292 || gSaveContext.entranceIndex == 0x0476) &&
-                 (gSaveContext.respawnFlag == 0)) ||
-                ((play->sceneNum == SCENE_SPOT20) && ((gSaveContext.eventInf[0] & 0xF) == 6) &&
-                 !Flags_GetEventChkInf(0x18) && (DREG(1) == 0))) {
-                func_8006D684(play, player);
-            } else {
-                func_8006D0EC(play, player);
-            }
+    if (func_8006CFC0(play->sceneNum)) {
+        if ((gSaveContext.sceneSetupIndex > 3) ||
+            ((gSaveContext.entranceIndex == 0x028A || gSaveContext.entranceIndex == 0x028E ||
+              gSaveContext.entranceIndex == 0x0292 || gSaveContext.entranceIndex == 0x0476) &&
+             (gSaveContext.respawnFlag == 0)) ||
+            ((play->sceneNum == SCENE_SPOT20) && ((gSaveContext.eventInf[0] & 0xF) == 6) &&
+             !Flags_GetEventChkInf(0x18) && (DREG(1) == 0))) {
+            func_8006D684(play, player);
+        } else {
+            func_8006D0EC(play, player);
         }
     }
+    //}
 }
 
 void func_8006DD9C(Actor* actor, Vec3f* arg1, s16 arg2) {

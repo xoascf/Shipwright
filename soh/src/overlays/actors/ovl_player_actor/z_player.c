@@ -2513,6 +2513,7 @@ s32 func_8083501C(Player* this, PlayState* play) {
     } else if (this->rideActor != NULL) {
         this->unk_6AD = 2; // OTRTODO: THIS IS A BAD IDEA BUT IT FIXES THE HORSE FIRST PERSON?
     }
+    // CHECK OR FIX!!
 
     return 1;
 }
@@ -4916,11 +4917,8 @@ s32 func_8083AD4C(PlayState* play, Player* this) {
 
     if (this->unk_6AD == 2) {
         if (func_8002DD6C(this)) {
-            if (LINK_IS_ADULT) {
-                cameraMode = CAM_MODE_BOWARROW;
-            } else {
-                cameraMode = CAM_MODE_SLINGSHOT;
-            }
+            //cameraMode = LINK_IS_ADULT ? CAM_MODE_BOWARROW : CAM_MODE_SLINGSHOT;
+            cameraMode = CAM_MODE_BOWARROW;
         } else {
             cameraMode = CAM_MODE_BOOMERANG;
         }
@@ -12194,8 +12192,9 @@ void func_8084CC98(Player* this, PlayState* play) {
         }
     }
 
+    float yOffset = LINK_IS_ADULT ? 27.0f : 0;
     this->actor.world.pos.x = rideActor->actor.world.pos.x + rideActor->riderPos.x;
-    this->actor.world.pos.y = (rideActor->actor.world.pos.y + rideActor->riderPos.y) - 27.0f;
+    this->actor.world.pos.y = (rideActor->actor.world.pos.y + rideActor->riderPos.y) - yOffset;
     this->actor.world.pos.z = rideActor->actor.world.pos.z + rideActor->riderPos.z;
 
     this->currentYaw = this->actor.shape.rot.y = rideActor->actor.shape.rot.y;
@@ -12212,16 +12211,26 @@ void func_8084CC98(Player* this, PlayState* play) {
 
                 if (this->skelAnime2.animation == &gPlayerAnim_link_uma_stop_muti) {
                     if (LinkAnimation_OnFrame(&this->skelAnime2, 23.0f)) {
-                        func_8002F7DC(&this->actor, NA_SE_IT_LASH);
-                        func_80832698(this, NA_SE_VO_LI_LASH);
+                        if (LINK_IS_ADULT) {
+                            func_8002F7DC(&this->actor, NA_SE_IT_LASH);
+                            func_80832698(this, NA_SE_VO_LI_LASH);
+                        } else {
+                            func_8002F7DC(&this->actor, NA_SE_VO_LI_AUTO_JUMP);
+                            func_80832698(this, NA_SE_VO_LI_AUTO_JUMP);
+                        }
                     }
 
                     AnimationContext_SetCopyAll(play, this->skelAnime.limbCount, this->skelAnime.jointTable,
                                                 this->skelAnime2.jointTable);
                 } else {
                     if (LinkAnimation_OnFrame(&this->skelAnime2, 10.0f)) {
-                        func_8002F7DC(&this->actor, NA_SE_IT_LASH);
-                        func_80832698(this, NA_SE_VO_LI_LASH);
+                        if (LINK_IS_ADULT) {
+                            func_8002F7DC(&this->actor, NA_SE_IT_LASH);
+                            func_80832698(this, NA_SE_VO_LI_LASH);
+                        } else {
+                            func_8002F7DC(&this->actor, NA_SE_VO_LI_AUTO_JUMP);
+                            func_80832698(this, NA_SE_VO_LI_AUTO_JUMP);
+                        }
                     }
 
                     AnimationContext_SetCopyTrue(play, this->skelAnime.limbCount, this->skelAnime.jointTable,

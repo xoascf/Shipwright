@@ -858,15 +858,11 @@ void func_80083108(PlayState* play) {
                         gSaveContext.equips.buttonItems[0] = ITEM_BOMBCHU;
                         Interface_LoadItemIcon1(play, 0);
                     } else {
-                        gSaveContext.equips.buttonItems[0] = ITEM_BOW;
+                        gSaveContext.equips.buttonItems[0] = Item_GetShooting();
                         if (play->shootingGalleryStatus > 1) {
-                            if (LINK_AGE_IN_YEARS == YEARS_CHILD) {
-                                gSaveContext.equips.buttonItems[0] = ITEM_SLINGSHOT;
-                            }
-
                             Interface_LoadItemIcon1(play, 0);
                         } else {
-                            if (gSaveContext.inventory.items[SLOT_BOW] == ITEM_NONE) {
+                            if (gSaveContext.inventory.items[Slot_GetShooting()] == ITEM_NONE) {
                                 gSaveContext.equips.buttonItems[0] = ITEM_NONE;
                             } else {
                                 Interface_LoadItemIcon1(play, 0);
@@ -1003,11 +999,11 @@ void func_80083108(PlayState* play) {
             } else if ((gSaveContext.eventInf[0] & 0xF) == 1) {
                 if (player->stateFlags1 & 0x00800000) {
                     if ((gSaveContext.equips.buttonItems[0] != ITEM_NONE) &&
-                        (gSaveContext.equips.buttonItems[0] != ITEM_BOW)) {
-                        if (gSaveContext.inventory.items[SLOT_BOW] == ITEM_NONE) {
+                        (gSaveContext.equips.buttonItems[0] != Item_GetShooting())) {
+                        if (gSaveContext.inventory.items[Slot_GetShooting()] == ITEM_NONE) {
                             gSaveContext.equips.buttonItems[0] = ITEM_NONE;
                         } else {
-                            gSaveContext.equips.buttonItems[0] = ITEM_BOW;
+                            gSaveContext.equips.buttonItems[0] = Item_GetShooting();
                             sp28 = 1;
                         }
                     }
@@ -1690,6 +1686,14 @@ void Randomizer_GameplayStats_SetTimestamp(uint16_t item) {
     if (item == RG_DOUBLE_DEFENSE) {
         gSaveContext.sohStats.timestamp[ITEM_DOUBLE_DEFENSE] = time;
     }
+}
+
+int Item_GetShooting() {
+    return LINK_IS_ADULT ? ITEM_BOW : ITEM_SLINGSHOT;
+}
+
+int Slot_GetShooting() {
+    return LINK_IS_ADULT ? SLOT_BOW : SLOT_SLINGSHOT;
 }
 
 /**
