@@ -226,6 +226,17 @@ extern "C" void OTRMessage_Init()
         }
     );
 
+    u16 WonderMsg = 0x0200;
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, WonderMsg+0x3D,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_MIDDLE,
+          "You're looking good \x0F!",
+          "",
+          "",
+        }
+    );
+
     u16 SariaMsg = TextIDAllocator::Instance->allocateRange("saria", 30);
     CustomMessageManager::Instance->CreateMessage(
         questMessageTableID, SariaMsg,
