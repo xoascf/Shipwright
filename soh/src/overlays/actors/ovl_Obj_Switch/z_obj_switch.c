@@ -487,7 +487,7 @@ void ObjSwitch_FloorRelease(ObjSwitch* this, PlayState* play) {
     }
 }
 
-s32 ObjSwitch_EyeIsHit(ObjSwitch* this) {
+s32 ObjSwitch_EyeIsHit(ObjSwitch* this, PlayState* play) {
     Actor* collidingActor;
     s16 yawDiff;
 
@@ -496,6 +496,11 @@ s32 ObjSwitch_EyeIsHit(ObjSwitch* this) {
         if (collidingActor != NULL) {
             yawDiff = collidingActor->world.rot.y - this->dyna.actor.shape.rot.y;
             if (ABS(yawDiff) > 0x5000) {
+                if (collidingActor->params == 4) { //Ice Arrow
+                    Audio_PlayActorSound2(&this->dyna.actor, NA_SE_PL_FREEZE_S);
+                    ObjSwitch_SpawnIce(this,play);
+                    return 0;
+                }
                 return 1;
             }
         }
@@ -521,7 +526,7 @@ void ObjSwitch_EyeOpenInit(ObjSwitch* this) {
 }
 
 void ObjSwitch_EyeOpen(ObjSwitch* this, PlayState* play) {
-    if (ObjSwitch_EyeIsHit(this) || (this->dyna.actor.params >> 7 & 1)) {
+    if (ObjSwitch_EyeIsHit(this,play) || (this->dyna.actor.params >> 7 & 1)) {
         ObjSwitch_EyeClosingInit(this);
         ObjSwitch_SetOn(this, play);
         this->dyna.actor.params &= ~0x80;
@@ -557,7 +562,7 @@ void ObjSwitch_EyeClosed(ObjSwitch* this, PlayState* play) {
             }
             break;
         case OBJSWITCH_SUBTYPE_EYE_1:
-            if (ObjSwitch_EyeIsHit(this) || (this->dyna.actor.params >> 7 & 1)) {
+            if (ObjSwitch_EyeIsHit(this,play) || (this->dyna.actor.params >> 7 & 1)) {
                 ObjSwitch_EyeOpeningInit(this);
                 ObjSwitch_SetOff(this, play);
                 this->dyna.actor.params &= ~0x80;

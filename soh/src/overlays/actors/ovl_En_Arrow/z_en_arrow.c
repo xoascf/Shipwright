@@ -412,20 +412,15 @@ void EnArrow_Fly(EnArrow* this, PlayState* play) {
 
             if (DynaPoly_IsBgIdBgActor(bgId)) {
                 DynaPolyActor* dyna1 = DynaPoly_GetActor(&play->colCtx,bgId);
-                Actor* actor1 = play->actorCtx.actorLists[ACTORCAT_BG].head;
+                Actor* actor1 = &dyna1->actor;
 
-                while (actor1 != NULL) {
-                    if (ACTOR_BG_SPOT08_ICEBLOCK == actor1->id) {
-                        if (dyna1 == &((BgSpot08Iceblock*)actor1)->dyna) {
-                            if (this->actor.params == ARROW_FIRE) {
-                                if (BgSpot08Iceblock_thaw(actor1))
-                                    Actor_Kill(&this->actor);
-                            } else if (this->actor.params == ARROW_ICE) {
-                                BgSpot08Iceblock_freeze(actor1);
-                            }
-                        }
+                if (ACTOR_BG_SPOT08_ICEBLOCK == actor1->id) {
+                    if (this->actor.params == ARROW_FIRE) {
+                        if (BgSpot08Iceblock_thaw(actor1))
+                            Actor_Kill(&this->actor);
+                    } else if (this->actor.params == ARROW_ICE) {
+                        BgSpot08Iceblock_freeze(actor1);
                     }
-                    actor1 = actor1->next;
                 }
             }
         }
