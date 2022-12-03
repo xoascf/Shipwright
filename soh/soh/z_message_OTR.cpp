@@ -369,7 +369,7 @@ extern "C" void OTRMessage_Init()
         questMessageTableID, SariaMsg+13,
         {
           TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
-          "\x0F, what are all those creatures&making those curious sounds?^There are those ones that make&that loud MUUUOAH sound.&And then, there's something else...^I don't even know if you can&hear it, maybe it's only&my Kokiri ears that can pick&it up, but it's there,^making this incredibly strange&high pitched noise.^What is that?\x0B\x02",
+          "\x0F, what are all those creatures&making those curious sounds?^There are those ones that make&that loud MUUUOAH sound.&And then, there's something else...^I don't even know if you can&hear it, but it's there,^making this incredibly strange&high pitched noise.^What is that?\x0B\x02",
           "",
           "",
         }
@@ -378,7 +378,7 @@ extern "C" void OTRMessage_Init()
         questMessageTableID, SariaMsg+14,
         {
           TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
-          "\x0F, what are all those creatures&making those curious sounds?^There are those ones that make&that loud MUUUOAH sound.&There are also those&ones that sometimes huff^and scratch and go NIIIHEHE!&And then, there's something else...^I don't even know if you can&hear it, maybe it's only&my Kokiri ears that can pick&it up, but it's there,^making this incredibly strange&high pitched noise.^What is that?\x0B\x02",
+          "\x0F, what are all those creatures&making those curious sounds?^There are those ones that make&that loud MUUUOAH sound.&There are also those&ones that sometimes huff^and scratch and go NIIIHEHE!&And then, there's something else...^I don't even know if you can&hear it, but it's there,^making this incredibly strange&high pitched noise.^What is that?\x0B\x02",
           "",
           "",
         }
