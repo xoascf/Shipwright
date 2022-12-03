@@ -120,8 +120,11 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
     { SCENE_LINK_HOME, {
         { 0x00, {
             //{ -1, -1, { ACTOR_EN_ITEM00, 0, 0, 0, 0, 0, 0, 0x100+(uint16_t)ITEM00_HEART_PIECE}},
-            { 0, -1, { ACTOR_EN_SA, 100,0,1, 0,-12350,0, 0x0}},
-            { -1, -1, { ACTOR_EN_WONDER_TALK2, -92,25,-8, 0,15350,0, 0x8000|(0x3D<<6)|0x3f /*0x8abf*/}},
+            { -1, -1, { ACTOR_EN_SA, 100,0,1, 0,-12350,0, 0x0}},
+            { 0, -1, { ACTOR_EN_WONDER_TALK2, -92,25,-8, 0,15350,0, 0x8000|(0x3D<<6)|0x3f /*0x8abf*/}},
+            { 1, -1, { ACTOR_EN_WONDER_TALK2, -92,25,-8, 0,15350,0, 0x8000|(0x3D<<6)|0x3f /*0x8abf*/}},
+            { 2, -1, { ACTOR_EN_WONDER_TALK2, -92,25,-8, 0,15350,0, 0x8000|(0x3E<<6)|0x3f /*0x8abf*/}},
+            { 3, -1, { ACTOR_EN_WONDER_TALK2, -92,25,-8, 0,15350,0, 0x8000|(0x3E<<6)|0x3f /*0x8abf*/}},
         } },
     } },
     { 0x29, {//Saria's
