@@ -3,7 +3,7 @@
  * Overlay: En_Ru1
  * Description: Ruto (child)
  */
-
+#define INCLUDE_GAME_PRINTF
 #include "z_en_ru1.h"
 #include "objects/object_ru1/object_ru1.h"
 #include "vt.h"
@@ -61,6 +61,9 @@ void func_80AEFBC8(EnRu1* this, PlayState* play);
 void func_80AEFC24(EnRu1* this, PlayState* play);
 void func_80AEFECC(EnRu1* this, PlayState* play);
 void func_80AEFF40(EnRu1* this, PlayState* play);
+void EnRu1_NotAppearing(EnRu1* this, PlayState* play);
+void EnRu1_DateStart(EnRu1* this, PlayState* play);
+void EnRu1_DateInitialTalk(EnRu1* this, PlayState* play);
 
 void func_80AF0278(EnRu1* this, PlayState* play, s32 limbIndex, Vec3s* rot);
 
@@ -116,7 +119,7 @@ static EnRu1ActionFunc sActionFuncs[] = {
     func_80AED414, func_80AEF29C, func_80AEF2AC, func_80AEF2D0, func_80AEF354, func_80AEF3A8, func_80AEEBD4,
     func_80AEEC5C, func_80AEECF0, func_80AEED58, func_80AEEDCC, func_80AEEE34, func_80AEEE9C, func_80AEEF08,
     func_80AEEF5C, func_80AEF9D8, func_80AEFA2C, func_80AEFAAC, func_80AEFB04, func_80AEFB68, func_80AEFCE8,
-    func_80AEFBC8, func_80AEFC24, func_80AEFECC, func_80AEFF40,
+    func_80AEFBC8, func_80AEFC24, func_80AEFECC, func_80AEFF40, EnRu1_NotAppearing, EnRu1_DateStart, EnRu1_DateInitialTalk,
 };
 
 static EnRu1PreLimbDrawFunc sPreLimbDrawFuncs[] = {
@@ -302,7 +305,7 @@ BgBdanObjects* EnRu1_FindSwitch(PlayState* play) {
         actorIt = actorIt->next;
     }
     // "There is no stand"
-    osSyncPrintf(VT_FGCOL(RED) "お立ち台が無い!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
+    //osSyncPrintf(VT_FGCOL(RED) "お立ち台が無い!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
     return NULL;
 }
 
@@ -2122,8 +2125,12 @@ void func_80AEFCE8(EnRu1* this, PlayState* play) {
     }
 }
 
+s32 EnRu1_DateConditionsMet() {
+    return !!(gSaveContext.infTable[20] & 0x100);
+}
+
 void func_80AEFD38(EnRu1* this, PlayState* play) {
-    if ((gSaveContext.eventChkInf[3] & 0x80) && LINK_IS_CHILD) {
+    if ((gSaveContext.eventChkInf[3] & 0x80) && LINK_IS_CHILD && !(EnRu1_DateConditionsMet())) {
         func_80AEB264(this, &gRutoChildWait2Anim, 0, 0, 0);
         this->actor.flags &= ~ACTOR_FLAG_4;
         this->action = 44;
@@ -2197,10 +2204,118 @@ void func_80AEFF94(EnRu1* this, PlayState* play) {
         this->roomNum3 = actorRoom;
         this->roomNum2 = actorRoom;
         // "Ruto switch set"
-        osSyncPrintf("スイッチルトセット!!!!!!!!!!!!!!!!!!!!!!\n");
+        //osSyncPrintf("スイッチルトセット!!!!!!!!!!!!!!!!!!!!!!\n");
     } else {
         // "Ruto switch not set"
-        osSyncPrintf("スイッチルトセットしない!!!!!!!!!!!!!!!!!!!!!!\n");
+        //osSyncPrintf("スイッチルトセットしない!!!!!!!!!!!!!!!!!!!!!!\n");
+        Actor_Kill(&this->actor);
+    }
+}
+
+void EnRu1_NotAppearing(EnRu1* this, PlayState* play) {//46
+    if (EnRu1_DateConditionsMet()) {
+        func_80AEB264(this, &gRutoChildTreadWaterAnim, 0, 0, 0);
+        this->timer = 25;
+        this->action = 47;
+        this->drawConfig = 2;
+        this->alpha = 0.0f;
+        this->actor.speedXZ = 0.0f;
+    }
+}
+
+void EnRu1_DateStart(EnRu1* this, PlayState* play) {
+    s32 cond;
+
+    this->actor.gravity = 0.0f;
+    this->actor.minVelocityY = 0.0f;
+    func_80AEEF68(this, play);
+    EnRu1_UpdateSkelAnime(this);
+    EnRu1_UpdateEyes(this);
+    func_80AEAC10(this, play);
+    func_80AEAECC(this, play);
+    //cond = func_80AEE264(this, play);
+    //func_80AED624(this, play);
+    //func_80AEF170(this, play, cond);
+    if (this->actor.world.pos.z > 3560){
+        if (this->timer > 0) {
+            Math_ApproachS(&this->alpha, 255, 3, 10);
+            this->timer--;
+            if (this->timer == 0) {
+                Audio_PlayActorSound2(&this->actor, NA_SE_EV_OUT_OF_WATER);
+                EnRu1_SpawnSplash(this,play);
+                this->alpha = 255;
+                this->drawConfig = 1;
+            }
+        } else {
+            this->actor.speedXZ = 1.0f;
+        }
+    } else {
+        if (this->timer == 0) {
+            this->timer = 8;
+            func_80AEB264(this, &gRutoChildWait2Anim, 0, -8, 0);
+        } else {
+            this->actor.speedXZ = 0.0f;
+            this->timer--;
+            this->actor.world.pos.y -= 3;//(1336-1313)/8
+
+            if (this->timer <= 0) {
+                this->drawConfig = 1;
+                this->actor.flags |= ACTOR_FLAG_0 | ACTOR_FLAG_3;
+                this->action = 48;
+            }
+        }
+    }
+    Actor_MoveForward(&this->actor);
+    if (this->actor.world.pos.y <= -1336)
+        this->actor.world.pos.y = -1336;
+}
+
+void EnRu1_DateInitialTalk(EnRu1* this, PlayState* play) {
+    s32 cond;
+
+    func_80AEEF68(this, play);
+    EnRu1_UpdateSkelAnime(this);
+    EnRu1_UpdateEyes(this);
+    func_80AEAC10(this, play);
+    func_80AEAECC(this, play);
+    cond = func_80AEE264(this, play);
+    func_80AED624(this, play);
+    func_80AEF170(this, play, cond);
+}
+
+void EnRu1_LakeDateSpawn(EnRu1* this, PlayState* play) {
+    s8 actorRoom;
+    if (LINK_IS_CHILD) {
+        if ( EnRu1_DateConditionsMet()) {//If the date start time is passed
+            if (!func_80AEB020(this, play)) {
+                func_80AEB264(this, &gRutoChildWait2Anim, 0, 0, 0);
+                const Vec3f dateStartPos = {-918,-1336,3560};
+                this->actor.world.pos = dateStartPos;
+                actorRoom = this->actor.room;
+                this->drawConfig = 1;
+                this->actor.flags |= ACTOR_FLAG_0 | ACTOR_FLAG_3;
+                this->action = 48;
+                this->actor.room = -1;
+                this->roomNum1 = actorRoom;
+                this->roomNum3 = actorRoom;
+                this->roomNum2 = actorRoom;
+            } else {
+                Actor_Kill(&this->actor);
+            }
+        } else {//Otherwise spawn a 'dormant' Ruto, who will wait until the right time
+            func_80AEB264(this, &gRutoChildTreadWaterAnim, 0, 0, 0);
+            const Vec3f dateStartPos = {-918,-1313,3734};
+            this->actor.world.pos = dateStartPos;
+            actorRoom = this->actor.room;
+            this->drawConfig = 0;
+            this->actor.flags &= ~(ACTOR_FLAG_0 | ACTOR_FLAG_3);
+            this->action = 46;
+            this->actor.room = -1;
+            this->roomNum1 = actorRoom;
+            this->roomNum3 = actorRoom;
+            this->roomNum2 = actorRoom;
+        }
+    } else {
         Actor_Kill(&this->actor);
     }
 }
@@ -2218,16 +2333,18 @@ void EnRu1_Update(Actor* thisx, PlayState* play) {
 
     if (this->action < 0 || this->action >= ARRAY_COUNT(sActionFuncs) || sActionFuncs[this->action] == NULL) {
         // "Main mode is improper!"
-        osSyncPrintf(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
+        //osSyncPrintf(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
 
+    osSyncPrintf("Ruto Action: %d",this->action);
     sActionFuncs[this->action](this, play);
 }
 
 void EnRu1_Init(Actor* thisx, PlayState* play) {
     s32 pad;
     EnRu1* this = (EnRu1*)thisx;
+    this->timer = 0;
 
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
     SkelAnime_InitFlex(play, &this->skelAnime, &gRutoChildSkel, NULL, this->jointTable, this->morphTable, 17);
@@ -2257,10 +2374,13 @@ void EnRu1_Init(Actor* thisx, PlayState* play) {
         case 10:
             func_80AF0050(this, play);
             break;
+        case 11:
+            EnRu1_LakeDateSpawn(this, play);
+            break;
         default:
             Actor_Kill(&this->actor);
             // "Relevant arge_data = %d unacceptable"
-            osSyncPrintf("該当 arge_data = %d 無し\n", func_80AEADF0(this));
+            //osSyncPrintf("該当 arge_data = %d 無し\n", func_80AEADF0(this));
             break;
     }
 }
@@ -2287,7 +2407,7 @@ s32 EnRu1_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* p
 
     if ((this->unk_290 < 0) || (this->unk_290 > 0) || (*sPreLimbDrawFuncs[this->unk_290] == NULL)) {
         // "Neck rotation mode is improper!"
-        osSyncPrintf(VT_FGCOL(RED) "首回しモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
+        //osSyncPrintf(VT_FGCOL(RED) "首回しモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
     } else {
         sPreLimbDrawFuncs[this->unk_290](this, play, limbIndex, rot);
     }
@@ -2369,7 +2489,7 @@ void EnRu1_Draw(Actor* thisx, PlayState* play) {
 
     if (this->drawConfig < 0 || this->drawConfig >= ARRAY_COUNT(sDrawFuncs) || sDrawFuncs[this->drawConfig] == 0) {
         // "Draw mode is improper!"
-        osSyncPrintf(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
+        //osSyncPrintf(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
     sDrawFuncs[this->drawConfig](this, play);
