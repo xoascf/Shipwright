@@ -1294,8 +1294,6 @@ void Environment_Update(PlayState* play, EnvironmentContext* envCtx, LightContex
     }
 }
 
-#define DAYS_IN_CYCLE 6
-
 u8 Moon_Colors[][2][3] = {
     {{245,255,225}, {100,90,50}},
     {{140,160,220}, {30,30,80}},
