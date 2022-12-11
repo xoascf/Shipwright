@@ -64,6 +64,7 @@ void func_80AEFF40(EnRu1* this, PlayState* play);
 void EnRu1_NotAppearing(EnRu1* this, PlayState* play);
 void EnRu1_DateStart(EnRu1* this, PlayState* play);
 void EnRu1_DateInitialTalk(EnRu1* this, PlayState* play);
+void EnRu1_DateDuringTalk(EnRu1* this, PlayState* play);
 
 void func_80AF0278(EnRu1* this, PlayState* play, s32 limbIndex, Vec3s* rot);
 
@@ -120,6 +121,7 @@ static EnRu1ActionFunc sActionFuncs[] = {
     func_80AEEC5C, func_80AEECF0, func_80AEED58, func_80AEEDCC, func_80AEEE34, func_80AEEE9C, func_80AEEF08,
     func_80AEEF5C, func_80AEF9D8, func_80AEFA2C, func_80AEFAAC, func_80AEFB04, func_80AEFB68, func_80AEFCE8,
     func_80AEFBC8, func_80AEFC24, func_80AEFECC, func_80AEFF40, EnRu1_NotAppearing, EnRu1_DateStart, EnRu1_DateInitialTalk,
+    EnRu1_DateDuringTalk,
 };
 
 static EnRu1PreLimbDrawFunc sPreLimbDrawFuncs[] = {
@@ -2125,8 +2127,90 @@ void func_80AEFCE8(EnRu1* this, PlayState* play) {
     }
 }
 
+void EnRu1_DateInfoReset() {
+    gSaveContext.infTable[20] &= 0xFF;//Stores only the flags used for Ruto's status in the original game
+    gSaveContext.infTable[21] = 0x0;
+}
+
+void EnRu1_DetectDateInfoReset() {
+    if (gSaveContext.RutoDateDay < gSaveContext.totalDays - DAYS_IN_CYCLE) {
+        EnRu1_DateInfoReset();
+    }
+}
+
+void EnRu1_SetupDate() {
+    gSaveContext.infTable[20] |= 0x100;
+    //Assumes that the date night will be the night of the full moon, AKA the first day of the cycle
+    gSaveContext.RutoDateDay = DAYS_IN_CYCLE*(1+(gSaveContext.totalDays-1)/DAYS_IN_CYCLE);
+    if (gSaveContext.RutoDateDay < 0)
+        gSaveContext.RutoDateDay = 0;//Handles the improbable case where you might date Ruto on the first night of the game
+}
+
 s32 EnRu1_DateConditionsMet() {
     return !!(gSaveContext.infTable[20] & 0x100);
+}
+
+void EnRu1_InitiateDate() {
+    gSaveContext.infTable[21] |= 0x0001;
+}
+
+s32 EnRu1_DetermineDateScore() {
+    s32 score = 1000;
+
+    if (!(gSaveContext.infTable[21] & 0x0001) || ! (gSaveContext.infTable[21] & 0x3000)) {//You failed to even show up, you nonce
+        score -= 1000;
+    } else if (gSaveContext.infTable[20] & 0x3000 == 0x1000) {//You showed up late
+        score -= 200;
+    } else if (gSaveContext.infTable[20] & 0x3000 == 0x2000) {//You were early
+        score -= 100;
+    }
+    if (gSaveContext.infTable[20] & 0x4000) {//You were hiding behind the pillars
+        score -100;
+    } else if ((gSaveContext.infTable[20] & 0x3000) == 0x3000) {//She saw you come in view right on time
+        score += 50;
+    }
+
+    if (gSaveContext.infTable[21] & 0x10) {//Other Zoras saw you in the domain on the day
+        score -= 100;
+    }
+
+    if (gSaveContext.infTable[21] & 0x20) {//Other Zoras saw you in Lake Hylia on the day
+        score -= 100;
+    }
+
+    if (gSaveContext.infTable[20] & 0x8000) {//You left Ruto
+        score -= 500;
+    }
+
+    if (!gSaveContext.infTable[20] & 0x800) {//You failed to finish the date in time
+        score -= 500;
+    }
+
+    if (gSaveContext.infTable[20] & 0x600 == 0x600) {//You hurt Ruto
+        score -= 300;
+    } else if (gSaveContext.infTable[20] & 0x600 == 0x400) {//You let her get scared
+        score -= 200;
+    } else if (gSaveContext.infTable[20] & 0x600 == 0x200) {//You made her unconfortable
+        score -= 100;
+    }
+
+    return score;
+}
+
+s32 EnRu1_DateConversation(EnRu1* this, PlayState* play) {
+    if (!Actor_ProcessTalkRequest(&this->actor, play)) {
+        u16 RutoMsg = GetTextID("ruto");
+        this->actor.flags |= ACTOR_FLAG_0 | ACTOR_FLAG_3;
+        if (!(gSaveContext.infTable[20] & 0x3000)) {
+            this->actor.textId = RutoMsg+0;
+            func_8002F2F4(&this->actor, play);
+        } else {
+            this->actor.textId = RutoMsg+1;
+            func_8002F2F4(&this->actor, play);
+        }
+        return false;
+    }
+    return true;
 }
 
 void func_80AEFD38(EnRu1* this, PlayState* play) {
@@ -2214,6 +2298,7 @@ void func_80AEFF94(EnRu1* this, PlayState* play) {
 
 void EnRu1_NotAppearing(EnRu1* this, PlayState* play) {//46
     if (EnRu1_DateConditionsMet()) {
+        EnRu1_InitiateDate();
         func_80AEB264(this, &gRutoChildTreadWaterAnim, 0, 0, 0);
         this->timer = 25;
         this->action = 47;
@@ -2233,12 +2318,9 @@ void EnRu1_DateStart(EnRu1* this, PlayState* play) {
     EnRu1_UpdateEyes(this);
     func_80AEAC10(this, play);
     func_80AEAECC(this, play);
-    //cond = func_80AEE264(this, play);
-    //func_80AED624(this, play);
-    //func_80AEF170(this, play, cond);
     if (this->actor.world.pos.z > 3560){
         if (this->timer > 0) {
-            Math_ApproachS(&this->alpha, 255, 3, 10);
+            Math_ApproachS(&this->alpha, 255, 1, 10);
             this->timer--;
             if (this->timer == 0) {
                 Audio_PlayActorSound2(&this->actor, NA_SE_EV_OUT_OF_WATER);
@@ -2278,9 +2360,33 @@ void EnRu1_DateInitialTalk(EnRu1* this, PlayState* play) {
     EnRu1_UpdateEyes(this);
     func_80AEAC10(this, play);
     func_80AEAECC(this, play);
-    cond = func_80AEE264(this, play);
+    cond = EnRu1_DateConversation(this, play);
     func_80AED624(this, play);
-    func_80AEF170(this, play, cond);
+    if (cond) {
+        this->action = 49;
+    }
+}
+
+s32 EnRu1_IsWillingToSit(EnRu1* this, PlayState* play) {
+    s32 frameCount;
+
+    if (gSaveContext.infTable[21] & 1) {
+        gSaveContext.infTable[20] |= 0x3000;
+        frameCount = Animation_GetLastFrame(&gRutoChildSitAnim);
+        Animation_Change(&this->skelAnime, &gRutoChildSitAnim, 1.0f, 0, frameCount, ANIMMODE_ONCE, -8.0f);
+        play->msgCtx.msgMode = MSGMODE_PAUSED;
+        this->action = 26;
+        this->actor.flags &= ~(ACTOR_FLAG_0 | ACTOR_FLAG_3);
+        return true;
+    }
+    return false;
+}
+
+void EnRu1_DateDuringTalk(EnRu1* this, PlayState* play) {
+    if (func_80AEB174(play) && !EnRu1_IsWillingToSit(this, play)) {
+        Message_CloseTextbox(play);
+        this->action = 48;
+    }
 }
 
 void EnRu1_LakeDateSpawn(EnRu1* this, PlayState* play) {
@@ -2288,6 +2394,7 @@ void EnRu1_LakeDateSpawn(EnRu1* this, PlayState* play) {
     if (LINK_IS_CHILD) {
         if ( EnRu1_DateConditionsMet()) {//If the date start time is passed
             if (!func_80AEB020(this, play)) {
+                EnRu1_InitiateDate();
                 func_80AEB264(this, &gRutoChildWait2Anim, 0, 0, 0);
                 const Vec3f dateStartPos = {-918,-1336,3560};
                 this->actor.world.pos = dateStartPos;

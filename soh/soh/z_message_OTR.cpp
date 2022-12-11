@@ -897,4 +897,9 @@ extern "C" void OTRMessage_Init()
     u16 ZoraMsg = TextIDAllocator::Instance->allocateRange("zora", 30);
 
     MakeNormalMsgEng(ZoraMsg+0, "Wow! I never suspected that&anyone who was not a&Zora could dive like that!^You cannot refuse this token&of my awe!\x0B\x02");
+
+    u16 RutoMsg = TextIDAllocator::Instance->allocateRange("ruto", 20);
+
+    MakeNormalMsgEng(RutoMsg+0, "You finally showed up!&Be a man and cary me&out to the middle of the lake!\x0B\x02");
+    MakeNormalMsgEng(RutoMsg+1, "You better pick me up again!\x0B\x02");
 }
