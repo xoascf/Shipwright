@@ -56,6 +56,7 @@ typedef struct EnRu1 {
     /* 0x0370 */ f32 unk_370;
     /* 0x0374 */ struct_80034A14_arg1 unk_374;
                  s32 timer;
+                 u32 dateProgress;
 } EnRu1; // size = 0x039C
 
 typedef enum {

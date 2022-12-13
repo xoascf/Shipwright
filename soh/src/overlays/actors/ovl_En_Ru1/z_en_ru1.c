@@ -15,52 +15,52 @@ void EnRu1_Destroy(Actor* thisx, PlayState* play);
 void EnRu1_Update(Actor* thisx, PlayState* play);
 void EnRu1_Draw(Actor* thisx, PlayState* play);
 
-void func_80AEC0B4(EnRu1* this, PlayState* play);
-void func_80AEC100(EnRu1* this, PlayState* play);
-void func_80AEC130(EnRu1* this, PlayState* play);
-void func_80AEC17C(EnRu1* this, PlayState* play);
-void func_80AEC1D4(EnRu1* this, PlayState* play);
-void func_80AEC244(EnRu1* this, PlayState* play);
-void func_80AEC2C0(EnRu1* this, PlayState* play);
-void func_80AECA94(EnRu1* this, PlayState* play);
-void func_80AECAB4(EnRu1* this, PlayState* play);
-void func_80AECAD4(EnRu1* this, PlayState* play);
-void func_80AECB18(EnRu1* this, PlayState* play);
-void func_80AECB60(EnRu1* this, PlayState* play);
-void func_80AECBB8(EnRu1* this, PlayState* play);
-void func_80AECC1C(EnRu1* this, PlayState* play);
-void func_80AECC84(EnRu1* this, PlayState* play);
-void func_80AED304(EnRu1* this, PlayState* play);
-void func_80AED324(EnRu1* this, PlayState* play);
-void func_80AED344(EnRu1* this, PlayState* play);
-void func_80AED374(EnRu1* this, PlayState* play);
-void func_80AED3A4(EnRu1* this, PlayState* play);
-void func_80AED3E0(EnRu1* this, PlayState* play);
-void func_80AED414(EnRu1* this, PlayState* play);
-void func_80AEF29C(EnRu1* this, PlayState* play);
-void func_80AEF2AC(EnRu1* this, PlayState* play);
-void func_80AEF2D0(EnRu1* this, PlayState* play);
-void func_80AEF354(EnRu1* this, PlayState* play);
-void func_80AEF3A8(EnRu1* this, PlayState* play);
-void func_80AEEBD4(EnRu1* this, PlayState* play);
-void func_80AEEC5C(EnRu1* this, PlayState* play);
-void func_80AEECF0(EnRu1* this, PlayState* play);
-void func_80AEED58(EnRu1* this, PlayState* play);
-void func_80AEEDCC(EnRu1* this, PlayState* play);
-void func_80AEEE34(EnRu1* this, PlayState* play);
-void func_80AEEE9C(EnRu1* this, PlayState* play);
-void func_80AEEF08(EnRu1* this, PlayState* play);
-void func_80AEEF5C(EnRu1* this, PlayState* play);
-void func_80AEF9D8(EnRu1* this, PlayState* play);
-void func_80AEFA2C(EnRu1* this, PlayState* play);
-void func_80AEFAAC(EnRu1* this, PlayState* play);
-void func_80AEFB04(EnRu1* this, PlayState* play);
-void func_80AEFB68(EnRu1* this, PlayState* play);
-void func_80AEFCE8(EnRu1* this, PlayState* play);
-void func_80AEFBC8(EnRu1* this, PlayState* play);
-void func_80AEFC24(EnRu1* this, PlayState* play);
-void func_80AEFECC(EnRu1* this, PlayState* play);
-void func_80AEFF40(EnRu1* this, PlayState* play);
+void EnRu1_Action0(EnRu1* this, PlayState* play);
+void EnRu1_Action1(EnRu1* this, PlayState* play);
+void EnRu1_Action2(EnRu1* this, PlayState* play);
+void EnRu1_Action3(EnRu1* this, PlayState* play);
+void EnRu1_Action4(EnRu1* this, PlayState* play);
+void EnRu1_Action5(EnRu1* this, PlayState* play);
+void EnRu1_Action6(EnRu1* this, PlayState* play);
+void EnRu1_Action7(EnRu1* this, PlayState* play);
+void EnRu1_Action8(EnRu1* this, PlayState* play);
+void EnRu1_Action9(EnRu1* this, PlayState* play);
+void EnRu1_Action10(EnRu1* this, PlayState* play);
+void EnRu1_Action11(EnRu1* this, PlayState* play);
+void EnRu1_Action12(EnRu1* this, PlayState* play);
+void EnRu1_Action13(EnRu1* this, PlayState* play);
+void EnRu1_Action14(EnRu1* this, PlayState* play);
+void EnRu1_Action15(EnRu1* this, PlayState* play);
+void EnRu1_Action16(EnRu1* this, PlayState* play);
+void EnRu1_Action17(EnRu1* this, PlayState* play);
+void EnRu1_Action18(EnRu1* this, PlayState* play);
+void EnRu1_Action19(EnRu1* this, PlayState* play);
+void EnRu1_Action20(EnRu1* this, PlayState* play);
+void EnRu1_Action21(EnRu1* this, PlayState* play);
+void EnRu1_Action22(EnRu1* this, PlayState* play);
+void EnRu1_Action23(EnRu1* this, PlayState* play);
+void EnRu1_Action24(EnRu1* this, PlayState* play);
+void EnRu1_Action25(EnRu1* this, PlayState* play);
+void EnRu1_Action26(EnRu1* this, PlayState* play);
+void EnRu1_Action27(EnRu1* this, PlayState* play);
+void EnRu1_Action28(EnRu1* this, PlayState* play);
+void EnRu1_Action29(EnRu1* this, PlayState* play);
+void EnRu1_Action30(EnRu1* this, PlayState* play);
+void EnRu1_Action31(EnRu1* this, PlayState* play);
+void EnRu1_Action32(EnRu1* this, PlayState* play);
+void EnRu1_Action33(EnRu1* this, PlayState* play);
+void EnRu1_Action34(EnRu1* this, PlayState* play);
+void EnRu1_Action35(EnRu1* this, PlayState* play);
+void EnRu1_Action36(EnRu1* this, PlayState* play);
+void EnRu1_Action37(EnRu1* this, PlayState* play);
+void EnRu1_Action38(EnRu1* this, PlayState* play);
+void EnRu1_Action39(EnRu1* this, PlayState* play);
+void EnRu1_Action40(EnRu1* this, PlayState* play);
+void EnRu1_Action41(EnRu1* this, PlayState* play);
+void EnRu1_Action42(EnRu1* this, PlayState* play);
+void EnRu1_Action43(EnRu1* this, PlayState* play);
+void EnRu1_Action44(EnRu1* this, PlayState* play);
+void EnRu1_Action45(EnRu1* this, PlayState* play);
 void EnRu1_NotAppearing(EnRu1* this, PlayState* play);
 void EnRu1_DateStart(EnRu1* this, PlayState* play);
 void EnRu1_DateInitialTalk(EnRu1* this, PlayState* play);
@@ -114,13 +114,13 @@ static s32 sUnused = 0;
 static u32 D_80AF1938 = 0;
 
 static EnRu1ActionFunc sActionFuncs[] = {
-    func_80AEC0B4, func_80AEC100, func_80AEC130, func_80AEC17C, func_80AEC1D4, func_80AEC244, func_80AEC2C0,
-    func_80AECA94, func_80AECAB4, func_80AECAD4, func_80AECB18, func_80AECB60, func_80AECBB8, func_80AECC1C,
-    func_80AECC84, func_80AED304, func_80AED324, func_80AED344, func_80AED374, func_80AED3A4, func_80AED3E0,
-    func_80AED414, func_80AEF29C, func_80AEF2AC, func_80AEF2D0, func_80AEF354, func_80AEF3A8, func_80AEEBD4,
-    func_80AEEC5C, func_80AEECF0, func_80AEED58, func_80AEEDCC, func_80AEEE34, func_80AEEE9C, func_80AEEF08,
-    func_80AEEF5C, func_80AEF9D8, func_80AEFA2C, func_80AEFAAC, func_80AEFB04, func_80AEFB68, func_80AEFCE8,
-    func_80AEFBC8, func_80AEFC24, func_80AEFECC, func_80AEFF40, EnRu1_NotAppearing, EnRu1_DateStart, EnRu1_DateInitialTalk,
+    EnRu1_Action0, EnRu1_Action1, EnRu1_Action2, EnRu1_Action3, EnRu1_Action4, EnRu1_Action5, EnRu1_Action6,
+    EnRu1_Action7, EnRu1_Action8, EnRu1_Action9, EnRu1_Action10, EnRu1_Action11, EnRu1_Action12, EnRu1_Action13,
+    EnRu1_Action14, EnRu1_Action15, EnRu1_Action16, EnRu1_Action17, EnRu1_Action18, EnRu1_Action19, EnRu1_Action20,
+    EnRu1_Action21, EnRu1_Action22, EnRu1_Action23, EnRu1_Action24, EnRu1_Action25, EnRu1_Action26, EnRu1_Action27,
+    EnRu1_Action28, EnRu1_Action29, EnRu1_Action30, EnRu1_Action31, EnRu1_Action32, EnRu1_Action33, EnRu1_Action34,
+    EnRu1_Action35, EnRu1_Action36, EnRu1_Action37, EnRu1_Action38, EnRu1_Action39, EnRu1_Action40, EnRu1_Action41,
+    EnRu1_Action42, EnRu1_Action43, EnRu1_Action44, EnRu1_Action45, EnRu1_NotAppearing, EnRu1_DateStart, EnRu1_DateInitialTalk,
     EnRu1_DateDuringTalk,
 };
 
@@ -339,6 +339,10 @@ Actor* func_80AEB124(PlayState* play) {
 
 s32 func_80AEB174(PlayState* play) {
     return (Message_GetState(&play->msgCtx) == TEXT_STATE_EVENT) && Message_ShouldAdvance(play);
+}
+
+s32 EnRu1_HandleMessageChoice(PlayState* play) {
+    return (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE) && Message_ShouldAdvance(play);
 }
 
 s32 func_80AEB1B4(PlayState* play) {
@@ -701,7 +705,7 @@ void func_80AEC070(EnRu1* this, PlayState* play, UNK_TYPE arg2) {
     }
 }
 
-void func_80AEC0B4(EnRu1* this, PlayState* play) {
+void EnRu1_Action0(EnRu1* this, PlayState* play) {
     func_80AEB89C(this, play);
     EnRu1_UpdateSkelAnime(this);
     func_80AEBC84(this, play);
@@ -709,12 +713,12 @@ void func_80AEC0B4(EnRu1* this, PlayState* play) {
     func_80AEBD1C(this, play);
 }
 
-void func_80AEC100(EnRu1* this, PlayState* play) {
+void EnRu1_Action1(EnRu1* this, PlayState* play) {
     func_80AEBAFC(this);
     func_80AEBD94(this, play);
 }
 
-void func_80AEC130(EnRu1* this, PlayState* play) {
+void EnRu1_Action2(EnRu1* this, PlayState* play) {
     s32 something = EnRu1_UpdateSkelAnime(this);
 
     func_80AEAECC(this, play);
@@ -722,7 +726,7 @@ void func_80AEC130(EnRu1* this, PlayState* play) {
     func_80AEBE3C(this, play, something);
 }
 
-void func_80AEC17C(EnRu1* this, PlayState* play) {
+void EnRu1_Action3(EnRu1* this, PlayState* play) {
     func_80AEB974(this, play);
     func_80AEAECC(this, play);
     EnRu1_UpdateSkelAnime(this);
@@ -730,7 +734,7 @@ void func_80AEC17C(EnRu1* this, PlayState* play) {
     func_80AEBEC8(this, play);
 }
 
-void func_80AEC1D4(EnRu1* this, PlayState* play) {
+void EnRu1_Action4(EnRu1* this, PlayState* play) {
     s32 something;
 
     something = EnRu1_UpdateSkelAnime(this);
@@ -742,7 +746,7 @@ void func_80AEC1D4(EnRu1* this, PlayState* play) {
     func_80AEBF60(this, play);
 }
 
-void func_80AEC244(EnRu1* this, PlayState* play) {
+void EnRu1_Action5(EnRu1* this, PlayState* play) {
     s32 something;
 
     something = EnRu1_UpdateSkelAnime(this);
@@ -755,7 +759,7 @@ void func_80AEC244(EnRu1* this, PlayState* play) {
     func_80AEBFD8(this, play);
 }
 
-void func_80AEC2C0(EnRu1* this, PlayState* play) {
+void EnRu1_Action6(EnRu1* this, PlayState* play) {
     s32 something;
 
     something = EnRu1_UpdateSkelAnime(this);
@@ -938,22 +942,22 @@ void func_80AECA44(EnRu1* this, PlayState* play) {
     }
 }
 
-void func_80AECA94(EnRu1* this, PlayState* play) {
+void EnRu1_Action7(EnRu1* this, PlayState* play) {
     func_80AEC780(this, play);
 }
 
-void func_80AECAB4(EnRu1* this, PlayState* play) {
+void EnRu1_Action8(EnRu1* this, PlayState* play) {
     func_80AEC81C(this, play);
 }
 
-void func_80AECAD4(EnRu1* this, PlayState* play) {
+void EnRu1_Action9(EnRu1* this, PlayState* play) {
     EnRu1_UpdateSkelAnime(this);
     EnRu1_UpdateEyes(this);
     func_80AEAECC(this, play);
     func_80AEC8B8(this, play);
 }
 
-void func_80AECB18(EnRu1* this, PlayState* play) {
+void EnRu1_Action10(EnRu1* this, PlayState* play) {
     s32 something;
 
     something = EnRu1_UpdateSkelAnime(this);
@@ -962,7 +966,7 @@ void func_80AECB18(EnRu1* this, PlayState* play) {
     func_80AEC93C(this, something);
 }
 
-void func_80AECB60(EnRu1* this, PlayState* play) {
+void EnRu1_Action11(EnRu1* this, PlayState* play) {
     func_80AEC40C(this);
     EnRu1_UpdateSkelAnime(this);
     EnRu1_UpdateEyes(this);
@@ -971,7 +975,7 @@ void func_80AECB60(EnRu1* this, PlayState* play) {
     func_80AEC9C4(this);
 }
 
-void func_80AECBB8(EnRu1* this, PlayState* play) {
+void EnRu1_Action12(EnRu1* this, PlayState* play) {
     func_80AEC4CC(this);
     func_80AEC6E4(this, play);
     EnRu1_UpdateSkelAnime(this);
@@ -981,7 +985,7 @@ void func_80AECBB8(EnRu1* this, PlayState* play) {
     func_80AECA18(this);
 }
 
-void func_80AECC1C(EnRu1* this, PlayState* play) {
+void EnRu1_Action13(EnRu1* this, PlayState* play) {
     func_80AEC4F4(this);
     func_80AEC6E4(this, play);
     EnRu1_UpdateSkelAnime(this);
@@ -991,7 +995,7 @@ void func_80AECC1C(EnRu1* this, PlayState* play) {
     func_80AECA44(this, play);
 }
 
-void func_80AECC84(EnRu1* this, PlayState* play) {
+void EnRu1_Action14(EnRu1* this, PlayState* play) {
     if (play->csCtx.state == CS_STATE_IDLE) {
         Actor_Kill(&this->actor);
     }
@@ -1146,36 +1150,36 @@ void func_80AED218(EnRu1* this, UNK_TYPE arg1) {
     }
 }
 
-void func_80AED304(EnRu1* this, PlayState* play) {
+void EnRu1_Action15(EnRu1* this, PlayState* play) {
     func_80AED0C8(this, play);
 }
 
-void func_80AED324(EnRu1* this, PlayState* play) {
+void EnRu1_Action16(EnRu1* this, PlayState* play) {
     func_80AED0D8(this, play);
 }
 
-void func_80AED344(EnRu1* this, PlayState* play) {
+void EnRu1_Action17(EnRu1* this, PlayState* play) {
     func_80AECE04(this, play);
     EnRu1_UpdateSkelAnime(this);
     func_80AED110(this);
 }
 
-void func_80AED374(EnRu1* this, PlayState* play) {
+void EnRu1_Action18(EnRu1* this, PlayState* play) {
     EnRu1_UpdateSkelAnime(this);
     func_80AED154(this, play);
 }
 
-void func_80AED3A4(EnRu1* this, PlayState* play) {
+void EnRu1_Action19(EnRu1* this, PlayState* play) {
     EnRu1_UpdateSkelAnime(this);
     func_80AED19C(this, func_80AECF6C(this, play));
 }
 
-void func_80AED3E0(EnRu1* this, PlayState* play) {
+void EnRu1_Action20(EnRu1* this, PlayState* play) {
     func_80AEAECC(this, play);
     func_80AED218(this, EnRu1_UpdateSkelAnime(this));
 }
 
-void func_80AED414(EnRu1* this, PlayState* play) {
+void EnRu1_Action21(EnRu1* this, PlayState* play) {
     func_80AECE20(this, play);
     func_80AEAECC(this, play);
     EnRu1_UpdateSkelAnime(this);
@@ -1707,7 +1711,7 @@ void func_80AEEBB4(EnRu1* this, PlayState* play) {
     func_8002F580(&this->actor, play);
 }
 
-void func_80AEEBD4(EnRu1* this, PlayState* play) {
+void EnRu1_Action27(EnRu1* this, PlayState* play) {
     func_80AED83C(this);
     func_80AEAC54(this, play);
     func_80AEAECC(this, play);
@@ -1719,7 +1723,7 @@ void func_80AEEBD4(EnRu1* this, PlayState* play) {
     func_80AEDAE0(this, play);
 }
 
-void func_80AEEC5C(EnRu1* this, PlayState* play) {
+void EnRu1_Action28(EnRu1* this, PlayState* play) {
     func_80AED83C(this);
     func_80AEACDC(this, play);
     func_80AEAECC(this, play);
@@ -1732,7 +1736,7 @@ void func_80AEEC5C(EnRu1* this, PlayState* play) {
     func_80AEDAE0(this, play);
 }
 
-void func_80AEECF0(EnRu1* this, PlayState* play) {
+void EnRu1_Action29(EnRu1* this, PlayState* play) {
     func_80AED83C(this);
     func_80AEAECC(this, play);
     func_80AEE050(this);
@@ -1742,7 +1746,7 @@ void func_80AEECF0(EnRu1* this, PlayState* play) {
     func_80AED624(this, play);
 }
 
-void func_80AEED58(EnRu1* this, PlayState* play) {
+void EnRu1_Action30(EnRu1* this, PlayState* play) {
     func_80AED83C(this);
     func_80AEAECC(this, play);
     Actor_MoveForward(&this->actor);
@@ -1753,7 +1757,7 @@ void func_80AEED58(EnRu1* this, PlayState* play) {
     func_80AEDAE0(this, play);
 }
 
-void func_80AEEDCC(EnRu1* this, PlayState* play) {
+void EnRu1_Action31(EnRu1* this, PlayState* play) {
     func_80AED8DC(this);
     EnRu1_UpdateSkelAnime(this);
     func_80AEAECC(this, play);
@@ -1763,7 +1767,7 @@ void func_80AEEDCC(EnRu1* this, PlayState* play) {
     func_80AEE7C4(this, play);
 }
 
-void func_80AEEE34(EnRu1* this, PlayState* play) {
+void EnRu1_Action32(EnRu1* this, PlayState* play) {
     func_80AED83C(this);
     EnRu1_UpdateSkelAnime(this);
     func_80AEAECC(this, play);
@@ -1773,7 +1777,7 @@ void func_80AEEE34(EnRu1* this, PlayState* play) {
     func_80AEE7C4(this, play);
 }
 
-void func_80AEEE9C(EnRu1* this, PlayState* play) {
+void EnRu1_Action33(EnRu1* this, PlayState* play) {
     func_80AED83C(this);
     func_80AEAECC(this, play);
     func_80AEDFF4(this, play);
@@ -1783,7 +1787,7 @@ void func_80AEEE9C(EnRu1* this, PlayState* play) {
     func_80AED624(this, play);
 }
 
-void func_80AEEF08(EnRu1* this, PlayState* play) {
+void EnRu1_Action34(EnRu1* this, PlayState* play) {
     func_80AED83C(this);
     EnRu1_UpdateSkelAnime(this);
     func_80AEAECC(this, play);
@@ -1791,7 +1795,7 @@ void func_80AEEF08(EnRu1* this, PlayState* play) {
     func_80AEE628(this, play);
 }
 
-void func_80AEEF5C(EnRu1* this, PlayState* play) {
+void EnRu1_Action35(EnRu1* this, PlayState* play) {
 }
 
 void func_80AEEF68(EnRu1* this, PlayState* play) {
@@ -1862,17 +1866,17 @@ void func_80AEF1F0(EnRu1* this, PlayState* play, UNK_TYPE arg2) {
     }
 }
 
-void func_80AEF29C(EnRu1* this, PlayState* play) {
+void EnRu1_Action22(EnRu1* this, PlayState* play) {
     this->action = 23;
 }
 
-void func_80AEF2AC(EnRu1* this, PlayState* play) {
+void EnRu1_Action23(EnRu1* this, PlayState* play) {
     this->action = 24;
     this->drawConfig = 1;
     this->actor.flags |= ACTOR_FLAG_0 | ACTOR_FLAG_3;
 }
 
-void func_80AEF2D0(EnRu1* this, PlayState* play) {
+void EnRu1_Action24(EnRu1* this, PlayState* play) {
     s32 cond;
 
     func_80AEEF68(this, play);
@@ -1885,7 +1889,7 @@ void func_80AEF2D0(EnRu1* this, PlayState* play) {
     func_80AEF170(this, play, cond);
 }
 
-void func_80AEF354(EnRu1* this, PlayState* play) {
+void EnRu1_Action25(EnRu1* this, PlayState* play) {
     func_80AEEFEC(this, play);
     EnRu1_UpdateSkelAnime(this);
     EnRu1_UpdateEyes(this);
@@ -1893,7 +1897,7 @@ void func_80AEF354(EnRu1* this, PlayState* play) {
     func_80AEF188(this, play);
 }
 
-void func_80AEF3A8(EnRu1* this, PlayState* play) {
+void EnRu1_Action26(EnRu1* this, PlayState* play) {
     s32 something;
 
     func_80AED83C(this);
@@ -2042,7 +2046,7 @@ void func_80AEF99C(EnRu1* this, PlayState* play) {
     }
 }
 
-void func_80AEF9D8(EnRu1* this, PlayState* play) {
+void EnRu1_Action36(EnRu1* this, PlayState* play) {
     func_80AED83C(this);
     EnRu1_UpdateSkelAnime(this);
     EnRu1_UpdateEyes(this);
@@ -2050,7 +2054,7 @@ void func_80AEF9D8(EnRu1* this, PlayState* play) {
     func_80AEB220(this, play);
 }
 
-void func_80AEFA2C(EnRu1* this, PlayState* play) {
+void EnRu1_Action37(EnRu1* this, PlayState* play) {
     s32 something;
 
     func_80AED83C(this);
@@ -2064,7 +2068,7 @@ void func_80AEFA2C(EnRu1* this, PlayState* play) {
     func_80AEB220(this, play);
 }
 
-void func_80AEFAAC(EnRu1* this, PlayState* play) {
+void EnRu1_Action38(EnRu1* this, PlayState* play) {
     func_80AED83C(this);
     func_80AEAECC(this, play);
     EnRu1_UpdateSkelAnime(this);
@@ -2072,7 +2076,7 @@ void func_80AEFAAC(EnRu1* this, PlayState* play) {
     func_80AEB220(this, play);
 }
 
-void func_80AEFB04(EnRu1* this, PlayState* play) {
+void EnRu1_Action39(EnRu1* this, PlayState* play) {
     s32 something;
 
     func_80AED83C(this);
@@ -2083,7 +2087,7 @@ void func_80AEFB04(EnRu1* this, PlayState* play) {
     func_80AEB220(this, play);
 }
 
-void func_80AEFB68(EnRu1* this, PlayState* play) {
+void EnRu1_Action40(EnRu1* this, PlayState* play) {
     func_80AED83C(this);
     func_80AEAECC(this, play);
     EnRu1_UpdateSkelAnime(this);
@@ -2092,7 +2096,7 @@ void func_80AEFB68(EnRu1* this, PlayState* play) {
     func_80AEB220(this, play);
 }
 
-void func_80AEFBC8(EnRu1* this, PlayState* play) {
+void EnRu1_Action42(EnRu1* this, PlayState* play) {
     func_80AED83C(this);
     func_80AEAECC(this, play);
     EnRu1_UpdateSkelAnime(this);
@@ -2101,7 +2105,7 @@ void func_80AEFBC8(EnRu1* this, PlayState* play) {
     func_80AEF930(this, play);
 }
 
-void func_80AEFC24(EnRu1* this, PlayState* play) {
+void EnRu1_Action43(EnRu1* this, PlayState* play) {
     func_80AED83C(this);
     func_80AEF99C(this, play);
 }
@@ -2118,7 +2122,7 @@ void func_80AEFC54(EnRu1* this, PlayState* play) {
     }
 }
 
-void func_80AEFCE8(EnRu1* this, PlayState* play) {
+void EnRu1_Action41(EnRu1* this, PlayState* play) {
     this->unk_28C = EnRu1_FindSwitch(play);
     if (this->unk_28C != NULL) {
         this->action = 42;
@@ -2139,25 +2143,39 @@ void EnRu1_DetectDateInfoReset() {
 }
 
 void EnRu1_SetupDate() {
-    gSaveContext.infTable[20] |= 0x100;
+    gSaveContext.infTable[21] |= 0x1;
+    gSaveContext.infTable[21] &= ~0x2;
     //Assumes that the date night will be the night of the full moon, AKA the first day of the cycle
     gSaveContext.RutoDateDay = DAYS_IN_CYCLE*(1+(gSaveContext.totalDays-1)/DAYS_IN_CYCLE);
     if (gSaveContext.RutoDateDay < 0)
         gSaveContext.RutoDateDay = 0;//Handles the improbable case where you might date Ruto on the first night of the game
 }
 
+void EnRu1_CancelDate() {
+    gSaveContext.infTable[21] &= ~0x1;
+    gSaveContext.infTable[21] |= 0x2;
+}
+
 s32 EnRu1_DateConditionsMet() {
-    return !!(gSaveContext.infTable[20] & 0x100);
+    return !!(gSaveContext.infTable[21] & 0x1) && IS_NIGHT && getDayOfCycle() == 0;//Night of the full moon
 }
 
 void EnRu1_InitiateDate() {
-    gSaveContext.infTable[21] |= 0x0001;
+    gSaveContext.infTable[21] |= 0x0004;
+}
+
+s32 EnRu1_HadDateStarted() {
+    return (gSaveContext.infTable[21] & 0x0004) || (gSaveContext.infTable[20] & 0x3000);
+}
+
+s32 EnRu1_HadDateEnded() {
+    return ((gSaveContext.infTable[20] & 0x800) || (gSaveContext.infTable[20] & 0x100));
 }
 
 s32 EnRu1_DetermineDateScore() {
     s32 score = 1000;
 
-    if (!(gSaveContext.infTable[21] & 0x0001) || ! (gSaveContext.infTable[21] & 0x3000)) {//You failed to even show up, you nonce
+    if (!(gSaveContext.infTable[21] & 0x0004) || !(gSaveContext.infTable[20] & 0x3000)) {//You failed to even show up, you nonce
         score -= 1000;
     } else if (gSaveContext.infTable[20] & 0x3000 == 0x1000) {//You showed up late
         score -= 200;
@@ -2165,7 +2183,7 @@ s32 EnRu1_DetermineDateScore() {
         score -= 100;
     }
     if (gSaveContext.infTable[20] & 0x4000) {//You were hiding behind the pillars
-        score -100;
+        score -= 100;
     } else if ((gSaveContext.infTable[20] & 0x3000) == 0x3000) {//She saw you come in view right on time
         score += 50;
     }
@@ -2178,11 +2196,15 @@ s32 EnRu1_DetermineDateScore() {
         score -= 100;
     }
 
+    if (gSaveContext.infTable[21] & 0x40) {//The owl saw Ruto in Lake Hylia on the day
+        score -= 50;
+    }
+
     if (gSaveContext.infTable[20] & 0x8000) {//You left Ruto
         score -= 500;
     }
 
-    if (!gSaveContext.infTable[20] & 0x800) {//You failed to finish the date in time
+    if (!(gSaveContext.infTable[20] & 0x800) || (gSaveContext.infTable[20] & 0x100)) {//You failed to finish the date in time
         score -= 500;
     }
 
@@ -2201,7 +2223,7 @@ s32 EnRu1_DateConversation(EnRu1* this, PlayState* play) {
     if (!Actor_ProcessTalkRequest(&this->actor, play)) {
         u16 RutoMsg = GetTextID("ruto");
         this->actor.flags |= ACTOR_FLAG_0 | ACTOR_FLAG_3;
-        if (!(gSaveContext.infTable[20] & 0x3000)) {
+        if (!(gSaveContext.infTable[21] & 0x0004)) {
             this->actor.textId = RutoMsg+0;
             func_8002F2F4(&this->actor, play);
         } else {
@@ -2226,10 +2248,19 @@ void func_80AEFD38(EnRu1* this, PlayState* play) {
 
 s32 func_80AEFDC0(EnRu1* this, PlayState* play) {
     if (!Actor_ProcessTalkRequest(&this->actor, play)) {
+        u16 RutoMsg = GetTextID("ruto");
         this->actor.flags |= ACTOR_FLAG_0 | ACTOR_FLAG_3;
         this->actor.textId = Text_GetFaceReaction(play, 0x1F);
         if (this->actor.textId == 0) {
-            this->actor.textId = 0x402C;
+            if (gSaveContext.infTable[21] & 0x1)
+                this->actor.textId = RutoMsg+3;
+            else if (gSaveContext.infTable[21] & 0x2)
+                this->actor.textId = RutoMsg+4;
+            else if (getDayOfCycle() == DAYS_IN_CYCLE-1) {
+                this->actor.textId = RutoMsg+2;
+            } else {
+                this->actor.textId = 0x402C;
+            }
         }
         func_8002F2F4(&this->actor, play);
         return false;
@@ -2241,6 +2272,21 @@ s32 func_80AEFE38(EnRu1* this, PlayState* play) {
     if (Message_GetState(&play->msgCtx) == TEXT_STATE_CLOSING) {
         this->actor.flags &= ~(ACTOR_FLAG_0 | ACTOR_FLAG_3);
         return true;
+    } else if (EnRu1_HandleMessageChoice(play)) {
+        u16 RutoMsg = GetTextID("ruto");
+        switch (play->msgCtx.choiceIndex) {
+            case 0:
+                this->actor.textId = RutoMsg+3;
+                EnRu1_SetupDate();
+                break;
+
+            case 1:
+                this->actor.textId = RutoMsg+4;
+                EnRu1_CancelDate();
+                break;
+        }
+        Message_ContinueTextbox(play, this->actor.textId);
+        return false;
     }
     return false;
 }
@@ -2257,7 +2303,7 @@ void func_80AEFE9C(EnRu1* this, PlayState* play) {
     }
 }
 
-void func_80AEFECC(EnRu1* this, PlayState* play) {
+void EnRu1_Action44(EnRu1* this, PlayState* play) {
     func_80AEEF68(this, play);
     EnRu1_UpdateSkelAnime(this);
     EnRu1_UpdateEyes(this);
@@ -2266,7 +2312,7 @@ void func_80AEFECC(EnRu1* this, PlayState* play) {
     func_80AEFE84(this, play, func_80AEFDC0(this, play));
 }
 
-void func_80AEFF40(EnRu1* this, PlayState* play) {
+void EnRu1_Action45(EnRu1* this, PlayState* play) {
     func_80AEEFEC(this, play);
     EnRu1_UpdateSkelAnime(this);
     EnRu1_UpdateEyes(this);
@@ -2296,9 +2342,10 @@ void func_80AEFF94(EnRu1* this, PlayState* play) {
     }
 }
 
-void EnRu1_NotAppearing(EnRu1* this, PlayState* play) {//46
+//Action46
+void EnRu1_NotAppearing(EnRu1* this, PlayState* play) {
     if (EnRu1_DateConditionsMet()) {
-        EnRu1_InitiateDate();
+        //EnRu1_InitiateDate();
         func_80AEB264(this, &gRutoChildTreadWaterAnim, 0, 0, 0);
         this->timer = 25;
         this->action = 47;
@@ -2308,6 +2355,7 @@ void EnRu1_NotAppearing(EnRu1* this, PlayState* play) {//46
     }
 }
 
+//Action47
 void EnRu1_DateStart(EnRu1* this, PlayState* play) {
     s32 cond;
 
@@ -2352,8 +2400,24 @@ void EnRu1_DateStart(EnRu1* this, PlayState* play) {
         this->actor.world.pos.y = -1336;
 }
 
+//Action48
 void EnRu1_DateInitialTalk(EnRu1* this, PlayState* play) {
     s32 cond;
+
+    if (!(gSaveContext.infTable[20] & 0x3000)) {
+        Player* player = GET_PLAYER(play);
+        Vec3f headPos = this->actor.world.pos;
+        headPos.y += 60.0f;
+        Vec3f result;
+        CollisionPoly* outPoly;
+        s32 bgID;
+        if (!BgCheck_CheckLineImpl(&play->colCtx,(1<<1),0,&headPos,&player->actor.world.pos,&result,
+                        &outPoly,&bgID,&player->actor,1.0,BgCheck_GetBccFlags(1,1,1,1,1))) {
+            gSaveContext.infTable[20] |= 0x3000;
+            u16 RutoMsg = GetTextID("ruto");
+            Message_StartTextbox(play, RutoMsg+5, NULL);
+        }
+    }
 
     func_80AEEF68(this, play);
     EnRu1_UpdateSkelAnime(this);
@@ -2370,11 +2434,11 @@ void EnRu1_DateInitialTalk(EnRu1* this, PlayState* play) {
 s32 EnRu1_IsWillingToSit(EnRu1* this, PlayState* play) {
     s32 frameCount;
 
-    if (gSaveContext.infTable[21] & 1) {
-        gSaveContext.infTable[20] |= 0x3000;
+    if (1/*gSaveContext.infTable[21] & 4*/) {
         frameCount = Animation_GetLastFrame(&gRutoChildSitAnim);
         Animation_Change(&this->skelAnime, &gRutoChildSitAnim, 1.0f, 0, frameCount, ANIMMODE_ONCE, -8.0f);
         play->msgCtx.msgMode = MSGMODE_PAUSED;
+        EnRu1_InitiateDate();
         this->action = 26;
         this->actor.flags &= ~(ACTOR_FLAG_0 | ACTOR_FLAG_3);
         return true;
@@ -2382,6 +2446,7 @@ s32 EnRu1_IsWillingToSit(EnRu1* this, PlayState* play) {
     return false;
 }
 
+//Action49
 void EnRu1_DateDuringTalk(EnRu1* this, PlayState* play) {
     if (func_80AEB174(play) && !EnRu1_IsWillingToSit(this, play)) {
         Message_CloseTextbox(play);
@@ -2394,7 +2459,7 @@ void EnRu1_LakeDateSpawn(EnRu1* this, PlayState* play) {
     if (LINK_IS_CHILD) {
         if ( EnRu1_DateConditionsMet()) {//If the date start time is passed
             if (!func_80AEB020(this, play)) {
-                EnRu1_InitiateDate();
+                //EnRu1_InitiateDate();
                 func_80AEB264(this, &gRutoChildWait2Anim, 0, 0, 0);
                 const Vec3f dateStartPos = {-918,-1336,3560};
                 this->actor.world.pos = dateStartPos;
@@ -2435,8 +2500,62 @@ void func_80AF0050(EnRu1* this, PlayState* play) {
     this->actor.room = -1;
 }
 
+s32 EnRu1_IsOnIsland(Vec3f cPos) {
+    return -1311 < cPos.x && cPos.x < -420 && 6860 < cPos.z && cPos.z < 7700;
+}
+
 void EnRu1_Update(Actor* thisx, PlayState* play) {
     EnRu1* this = (EnRu1*)thisx;
+
+    if (0x57 == play->sceneNum) {
+        u16 RutoMsg = GetTextID("ruto");
+        Vec3f cPos = this->actor.world.pos;
+
+        if (EnRu1_DateConditionsMet()) {
+            if (!(this->dateProgress & 0x1) &&
+                -3120 < cPos.x && cPos.x < -2950 &&
+                -1100 < cPos.y &&
+                4000 < cPos.z) {
+
+                this->dateProgress |= 0x1;
+                Message_StartTextbox(play, RutoMsg+6, NULL);
+            }
+
+            if (!(this->dateProgress & 0x2) &&
+                -3205 < cPos.x && cPos.x < -2885 &&
+                5915 < cPos.z && cPos.z < 6235 &&
+                (Actor_FindNearby(play,thisx,ACTOR_EN_OWL,ACTORCAT_NPC,300.0f) != NULL)) {
+
+                this->dateProgress |= 0x2;
+                gSaveContext.infTable[21] |= 0x40;
+                Message_StartTextbox(play, RutoMsg+7, NULL);
+            }
+
+            if (!(this->dateProgress & 0x4) &&
+                EnRu1_IsOnIsland(cPos) &&
+                IS_NIGHT) {
+
+                this->dateProgress |= 0x4;
+                Message_StartTextbox(play, RutoMsg+8, NULL);
+            }
+        } else {
+            if (IS_DAY && gSaveContext.RutoDateDay == (gSaveContext.totalDays-1) && EnRu1_HadDateStarted() && !EnRu1_HadDateEnded()) {
+                Player* player = GET_PLAYER(play);
+                if ((this->dateProgress & 0x4) &&
+                    (gSaveContext.infTable[21] & 0x0004) &&
+                    EnRu1_IsOnIsland(cPos) &&
+                    EnRu1_IsOnIsland(player->actor.world.pos) &&
+                    this->action == 27) {
+
+                    gSaveContext.infTable[20] |= 0x800;
+                    Message_StartTextbox(play, RutoMsg+10, NULL);
+                } else {
+                    gSaveContext.infTable[20] |= 0x100;
+                    Message_StartTextbox(play, RutoMsg+9, NULL);
+                }
+            }
+        }
+    }
 
     if (this->action < 0 || this->action >= ARRAY_COUNT(sActionFuncs) || sActionFuncs[this->action] == NULL) {
         // "Main mode is improper!"
@@ -2452,6 +2571,7 @@ void EnRu1_Init(Actor* thisx, PlayState* play) {
     s32 pad;
     EnRu1* this = (EnRu1*)thisx;
     this->timer = 0;
+    this->dateProgress = 0;
 
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
     SkelAnime_InitFlex(play, &this->skelAnime, &gRutoChildSkel, NULL, this->jointTable, this->morphTable, 17);

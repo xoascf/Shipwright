@@ -900,6 +900,17 @@ extern "C" void OTRMessage_Init()
 
     u16 RutoMsg = TextIDAllocator::Instance->allocateRange("ruto", 20);
 
-    MakeNormalMsgEng(RutoMsg+0, "You finally showed up!&Be a man and cary me&out to the middle of the lake!\x0B\x02");
-    MakeNormalMsgEng(RutoMsg+1, "You better pick me up again!\x0B\x02");
+    MakeNormalMsgEng(RutoMsg+0, "You finally showed up!&Be a man and carry me&out to the middle of the lake!\x0B\x02");
+    MakeNormalMsgEng(RutoMsg+1, "Who do you think you are&trying to leave on me?&You better pick me up again!\x0B\x02");
+    MakeNormalMsgEng(RutoMsg+2, "Pssst! Hey, I don't want my&father knowing about our promise&just yet...^But maybe we could get to&know each other a little better,&say tomorrow night...^I'll sneak out to the lake,&and we can meet at nightfall,&under the full moon.^How about that?&\x1B&%gAbsolutely&Uhhh...%w\x02");
+    MakeNormalMsgEng(RutoMsg+3, "Heehee, let's do this!");
+    MakeNormalMsgEng(RutoMsg+4, "Ok, maybe it's a bit too soon.");
+    MakeNormalMsgEng(RutoMsg+5, "\x08Oh, hello there!\016<\x02");
+    MakeNormalMsgEng(RutoMsg+6, "\x08Yes, take me across&to that island&with the big tree.\016<\x02");
+    MakeNormalMsgEng(RutoMsg+7, "\x08Hello Mr. Owl!\016<\x02");
+    MakeNormalMsgEng(RutoMsg+8, "\x08Ok, put me down here,&let's gaze at the stars&and watch the sun rise.\016<\x02");
+    MakeNormalMsgEng(RutoMsg+9, "\x08Oh, the sun is up already,&that's disappointing.\016<\x02");
+    MakeNormalMsgEng(RutoMsg+10, "\x08That was nice!\016<\x02");
+    MakeNormalMsgEng(RutoMsg+11, "\x08Isn't it all so beautiful?&Come closer to me.\016<\x02");
+    MakeNormalMsgEng(RutoMsg+12, "That was really the greatest&night of my life.^With us together here,&there is only one way I can&properly show you how I feel.^And that's with this.\x0B\x02");
 }
