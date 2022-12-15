@@ -941,6 +941,7 @@ void Environment_AdjustLights(PlayState* play, f32 arg1, f32 arg2, f32 arg3, f32
 s32 Environment_GetBgsDayCount(void);
 void Environment_ClearBgsDayCount(void);
 s32 Environment_GetTotalDays(void);
+s32 IsAfterRutosDate(void);
 void Environment_ForcePlaySequence(u16 seqId);
 s32 Environment_IsForcedSequenceDisabled(void);
 void Environment_PlayStormNatureAmbience(PlayState* play);

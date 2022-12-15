@@ -9,6 +9,8 @@
 
 #include "soh/frame_interpolation.h"
 
+#include "src/overlays/actors/ovl_En_Ru1/z_en_ru1.h"
+
 #define FLAGS (ACTOR_FLAG_0 | ACTOR_FLAG_3)
 
 typedef enum {
@@ -364,6 +366,7 @@ void EnZo_SpawnSplashes(EnZo* this) {
 
 u16 func_80B61024(PlayState* play, Actor* thisx) {
     u16 textId;
+    u16 ZoraMsg = GetTextID("zora");
 
     textId = Text_GetFaceReaction(play, 29);
     if (textId != 0) {
@@ -372,18 +375,42 @@ u16 func_80B61024(PlayState* play, Actor* thisx) {
 
     switch (thisx->params & 0x3F) {
         case 8:
+            if (IsAfterRutosDate()) {
+                if ((!(gSaveContext.infTable[21] & 0x0004) && !(gSaveContext.infTable[20] & 0x7000))) {
+                    return ZoraMsg+15;
+                } else if ((!(gSaveContext.infTable[20] & 0x800) && !(gSaveContext.infTable[20] & 0x100))) {
+                    return ZoraMsg+12;
+                } if ((!(gSaveContext.infTable[21] & 0x80) || (gSaveContext.infTable[20] & 0x100))) {
+                    return ZoraMsg+14;
+                }
+            }
             if (gSaveContext.eventChkInf[3] & 1) {
                 return 0x402A;
             }
             break;
 
         case 6:
+            if (EnRu1_DateConditionsMet()) {
+                if (!(gSaveContext.infTable[20] & 0x800) && !(gSaveContext.infTable[20] & 0x100)) {
+                    if (gSaveContext.infTable[21] & 0x8000)
+                        return ZoraMsg+13;
+                    else
+                        return ZoraMsg+16;
+                }
+            }
             return 0x4020;
 
         case 7:
             return 0x4021;
 
         case 0:
+            if (IsAfterRutosDate()) {
+                if ((gSaveContext.infTable[20] & 0x3000 == 0x1000) || (!(gSaveContext.infTable[21] & 0x0004) && !(gSaveContext.infTable[20] & 0x7000))) {//You (at best) showed up late
+                    return ZoraMsg+10;
+                } else if ((gSaveContext.infTable[20] & 0x3000) == 0x2000) {////You were early
+                    return ZoraMsg+9;
+                }
+            }
             if (CHECK_QUEST_ITEM(QUEST_ZORA_SAPPHIRE)) {
                 return 0x402D;
             }
@@ -393,6 +420,13 @@ u16 func_80B61024(PlayState* play, Actor* thisx) {
             break;
 
         case 1:
+            if (IsAfterRutosDate()) {
+                if (gSaveContext.infTable[21] & 0x10) {//You were spotted in the domain
+                    return ZoraMsg+1;
+                } else if (gSaveContext.infTable[21] & 0x20) {//You were spotted in the lake
+                    return ZoraMsg+2;
+                }
+            }
             if (CHECK_QUEST_ITEM(QUEST_ZORA_SAPPHIRE)) {
                 return 0x402E;
             }
@@ -403,6 +437,11 @@ u16 func_80B61024(PlayState* play, Actor* thisx) {
             break;
 
         case 2:
+            if (IsAfterRutosDate()) {
+                if ((((gSaveContext.infTable[20] & 0x3000) == 0x0000) && (gSaveContext.infTable[21] & 0x0004)) || (gSaveContext.infTable[20] & 0x4000)) {//You were hiding
+                    return ZoraMsg+11;
+                }
+            }
             if (CHECK_QUEST_ITEM(QUEST_ZORA_SAPPHIRE)) {
                 return 0x402D;
             }
@@ -415,6 +454,11 @@ u16 func_80B61024(PlayState* play, Actor* thisx) {
             break;
 
         case 3:
+            if (IsAfterRutosDate()) {
+                if ((gSaveContext.infTable[21] & 0x40)) {//She was bothered (by owl or distance or time)
+                    return ZoraMsg+8;
+                }
+            }
             if (CHECK_QUEST_ITEM(QUEST_ZORA_SAPPHIRE)) {
                 return 0x402E;
             }
@@ -424,6 +468,13 @@ u16 func_80B61024(PlayState* play, Actor* thisx) {
             break;
 
         case 4:
+            if (IsAfterRutosDate()) {
+                if (!(gSaveContext.infTable[21] & 0x0004) && !(gSaveContext.infTable[20] & 0x7000)) {//You didn't show up
+                    return ZoraMsg+7;
+                } else if ((gSaveContext.infTable[20] & 0x8000) || (!(gSaveContext.infTable[20] & 0x800) && !(gSaveContext.infTable[20] & 0x100))) {//You left before dawn
+                    return ZoraMsg+6;
+                }
+            }
             if (CHECK_QUEST_ITEM(QUEST_ZORA_SAPPHIRE)) {
                 return 0x402D;
             }
@@ -437,6 +488,15 @@ u16 func_80B61024(PlayState* play, Actor* thisx) {
             break;
 
         case 5:
+            if (IsAfterRutosDate()) {
+                if (gSaveContext.infTable[20] & 0x600 == 0x600) {//You hurt her
+                    return ZoraMsg+3;
+                } else if (gSaveContext.infTable[20] & 0x600 == 0x400){//You scared her
+                    return ZoraMsg+4;
+                } else if (gSaveContext.infTable[20] & 0x600 == 0x200) {//You made her uncomfortable
+                    return ZoraMsg+5;
+                }
+            }
             if (CHECK_QUEST_ITEM(QUEST_ZORA_SAPPHIRE)) {
                 return 0x402E;
             }
@@ -449,6 +509,7 @@ u16 func_80B61024(PlayState* play, Actor* thisx) {
 }
 
 s16 func_80B61298(PlayState* play, Actor* thisx) {
+    u16 ZoraMsg = GetTextID("zora");
     switch (Message_GetState(&play->msgCtx)) {
         case TEXT_STATE_NONE:
         case TEXT_STATE_DONE_HAS_NEXT:
@@ -469,6 +530,10 @@ s16 func_80B61298(PlayState* play, Actor* thisx) {
                     break;
                 case 0x402F:
                     gSaveContext.infTable[18] |= 0x200;
+                    break;
+                default:
+                    if (thisx->textId == ZoraMsg+13)
+                        gSaveContext.infTable[21] |= 0x8000;//Spoken to the perv this time
                     break;
             }
             gSaveContext.eventChkInf[3] |= 1;
@@ -639,6 +704,7 @@ void EnZo_Standing(EnZo* this, PlayState* play) {
 }
 
 void EnZo_DetectPlayerInitially(EnZo* this, PlayState* play) {
+    DetectAndPerformDateInfoReset();
     if (gSaveContext.totalDays == gSaveContext.RutoDateDay && gSaveContext.infTable[21] & 0x1) {
         if (0x58 == play->sceneNum) {
             gSaveContext.infTable[21] |= 0x10;//You you spotted in Zora's Domain during Ruto's date

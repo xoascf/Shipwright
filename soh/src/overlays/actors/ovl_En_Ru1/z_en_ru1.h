@@ -79,4 +79,7 @@ typedef enum {
     /* 15 */ RUTO_CHILD_TORSO
 } RutoLimb;
 
+void DetectAndPerformDateInfoReset(void);
+s32 EnRu1_DateConditionsMet(void);
+
 #endif

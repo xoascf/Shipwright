@@ -41,7 +41,8 @@ uint32_t IsGameMasterQuest();
 #endif
 
 #ifndef __cplusplus
-    void InitOTR(void);
+uint16_t GetTextID(const char* name);
+void InitOTR(void);
 void DeinitOTR(void);
 void VanillaItemTable_Init();
 void OTRAudio_Init();

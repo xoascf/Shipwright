@@ -65,6 +65,7 @@ void EnRu1_NotAppearing(EnRu1* this, PlayState* play);
 void EnRu1_DateStart(EnRu1* this, PlayState* play);
 void EnRu1_DateInitialTalk(EnRu1* this, PlayState* play);
 void EnRu1_DateDuringTalk(EnRu1* this, PlayState* play);
+void EnRu1_GiveItem(EnRu1* this, PlayState* play);
 
 void func_80AF0278(EnRu1* this, PlayState* play, s32 limbIndex, Vec3s* rot);
 s32 EnRu1_DateConditionsMet();
@@ -122,7 +123,7 @@ static EnRu1ActionFunc sActionFuncs[] = {
     EnRu1_Action28, EnRu1_Action29, EnRu1_Action30, EnRu1_Action31, EnRu1_Action32, EnRu1_Action33, EnRu1_Action34,
     EnRu1_Action35, EnRu1_Action36, EnRu1_Action37, EnRu1_Action38, EnRu1_Action39, EnRu1_Action40, EnRu1_Action41,
     EnRu1_Action42, EnRu1_Action43, EnRu1_Action44, EnRu1_Action45, EnRu1_NotAppearing, EnRu1_DateStart, EnRu1_DateInitialTalk,
-    EnRu1_DateDuringTalk,
+    EnRu1_DateDuringTalk, EnRu1_GiveItem,
 };
 
 static EnRu1PreLimbDrawFunc sPreLimbDrawFuncs[] = {
@@ -2190,8 +2191,8 @@ void EnRu1_DateInfoReset() {
     gSaveContext.infTable[21] = 0x0;
 }
 
-void EnRu1_DetectDateInfoReset() {
-    if (gSaveContext.RutoDateDay < gSaveContext.totalDays - DAYS_IN_CYCLE) {
+void DetectAndPerformDateInfoReset() {
+    if (gSaveContext.RutoDateDay < 2 + gSaveContext.totalDays - DAYS_IN_CYCLE) {
         EnRu1_DateInfoReset();
     }
 }
@@ -2221,6 +2222,12 @@ void EnRu1_InitiateDate() {
 
 }
 
+//This will be true if you are in a day of the cycle after the date has finished
+s32 IsAfterRutosDate() {
+    return !!(gSaveContext.infTable[21] & 0x1) && (gSaveContext.RutoDateDay < gSaveContext.totalDays);
+}
+
+//These functions deal with whether Ruto herself has acknowledged the start and/or end of the date
 s32 EnRu1_HadDateStarted() {
     return (gSaveContext.infTable[21] & 0x0004) || (gSaveContext.infTable[20] & 0x7000);
 }
@@ -2313,6 +2320,7 @@ s32 EnRu1_DateConversation(EnRu1* this, PlayState* play) {
 }
 
 void func_80AEFD38(EnRu1* this, PlayState* play) {
+    DetectAndPerformDateInfoReset();
     if ((gSaveContext.eventChkInf[3] & 0x80) && LINK_IS_CHILD && !(EnRu1_DateConditionsMet())) {
         func_80AEB264(this, &gRutoChildWait2Anim, 0, 0, 0);
         this->actor.flags &= ~ACTOR_FLAG_4;
@@ -2329,7 +2337,21 @@ s32 func_80AEFDC0(EnRu1* this, PlayState* play) {
         this->actor.flags |= ACTOR_FLAG_0 | ACTOR_FLAG_3;
         this->actor.textId = Text_GetFaceReaction(play, 0x1F);
         if (this->actor.textId == 0) {
-            if (gSaveContext.infTable[21] & 0x1)
+            if (IsAfterRutosDate()) {
+                if (!(gSaveContext.infTable[21] & 0x0004) && !(gSaveContext.infTable[20] & 0x7000))//You failed to show up
+                    this->actor.textId = RutoMsg+20;
+                else if (EnRu1_DetermineDateScore() == 1000) {
+                    if (gSaveContext.infTable[19] & 0x1) {
+                        this->actor.textId = RutoMsg+21;
+                    } else {
+                        this->actor.textId = RutoMsg+18;
+                    }
+                } else if (EnRu1_DetermineDatePreScore() == 1000) {
+                    this->actor.textId = RutoMsg+17;
+                } else {
+                    this->actor.textId = RutoMsg+22;
+                }
+            } else if (gSaveContext.infTable[21] & 0x1)
                 this->actor.textId = RutoMsg+3;
             else if (gSaveContext.infTable[21] & 0x2)
                 this->actor.textId = RutoMsg+4;
@@ -2364,8 +2386,27 @@ s32 func_80AEFE38(EnRu1* this, PlayState* play) {
         }
         Message_ContinueTextbox(play, this->actor.textId);
         return false;
+    } else if (func_80AEB174(play)) {
+        u16 RutoMsg = GetTextID("ruto");
+        if (this->actor.textId == RutoMsg+18) {
+            func_8002F434(&this->actor, play, GI_HEART_PIECE, this->actor.xzDistToPlayer + 1.0f, fabsf(this->actor.yDistToPlayer) + 1.0f);
+            Message_CloseTextbox(play);
+            gSaveContext.infTable[19] |= 0x1;
+            this->action = 50;
+            return false;
+        }
+        return true;
     }
     return false;
+}
+
+void EnRu1_GiveItem(EnRu1* this, PlayState* play) {
+    if (Actor_HasParent(&this->actor, play)) {
+        this->actor.parent = NULL;
+        this->action = 44;
+    } else {
+        func_8002F434(&this->actor, play, GI_HEART_PIECE, this->actor.xzDistToPlayer + 1.0f, fabsf(this->actor.yDistToPlayer) + 1.0f);
+    }
 }
 
 void func_80AEFE84(EnRu1* this, PlayState* play, s32 cond) {
