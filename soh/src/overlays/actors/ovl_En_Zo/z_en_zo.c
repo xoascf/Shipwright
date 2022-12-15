@@ -24,6 +24,7 @@ void EnZo_Update(Actor* thisx, PlayState* play);
 void EnZo_Draw(Actor* thisx, PlayState* play);
 
 // Actions
+void EnZo_DetectPlayerInitially(EnZo* this, PlayState* play);
 void EnZo_Standing(EnZo* this, PlayState* play);
 void EnZo_Submerged(EnZo* this, PlayState* play);
 void EnZo_Surface(EnZo* this, PlayState* play);
@@ -605,10 +606,10 @@ void EnZo_Init(Actor* thisx, PlayState* play) {
         Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENZO_ANIM_1);
         this->canSpeak = true;
         this->alpha = 255.0f;
-        this->actionFunc = EnZo_Standing;
+        this->actionFunc = EnZo_DetectPlayerInitially;
     } else {
         this->actor.flags &= ~ACTOR_FLAG_0;
-        this->actionFunc = EnZo_Submerged;
+        this->actionFunc = EnZo_DetectPlayerInitially;
     }
 }
 
@@ -634,6 +635,25 @@ void EnZo_Standing(EnZo* this, PlayState* play) {
         }
     } else {
         this->unk_64C = 1;
+    }
+}
+
+void EnZo_DetectPlayerInitially(EnZo* this, PlayState* play) {
+    if (gSaveContext.totalDays == gSaveContext.RutoDateDay && gSaveContext.infTable[21] & 0x1) {
+        if (0x58 == play->sceneNum) {
+            gSaveContext.infTable[21] |= 0x10;//You you spotted in Zora's Domain during Ruto's date
+        }
+    }
+
+    if (this->actor.yDistToWater < 54.0f || (this->actor.params & 0x3F) == 8) {
+        this->actor.shape.shadowDraw = ActorShadow_DrawCircle;
+        this->actor.shape.shadowScale = 24.0f;
+        this->canSpeak = true;
+        this->alpha = 255.0f;
+        this->actionFunc = EnZo_Standing;
+    } else {
+        this->actor.flags &= ~ACTOR_FLAG_0;
+        this->actionFunc = EnZo_Submerged;
     }
 }
 
@@ -677,6 +697,12 @@ void EnZo_TreadWater(EnZo* this, PlayState* play) {
     } else {
         EnZo_TreadWaterRipples(this, 0.2f, 1.0f, 200);
         this->rippleTimer = 12;
+    }
+
+    if (gSaveContext.totalDays == gSaveContext.RutoDateDay && gSaveContext.infTable[21] & 0x1) {
+        if (0x57 == play->sceneNum) {
+            gSaveContext.infTable[21] |= 0x20;//You you spotted in Lake Hylia during Ruto's date
+        }
     }
 
     if (EnZo_PlayerInProximity(this, play) != 0) {

@@ -897,6 +897,18 @@ extern "C" void OTRMessage_Init()
     u16 ZoraMsg = TextIDAllocator::Instance->allocateRange("zora", 30);
 
     MakeNormalMsgEng(ZoraMsg+0, "Wow! I never suspected that&anyone who was not a&Zora could dive like that!^You cannot refuse this token&of my awe!\x0B\x02");
+    MakeNormalMsgEng(ZoraMsg+1, "Oh, you do know a boy who was&seen hanging around this domain&on the day Ruto snuck away again.^Surely you understand why people&are...suspecting things?");
+    MakeNormalMsgEng(ZoraMsg+1, "Oh, you do know a boy who was&seen hanging around the&shores of Lake Hylia&on the day Ruto snuck away again.^Surely you understand why people&are...suspecting things?");
+    MakeNormalMsgEng(ZoraMsg+2, "I heard Ruto had some scary&encounters on that night.&I hope that doens't happen to our princess again.");
+    MakeNormalMsgEng(ZoraMsg+3, "I heard Ruto was treated very&roughly the last time she went out.^I would hope our princess would&deserve far more dignified&treatment from anyone.");
+    MakeNormalMsgEng(ZoraMsg+4, "I heard Ruto was made quite&unconfortable on her night away.&I would hope anyone in her company&would treat her with good courtesy.");
+    MakeNormalMsgEng(ZoraMsg+5, "Apparantly, Ruto's boyfriend&just abandoned her,&leaving her completely alone!^How unthinkable!");
+    MakeNormalMsgEng(ZoraMsg+6, "Apparantly, whoever was&supposed to meet Ruto&just never showed up at all!^How unbelievable!");
+    MakeNormalMsgEng(ZoraMsg+7, "There was apparantly something&unexpected that happend that&bothered Ruto that last time she went out.^I can't say I'm aware of what&that was in particular though.");
+    MakeNormalMsgEng(ZoraMsg+8, "You know what I heard.&Apparantly, Ruto's date&showed up far ahead of time.^almost like he was excessively desperate for her.");
+    MakeNormalMsgEng(ZoraMsg+9, "You know what I heard.&Apparantly, Ruto's date&showed up incredibly late.^Like he had no regard&for her whatsoever!");
+    MakeNormalMsgEng(ZoraMsg+10, "I heard the boy Ruto met&wasacting very strange&when she showed up.^Like he was just hanging around&at first, silently watching her.^Creepy.");
+    MakeNormalMsgEng(ZoraMsg+11, "Those who cannot give their&partners a propper seeing&off deserve no respect.");
 
     u16 RutoMsg = TextIDAllocator::Instance->allocateRange("ruto", 20);
 
@@ -908,9 +920,16 @@ extern "C" void OTRMessage_Init()
     MakeNormalMsgEng(RutoMsg+5, "\x08Oh, hello there!\016<\x02");
     MakeNormalMsgEng(RutoMsg+6, "\x08Yes, take me across&to that island&with the big tree.\016<\x02");
     MakeNormalMsgEng(RutoMsg+7, "\x08Hello Mr. Owl!\016<\x02");
-    MakeNormalMsgEng(RutoMsg+8, "\x08Ok, put me down here,&let's gaze at the stars&and watch the sun rise.\016<\x02");
+    MakeNormalMsgEng(RutoMsg+8, "\x08Ok, put me down here,&let's gaze at the sky&and watch the sun rise.\016<\x02");
     MakeNormalMsgEng(RutoMsg+9, "\x08Oh, the sun is up already,&that's disappointing.\016<\x02");
     MakeNormalMsgEng(RutoMsg+10, "\x08That was nice!\016<\x02");
     MakeNormalMsgEng(RutoMsg+11, "\x08Isn't it all so beautiful?&Come closer to me.\016<\x02");
-    MakeNormalMsgEng(RutoMsg+12, "That was really the greatest&night of my life.^With us together here,&there is only one way I can&properly show you how I feel.^And that's with this.\x0B\x02");
+    MakeNormalMsgEng(RutoMsg+12, "That was such a wonderful night.^With us together here,&there is only one way I can&properly show you how I feel...^But I have to be back now,&otherwise father will be angry.&Please see me again soon.");
+    MakeNormalMsgEng(RutoMsg+13, "We're a bit eager, aren't we?&I see you've been waiting for me.^You can start by taking me to&that island out there then.\x0B\x02");
+    MakeNormalMsgEng(RutoMsg+14, "Oh, you showed up just on time!^It's all so exciting, isn't it,&the moonlit lake,&the sky, the water.^And us.^Tonight I give you the privilage&of carrying me out to the&middle of the lake.\x0B\x02");
+    MakeNormalMsgEng(RutoMsg+15, "Hiding around here, weren't you?&Come on, don't be shy,&you can carry me to the&island across that bridge.\x0B\x02");
+    MakeNormalMsgEng(RutoMsg+16, "Why did you leave?&Don't hesitate now,&carry me over to that island!\x0B\x02");
+    MakeNormalMsgEng(RutoMsg+17, "Well I know I said I wanted to&really show my feelings&for you...but allthe gossip&about us is so embarassing already.^I'd hope that would die down&if nobody actually noticed us.");
+    MakeNormalMsgEng(RutoMsg+18, "I said I wanted to&really show my feelings&for you...and now...&I truly feel I can.^Right now, I can only express&my deepest love for you,&with this.\x0B\x02");
+    MakeNormalMsgEng(RutoMsg+19, "\x08Why are you over there?&I want you near me.\016<\x02");
 }

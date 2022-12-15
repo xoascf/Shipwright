@@ -67,6 +67,7 @@ void EnRu1_DateInitialTalk(EnRu1* this, PlayState* play);
 void EnRu1_DateDuringTalk(EnRu1* this, PlayState* play);
 
 void func_80AF0278(EnRu1* this, PlayState* play, s32 limbIndex, Vec3s* rot);
+s32 EnRu1_DateConditionsMet();
 
 void EnRu1_DrawNothing(EnRu1* this, PlayState* play);
 void EnRu1_DrawOpa(EnRu1* this, PlayState* play);
@@ -1224,8 +1225,15 @@ void func_80AED57C(EnRu1* this) {
     }
 }
 
+void EnRu1_ExpressHurt() {
+    if (EnRu1_DateConditionsMet()) {
+        gSaveContext.infTable[20] |= 0x600;
+    }
+}
+
 void func_80AED5B8(EnRu1* this) {
     func_80078914(&this->actor.projectedPos, NA_SE_VO_RT_CRASH);
+    EnRu1_ExpressHurt();
 }
 
 void func_80AED5DC(EnRu1* this) {
@@ -1591,6 +1599,7 @@ void func_80AEE568(EnRu1* this, PlayState* play) {
             func_80AEE02C(this);
             func_8002F580(&this->actor, play);
             this->action = 27;
+            this->expressionState = 0;
             func_80AEADD8(this);
         } else if (this->actor.yDistToWater > 0.0f) {
             this->action = 29;
@@ -1692,6 +1701,7 @@ s32 func_80AEEAC8(EnRu1* this, PlayState* play) {
         func_80AEE02C(this);
         func_8002F580(&this->actor, play);
         this->action = 27;
+        this->expressionState = 0;
         func_80AEADD8(this);
         return true;
     }
@@ -1711,12 +1721,55 @@ void func_80AEEBB4(EnRu1* this, PlayState* play) {
     func_8002F580(&this->actor, play);
 }
 
+void EnRu1_ExpressDiscomfort(EnRu1* this, PlayState* play) {
+    if (!this->expressionState) {
+        func_80078914(&this->actor.projectedPos, NA_SE_VO_RT_CRASH);
+        this->expressionState = 2;
+        if (EnRu1_DateConditionsMet() && !(gSaveContext.infTable[20] & 0x600)) {
+            gSaveContext.infTable[20] |= 0x200;
+        }
+    }
+}
+
+void EnRu1_DetectExpressHarm(EnRu1* this, PlayState* play) {
+    Player* player = GET_PLAYER(play);
+    if (player->invincibilityTimer > 0 && !(this->expressionState & 1)) {
+        this->expressionState = 1;
+        func_80078914(&this->actor.projectedPos, NA_SE_VO_RT_UNBALLANCE);
+        if (EnRu1_DateConditionsMet() && !(gSaveContext.infTable[20] & 0x400)) {
+            gSaveContext.infTable[20] |= 0x200;
+            gSaveContext.infTable[20] |= 0x400;
+        }
+    }
+}
+
+void EnRu1_DetectGroundState(EnRu1* this, PlayState* play) {
+    if (this->actor.bgCheckFlags & 1) {
+        u16 groundType = SurfaceType_GetSfx(&play->colCtx, this->actor.floorPoly, this->actor.floorBgId);
+        u16 inWater = !!(this->actor.bgCheckFlags & 0x20);
+        u16 isGroundHard = 0;
+        osSyncPrintf("Ruto Floor SFX Type: %d",groundType);
+        osSyncPrintf("Ruto is in Water: %d", inWater);
+        switch (groundType) {
+            case 2:
+            case 10:
+            case 11:
+            isGroundHard = 1;
+            break;
+        }
+        if (!inWater && isGroundHard)
+            EnRu1_ExpressDiscomfort(this,play);
+    }
+}
+
 void EnRu1_Action27(EnRu1* this, PlayState* play) {
     func_80AED83C(this);
     func_80AEAC54(this, play);
     func_80AEAECC(this, play);
     EnRu1_UpdateSkelAnime(this);
     EnRu1_UpdateEyes(this);
+    EnRu1_DetectExpressHarm(this,play);
+    EnRu1_DetectGroundState(this, play);
     func_80AEEBB4(this, play);
     func_80AEE488(this, play);
     func_80AED624(this, play);
@@ -1862,6 +1915,7 @@ void func_80AEF1F0(EnRu1* this, PlayState* play, UNK_TYPE arg2) {
         func_80AED6DC(this, play);
         func_8002F580(&this->actor, play);
         this->action = 27;
+        this->expressionState = 0;
         func_80AEADD8(this);
     }
 }
@@ -2162,41 +2216,41 @@ s32 EnRu1_DateConditionsMet() {
 
 void EnRu1_InitiateDate() {
     gSaveContext.infTable[21] |= 0x0004;
+    if (!(gSaveContext.infTable[20] & 0x7000))
+        gSaveContext.infTable[20] |= 0x4000;//Records that you spoke to Ruto without being spotted
+
 }
 
 s32 EnRu1_HadDateStarted() {
-    return (gSaveContext.infTable[21] & 0x0004) || (gSaveContext.infTable[20] & 0x3000);
+    return (gSaveContext.infTable[21] & 0x0004) || (gSaveContext.infTable[20] & 0x7000);
 }
 
 s32 EnRu1_HadDateEnded() {
     return ((gSaveContext.infTable[20] & 0x800) || (gSaveContext.infTable[20] & 0x100));
 }
 
-s32 EnRu1_DetermineDateScore() {
+s32 EnRu1_DetermineDatePreScore() {
     s32 score = 1000;
 
-    if (!(gSaveContext.infTable[21] & 0x0004) || !(gSaveContext.infTable[20] & 0x3000)) {//You failed to even show up, you nonce
+    if (!(gSaveContext.infTable[21] & 0x0004) || !(gSaveContext.infTable[20] & 0x7000)) {//You failed to even show up, you nonce
         score -= 1000;
     } else if (gSaveContext.infTable[20] & 0x3000 == 0x1000) {//You showed up late
         score -= 200;
     } else if (gSaveContext.infTable[20] & 0x3000 == 0x2000) {//You were early
         score -= 100;
+    } else if ((gSaveContext.infTable[20] & 0x3000) == 0x0000) {//You talked to her before she noticed you
+        score -= 50;
     }
+
     if (gSaveContext.infTable[20] & 0x4000) {//You were hiding behind the pillars
-        score -= 100;
-    } else if ((gSaveContext.infTable[20] & 0x3000) == 0x3000) {//She saw you come in view right on time
-        score += 50;
-    }
-
-    if (gSaveContext.infTable[21] & 0x10) {//Other Zoras saw you in the domain on the day
-        score -= 100;
-    }
-
-    if (gSaveContext.infTable[21] & 0x20) {//Other Zoras saw you in Lake Hylia on the day
         score -= 100;
     }
 
     if (gSaveContext.infTable[21] & 0x40) {//The owl saw Ruto in Lake Hylia on the day
+        score -= 50;
+    }
+
+    if (!(gSaveContext.infTable[21] & 0x80)) {//You weren't close enough to her at sunrise
         score -= 50;
     }
 
@@ -2219,12 +2273,35 @@ s32 EnRu1_DetermineDateScore() {
     return score;
 }
 
+s32 EnRu1_DetermineDateScore() {
+    s32 score = EnRu1_DetermineDatePreScore();
+
+    if (gSaveContext.infTable[21] & 0x10) {//Other Zoras saw you in the domain on the day
+        score -= 100;
+    }
+
+    if (gSaveContext.infTable[21] & 0x20) {//Other Zoras saw you in Lake Hylia on the day
+        score -= 100;
+    }
+
+    return score;
+}
+
 s32 EnRu1_DateConversation(EnRu1* this, PlayState* play) {
     if (!Actor_ProcessTalkRequest(&this->actor, play)) {
         u16 RutoMsg = GetTextID("ruto");
         this->actor.flags |= ACTOR_FLAG_0 | ACTOR_FLAG_3;
         if (!(gSaveContext.infTable[21] & 0x0004)) {
-            this->actor.textId = RutoMsg+0;
+            if (gSaveContext.infTable[20] & 0x8000)
+                this->actor.textId = RutoMsg+16;
+            else if ((gSaveContext.infTable[20] & 0x3000) == 0x1000)
+                this->actor.textId = RutoMsg+0;
+            else if ((gSaveContext.infTable[20] & 0x3000) == 0x2000)
+                this->actor.textId = RutoMsg+13;
+            else if ((this->dateProgress & 0x8) || ((gSaveContext.infTable[20] & 0x3000) == 0x0000))
+                this->actor.textId = RutoMsg+15;
+            else
+                this->actor.textId = RutoMsg+14;
             func_8002F2F4(&this->actor, play);
         } else {
             this->actor.textId = RutoMsg+1;
@@ -2342,6 +2419,44 @@ void func_80AEFF94(EnRu1* this, PlayState* play) {
     }
 }
 
+void EnRu1_SpotLink(EnRu1* this, PlayState* play, s16 relTime) {
+    if (!EnRu1_HadDateStarted()) {
+        Player* player = GET_PLAYER(play);
+        f32 heightMod = (relTime < 0 ? -20 : 10);//Acounts for the movement of Ruto's root position when her animations transition
+        Vec3f headPos = this->actor.world.pos;
+        Vec3f headPosLink = player->actor.world.pos;
+        headPos.y += 20.0f + heightMod;
+        headPosLink.y += 25.0f;
+        Vec3f result;
+        CollisionPoly* outPoly;
+        s32 bgID;
+        if (!BgCheck_CheckLineImpl(&play->colCtx,(1<<1),0,&headPos,&headPosLink,&result,
+                        &outPoly,&bgID,&player->actor,1.0,BgCheck_GetBccFlags(1,1,1,1,1))) {
+            if (relTime == -1) {
+                gSaveContext.infTable[20] |= 0x2000;
+                u16 RutoMsg = GetTextID("ruto");
+                Message_StartTextbox(play, RutoMsg+5, NULL);
+            } else if (relTime == 0) {
+                if (this->dateProgress & 8)
+                    gSaveContext.infTable[20] |= 0x4000;
+                gSaveContext.infTable[20] |= 0x3000;
+                u16 RutoMsg = GetTextID("ruto");
+                Message_StartTextbox(play, RutoMsg+5, NULL);
+            } else if (relTime == 1) {
+                if (this->dateProgress & 8)
+                    gSaveContext.infTable[20] |= 0x4000;
+                gSaveContext.infTable[20] |= 0x1000;
+                u16 RutoMsg = GetTextID("ruto");
+                Message_StartTextbox(play, RutoMsg+5, NULL);
+            }
+        } else {
+            if (this->actor.xzDistToPlayer < 800 && this->actor.yDistToPlayer+25 > heightMod) {
+                this->dateProgress |= 0x8;//Sets flag to indicate you were noticed behind a pillar before you became visible
+            }
+        }
+    }
+}
+
 //Action46
 void EnRu1_NotAppearing(EnRu1* this, PlayState* play) {
     if (EnRu1_DateConditionsMet()) {
@@ -2395,6 +2510,9 @@ void EnRu1_DateStart(EnRu1* this, PlayState* play) {
             }
         }
     }
+    if (this->actor.speedXZ == 1.0f) {
+        EnRu1_SpotLink(this, play, -1);
+    }
     Actor_MoveForward(&this->actor);
     if (this->actor.world.pos.y <= -1336)
         this->actor.world.pos.y = -1336;
@@ -2403,22 +2521,7 @@ void EnRu1_DateStart(EnRu1* this, PlayState* play) {
 //Action48
 void EnRu1_DateInitialTalk(EnRu1* this, PlayState* play) {
     s32 cond;
-
-    if (!(gSaveContext.infTable[20] & 0x3000)) {
-        Player* player = GET_PLAYER(play);
-        Vec3f headPos = this->actor.world.pos;
-        headPos.y += 60.0f;
-        Vec3f result;
-        CollisionPoly* outPoly;
-        s32 bgID;
-        if (!BgCheck_CheckLineImpl(&play->colCtx,(1<<1),0,&headPos,&player->actor.world.pos,&result,
-                        &outPoly,&bgID,&player->actor,1.0,BgCheck_GetBccFlags(1,1,1,1,1))) {
-            gSaveContext.infTable[20] |= 0x3000;
-            u16 RutoMsg = GetTextID("ruto");
-            Message_StartTextbox(play, RutoMsg+5, NULL);
-        }
-    }
-
+    EnRu1_SpotLink(this, play, (gSaveContext.dayTime < (49153+8192)) ? 0 : 1);
     func_80AEEF68(this, play);
     EnRu1_UpdateSkelAnime(this);
     EnRu1_UpdateEyes(this);
@@ -2465,6 +2568,9 @@ void EnRu1_LakeDateSpawn(EnRu1* this, PlayState* play) {
                 this->actor.world.pos = dateStartPos;
                 actorRoom = this->actor.room;
                 this->drawConfig = 1;
+                if (EnRu1_HadDateStarted()) {
+                    gSaveContext.infTable[20] |= 0x8000;
+                }
                 this->actor.flags |= ACTOR_FLAG_0 | ACTOR_FLAG_3;
                 this->action = 48;
                 this->actor.room = -1;
@@ -2548,7 +2654,15 @@ void EnRu1_Update(Actor* thisx, PlayState* play) {
                     this->action == 27) {
 
                     gSaveContext.infTable[20] |= 0x800;
-                    Message_StartTextbox(play, RutoMsg+10, NULL);
+                    if (this->actor.xzDistToPlayer < 100.0f){
+                        gSaveContext.infTable[21] |= 0x80;
+                        if (EnRu1_DetermineDatePreScore() < 1000)
+                            Message_StartTextbox(play, RutoMsg+10, NULL);
+                        else
+                            Message_StartTextbox(play, RutoMsg+11, NULL);
+                    } else {
+                        Message_StartTextbox(play, RutoMsg+19, NULL);
+                    }
                 } else {
                     gSaveContext.infTable[20] |= 0x100;
                     Message_StartTextbox(play, RutoMsg+9, NULL);
@@ -2571,6 +2685,7 @@ void EnRu1_Init(Actor* thisx, PlayState* play) {
     s32 pad;
     EnRu1* this = (EnRu1*)thisx;
     this->timer = 0;
+    this->expressionState = 0;
     this->dateProgress = 0;
 
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
