@@ -247,6 +247,26 @@ extern "C" void OTRMessage_Init()
         }
     );
 
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, WonderMsg+0x3F,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_MIDDLE,
+          "History of Hyrule's days.^In this land, each day,&with its characteristic Moon,&has a unique reason and purpose&for the people living under its sky.^The first day, with the biggest&and brightest Moon, is a&day of beginnings,&love and renewal.^The second, the day of&the golden Moon, is a day of&industriousness and seriousness of work.^The third, the day of Moonfire,&is a day for testing and&understanding oneself.",
+          "",
+          "",
+        }
+    );
+
+    CustomMessageManager::Instance->CreateMessage(
+        questMessageTableID, WonderMsg+0x40,
+        {
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_MIDDLE,
+          "The fourth day, the darkest day,&is a day of the markets, and also one that brings mystery.^Many are filled with wonder at&the kinds of things that&tend to be brought by this day.^The fifth, a day loved&by the multitudes, is a day of&festivity and celabration.^And finally the sixth,&the day of rest, one even&more loved by some.",
+          "",
+          "",
+        }
+    );
+
     u16 SariaMsg = TextIDAllocator::Instance->allocateRange("saria", 30);
     CustomMessageManager::Instance->CreateMessage(
         questMessageTableID, SariaMsg,
@@ -905,14 +925,15 @@ extern "C" void OTRMessage_Init()
     MakeNormalMsgEng(ZoraMsg+6, "Apparantly, Ruto's boyfriend&just abandoned her,&leaving her completely alone!^How unthinkable!");
     MakeNormalMsgEng(ZoraMsg+7, "Apparantly, whoever was&supposed to meet Ruto&just never showed up at all!^How unbelievable!");
     MakeNormalMsgEng(ZoraMsg+8, "There was apparantly something&unexpected that happend&which bothered Ruto the&last time she went out.^I can't say I'm aware of what&that was in particular though.");
-    MakeNormalMsgEng(ZoraMsg+9, "You know what I heard.&Apparantly, Ruto's date&showed up far ahead of time.^almost like he was excessively desperate for her.");
+    MakeNormalMsgEng(ZoraMsg+9, "You know what I heard.&Apparantly, Ruto's date&showed up far ahead of time.^Almost like he was excessively&desperate for her.");
     MakeNormalMsgEng(ZoraMsg+10, "You know what I heard.&Apparantly, Ruto's date&showed up incredibly late.^Like he had no regard&for her whatsoever!");
-    MakeNormalMsgEng(ZoraMsg+11, "I heard the boy Ruto met&wasacting very strange&when she showed up.^Like he was just hanging around&at first, silently watching her.^Creepy.");
-    MakeNormalMsgEng(ZoraMsg+12, "Those who cannot give their&partner's a propper seeing&off deserve no respect.");
+    MakeNormalMsgEng(ZoraMsg+11, "I heard the boy Ruto met&was acting very strange&when she showed up.^Like he was just hanging around&at first, silently watching her.^Creepy.");
+    MakeNormalMsgEng(ZoraMsg+12, "Those who cannot give their&partner a propper seeing&off deserve no respect.");
     MakeNormalMsgEng(ZoraMsg+13, "Oh, so there is a Zora girl here,&none other than the&Royal Princess Ruto.^Glad to see you're keeping her safe...");
     MakeNormalMsgEng(ZoraMsg+14, "Those who do not think about&their partner's wishes&deserve no respect.");
     MakeNormalMsgEng(ZoraMsg+15, "Those who do not think about&their partner at all&deserve absolutely no respect.");
     MakeNormalMsgEng(ZoraMsg+16, "Well...she is very pretty&isn't she?^You wouldn't have&any pictures of her,&now would you?^I'd promise to not show&them to anyone else.");
+    MakeNormalMsgEng(ZoraMsg+17, "I heard the boy Ruto met&was acting very strange&when she showed up.^Like he wouldn't even talk&to her even after she'd&greeted him.^Creepy.");
 
     u16 RutoMsg = TextIDAllocator::Instance->allocateRange("ruto", 30);
 
@@ -936,7 +957,10 @@ extern "C" void OTRMessage_Init()
     MakeNormalMsgEng(RutoMsg+17, "Well I know I said I wanted to&really show my feelings&for you...but allthe gossip&about us is so embarassing already.^I'd hope that would die down&if nobody actually noticed us.");
     MakeNormalMsgEng(RutoMsg+18, "I said I wanted to&really show my feelings&for you...and now...&I truly feel I can.^Right now, I can only express&my deepest love for you,&with this.\x0B\x02");
     MakeNormalMsgEng(RutoMsg+19, "\x08Why are you over there?&I want you near me.\016<\x02");
-    MakeNormalMsgEng(RutoMsg+20, "How dare you treat me the way you did!");
+    MakeNormalMsgEng(RutoMsg+20, "How dare you treat me&the way you did!");
     MakeNormalMsgEng(RutoMsg+21, "You know my feelings for you,&nothing more needs to be said.");
     MakeNormalMsgEng(RutoMsg+22, "That was fun,&maybe we should try&that again sometime.");
+    MakeNormalMsgEng(RutoMsg+23, "Thank you for being here.&I have to go now,&so see you later.");
+    MakeNormalMsgEng(RutoMsg+24, "Why did you run away from me?");
+    MakeNormalMsgEng(RutoMsg+25, "Why wouldn't you talk to me?\x0B\x02");
 }

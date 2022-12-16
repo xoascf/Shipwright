@@ -378,7 +378,7 @@ u16 func_80B61024(PlayState* play, Actor* thisx) {
             if (IsAfterRutosDate()) {
                 if ((!(gSaveContext.infTable[21] & 0x0004) && !(gSaveContext.infTable[20] & 0x7000))) {
                     return ZoraMsg+15;
-                } else if ((!(gSaveContext.infTable[20] & 0x800) && !(gSaveContext.infTable[20] & 0x100))) {
+                } else if (((!(gSaveContext.infTable[20] & 0x800) && !(gSaveContext.infTable[20] & 0x100))) || (((gSaveContext.infTable[20] & 0x800) || (gSaveContext.infTable[20] & 0x100)) && !(gSaveContext.infTable[21] & 0x8))) {
                     return ZoraMsg+12;
                 } if ((!(gSaveContext.infTable[21] & 0x80) || (gSaveContext.infTable[20] & 0x100))) {
                     return ZoraMsg+14;
@@ -393,9 +393,9 @@ u16 func_80B61024(PlayState* play, Actor* thisx) {
             if (EnRu1_DateConditionsMet()) {
                 if (!(gSaveContext.infTable[20] & 0x800) && !(gSaveContext.infTable[20] & 0x100)) {
                     if (gSaveContext.infTable[21] & 0x8000)
-                        return ZoraMsg+13;
-                    else
                         return ZoraMsg+16;
+                    else
+                        return ZoraMsg+13;
                 }
             }
             return 0x4020;
@@ -438,7 +438,9 @@ u16 func_80B61024(PlayState* play, Actor* thisx) {
 
         case 2:
             if (IsAfterRutosDate()) {
-                if ((((gSaveContext.infTable[20] & 0x3000) == 0x0000) && (gSaveContext.infTable[21] & 0x0004)) || (gSaveContext.infTable[20] & 0x4000)) {//You were hiding
+                if (gSaveContext.infTable[21] & 0x800) {
+                    return ZoraMsg+17;
+                } else if ((((gSaveContext.infTable[20] & 0x3000) == 0x0000) && (gSaveContext.infTable[21] & 0x0004)) || (gSaveContext.infTable[20] & 0x4000)) {//You were hiding
                     return ZoraMsg+11;
                 }
             }
@@ -471,7 +473,7 @@ u16 func_80B61024(PlayState* play, Actor* thisx) {
             if (IsAfterRutosDate()) {
                 if (!(gSaveContext.infTable[21] & 0x0004) && !(gSaveContext.infTable[20] & 0x7000)) {//You didn't show up
                     return ZoraMsg+7;
-                } else if ((gSaveContext.infTable[20] & 0x8000) || (!(gSaveContext.infTable[20] & 0x800) && !(gSaveContext.infTable[20] & 0x100))) {//You left before dawn
+                } else if ((gSaveContext.infTable[20] & 0x8000) || (!(gSaveContext.infTable[20] & 0x800) && !(gSaveContext.infTable[20] & 0x100)) || !(gSaveContext.infTable[21] & 0x8)) {//You left before dawn or before sending her off
                     return ZoraMsg+6;
                 }
             }
@@ -489,11 +491,11 @@ u16 func_80B61024(PlayState* play, Actor* thisx) {
 
         case 5:
             if (IsAfterRutosDate()) {
-                if (gSaveContext.infTable[20] & 0x600 == 0x600) {//You hurt her
+                if ((gSaveContext.infTable[20] & 0x600) == 0x600) {//You hurt her
                     return ZoraMsg+3;
-                } else if (gSaveContext.infTable[20] & 0x600 == 0x400){//You scared her
+                } else if ((gSaveContext.infTable[20] & 0x600) == 0x400){//You scared her
                     return ZoraMsg+4;
-                } else if (gSaveContext.infTable[20] & 0x600 == 0x200) {//You made her uncomfortable
+                } else if ((gSaveContext.infTable[20] & 0x600) == 0x200) {//You made her uncomfortable
                     return ZoraMsg+5;
                 }
             }
@@ -533,7 +535,7 @@ s16 func_80B61298(PlayState* play, Actor* thisx) {
                     break;
                 default:
                     if (thisx->textId == ZoraMsg+13)
-                        gSaveContext.infTable[21] |= 0x8000;//Spoken to the perv this time
+                        gSaveContext.infTable[21] |= 0x8000;//Spoken to the creep this time
                     break;
             }
             gSaveContext.eventChkInf[3] |= 1;
