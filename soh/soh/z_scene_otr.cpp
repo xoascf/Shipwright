@@ -90,6 +90,11 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
             //{ -1, 3, { ACTOR_EN_ITEM00, -1150, -1113, -2248, 0, 0, 0, 0x106 }},
         } },
     } },
+    { 0x04, { // Fire Temple
+        { 0x08, {
+            { -1, 2, { 0xA, 1944,4681,-393, 0,24394,0, 0x07CD }},
+        } },
+    } },
     { 0x3e, { // Grotto
         { 0x05, { // Octorok Grotto
             //{ -1, 8, { ACTOR_EN_ITEM00, 32, -129, 852, 0, 0, 0, 0x406 }},
@@ -194,6 +199,12 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
     { 0x57, { // Lake Hylia
         { 0x00, {
             { -1, -1, { ACTOR_EN_RU1, -918,-1336,3560, 0,0x7FFF,0, 0xB }},
+        } },
+    } },
+    { 0x59, { // Zora's Fountain
+        { 0x00, {
+            { 2, -1, { ACTOR_EN_GOROIWA, 1243,322,100, 0,-20771,1, 0x1D00 }},
+            { 3, -1, { ACTOR_EN_GOROIWA, 1243,322,100, 0,-20771,1, 0x1D00 }},
         } },
     } },
 };
