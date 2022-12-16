@@ -963,4 +963,5 @@ extern "C" void OTRMessage_Init()
     MakeNormalMsgEng(RutoMsg+23, "Thank you for being here.&I have to go now,&so see you later.");
     MakeNormalMsgEng(RutoMsg+24, "Why did you run away from me?");
     MakeNormalMsgEng(RutoMsg+25, "Why wouldn't you talk to me?\x0B\x02");
+    MakeNormalMsgEng(RutoMsg+26, "\x08Oh, the tree is in the way,&how disappointing.\016<\x02");
 }

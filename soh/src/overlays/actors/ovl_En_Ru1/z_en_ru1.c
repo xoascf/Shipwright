@@ -73,6 +73,9 @@ void EnRu1_DateEnd(EnRu1* this, PlayState* play);
 void func_80AF0278(EnRu1* this, PlayState* play, s32 limbIndex, Vec3s* rot);
 s32 EnRu1_DateConditionsMet();
 s32 IsAfterRutosDate();
+s32 EnRu1_IsOnIsland(Vec3f cPos);
+s32 EnRu1_IsNotBehindTree(Vec3f cPos);
+s32 EnRu1_IsPassedTree(Vec3f cPos);
 
 void EnRu1_DrawNothing(EnRu1* this, PlayState* play);
 void EnRu1_DrawOpa(EnRu1* this, PlayState* play);
@@ -2686,7 +2689,7 @@ void EnRu1_DateDuringFinalTalk(EnRu1* this, PlayState* play) {
         this->timer = 0;
         Animation_Change(&this->skelAnime, &gRutoChildWalkAnim, 1.0f, 0, Animation_GetLastFrame(&gRutoChildWalkAnim),
                          ANIMMODE_LOOP, -8.0f);
-        this->actor.shape.rot.y = this->actor.world.rot.y + 0x8000;
+        this->actor.shape.rot.y = this->actor.world.rot.y + (EnRu1_IsPassedTree(this->actor.world.pos) ? 0x0 : 0x8000);
         this->action = 53;
         gSaveContext.infTable[21] |= 0x8;//Records that you've seen her off
         this->actor.flags &= ~(ACTOR_FLAG_0 | ACTOR_FLAG_3);
@@ -2793,7 +2796,15 @@ void func_80AF0050(EnRu1* this, PlayState* play) {
 }
 
 s32 EnRu1_IsOnIsland(Vec3f cPos) {
+    return -1311 < cPos.x && cPos.x < -420 && 6860 < cPos.z && cPos.z < 7700;
+}
+
+s32 EnRu1_IsNotBehindTree(Vec3f cPos) {
     return -1311 < cPos.x && cPos.x < -420 && 6860 < cPos.z && cPos.z < 7300;
+}
+
+s32 EnRu1_IsPassedTree(Vec3f cPos) {
+    return 7500 < cPos.z;
 }
 
 void EnRu1_Update(Actor* thisx, PlayState* play) {
@@ -2841,17 +2852,21 @@ void EnRu1_Update(Actor* thisx, PlayState* play) {
                         this->action == 27) {
 
                         gSaveContext.infTable[20] |= 0x800;
-                        if (this->actor.xzDistToPlayer < 100.0f){
-                            gSaveContext.infTable[21] |= 0x80;
-                            if (EnRu1_DetermineDatePreScore() < 1000)
-                                Message_StartTextbox(play, RutoMsg+10, NULL);
-                            else
-                                Message_StartTextbox(play, RutoMsg+11, NULL);
+                        if (EnRu1_IsNotBehindTree(cPos)) {
+                            if (this->actor.xzDistToPlayer < 100.0f){
+                                gSaveContext.infTable[21] |= 0x80;
+                                if (EnRu1_DetermineDatePreScore() < 1000)
+                                    Message_StartTextbox(play, RutoMsg+10, NULL);
+                                else
+                                    Message_StartTextbox(play, RutoMsg+11, NULL);
+                            } else {
+                                gSaveContext.infTable[20] |= 0x100;
+                                Message_StartTextbox(play, RutoMsg+19, NULL);
+                            }
                         } else {
-                            Message_StartTextbox(play, RutoMsg+19, NULL);
+                            gSaveContext.infTable[20] |= 0x100;
+                            Message_StartTextbox(play, RutoMsg+26, NULL);
                         }
-
-
                     } else {
                         gSaveContext.infTable[20] |= 0x100;
                         Message_StartTextbox(play, RutoMsg+9, NULL);
