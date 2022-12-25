@@ -1498,7 +1498,7 @@ typedef struct {
     s32 nodeListMax; // if -1, dynamically compute max nodes
 } BgCheckSceneSubdivisionEntry;
 
-static const u16 LIST_MAX_NUM = 4096;
+static const u16 LIST_MAX_NUM = 2048; // 4096 crashes
 /**
  * Allocate CollisionContext
  */
