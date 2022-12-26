@@ -727,8 +727,45 @@ bool Scene_CommandPathList(PlayState* play, Ship::SceneCommand* cmd)
     return false;
 }
 
+const std::map<u16,  std::vector<std::tuple<int, int, Ship::TransitionActorEntry>>> sceneTransitionActorOverrides = {
+    { 0x5B, { // Lost Woods
+        { -1, 9, { 1,255, 0,255,   ACTOR_EN_HOLL, 0,0,-400,  0, 0x3F }},
+        { -1, 10, { 1,255, 0,255,   ACTOR_EN_HOLL, 0,0, 400,  -32768, 0x3F }},
+        { -1, 11, { 0,255, 1,255,   ACTOR_EN_HOLL, 800,0, 400,  -32768, 0x3F }},
+        { -1, 12, { 1,255, 2,255,   ACTOR_EN_HOLL, 400,0, -800,  16384, 0x3F }},
+        { -1, 13, { 2,255, 3,255,   ACTOR_EN_HOLL, 1600,0, -400,  -32768, 0x3F }},
+        { -1, 14, { 7,255, 4,255,   ACTOR_EN_HOLL, 2000,0, -1600,  -16384, 0x3F }},
+        { -1, 15, { 7,255, 4,255,   ACTOR_EN_HOLL, 2000,0, -2400,  -16384, 0x3F }},
+        { -1, 16, { 8,255, 7,255,   ACTOR_EN_HOLL, 1600,0, -2800,  0, 0x3F }},
+        { -1, 17, { 8,255, 7,255,   ACTOR_EN_HOLL, 400,0, -2400,  -16384, 0x3F | (0x7 << 6) }},
+        { -1, 18, { 7,255, 8,255,   ACTOR_EN_HOLL, 800,0, -2800,  0, 0x3F }},
+        { -1, 19, { 7,255, 8,255,   ACTOR_EN_HOLL, 800,0, -2000,  -32768, 0x3F }},
+    } },
+};
+
+//Keeps track of if extra transition actors have been loaded already, avoids multi loading them if this is the case
+//std::map<u16, bool> sceneTransitionLoadFlags = {
+//};
+
 bool Scene_CommandTransitionActorList(PlayState* play, Ship::SceneCommand* cmd) {
     Ship::SetTransitionActorList* cmdActor = (Ship::SetTransitionActorList*)cmd;
+
+    if (sceneTransitionActorOverrides.find(play->sceneNum) != sceneTransitionActorOverrides.end()/* && sceneTransitionLoadFlags.find(play->sceneNum) == sceneTransitionLoadFlags.end()*/) {
+        //sceneTransitionLoadFlags.insert(std::make_pair(play->sceneNum,true));
+        auto& roomOverrides = sceneTransitionActorOverrides.at(play->sceneNum);
+        for (auto& [setup, index, entry] : roomOverrides) {
+            if (setup == -1 || setup == gSaveContext.sceneSetupIndex) {
+                if (index == -1) {
+                    cmdActor->entries.push_back(entry);
+                } else {
+                    if (index < cmdActor->entries.size())
+                        cmdActor->entries[index] = entry;
+                    else
+                        cmdActor->entries.emplace(cmdActor->entries.begin()+index,entry);
+                }
+            }
+        }
+    }
 
     play->transiActorCtx.numActors = cmdActor->entries.size();
     play->transiActorCtx.list = (TransitionActorEntry*)malloc(cmdActor->entries.size() * sizeof(TransitionActorEntry));
@@ -745,6 +782,11 @@ bool Scene_CommandTransitionActorList(PlayState* play, Ship::SceneCommand* cmd) 
         play->transiActorCtx.list[i].pos.z = cmdActor->entries[i].posZ;
         play->transiActorCtx.list[i].rotY = cmdActor->entries[i].rotY;
         play->transiActorCtx.list[i].params = cmdActor->entries[i].initVar;
+
+        SPDLOG_INFO("Transition {0:d}\t ID: 0x{1:x}, \tParams: 0x{2:x}, \tpos: {3:d},{4:d},{5:d}, \trot: {6:d},\nroomF: {7:d},{8:d}\troomB: {9:d},{10:d}",
+            i, (uint16_t)cmdActor->entries[i].actorNum, cmdActor->entries[i].initVar,
+            cmdActor->entries[i].posX, cmdActor->entries[i].posY, cmdActor->entries[i].posZ, cmdActor->entries[i].rotY,
+            cmdActor->entries[i].frontObjectRoom, cmdActor->entries[i].frontTransitionReaction, cmdActor->entries[i].backObjectRoom, cmdActor->entries[i].backTransitionReaction);
     }
 
     return false;
