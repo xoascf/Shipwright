@@ -74,10 +74,11 @@ static f32 sHorizTriggerDists[2][4] = {
     { 100.0f, 75.0f, 50.0f, 25.0f },
 };
 
-#define SecretTransitionLength 2
+#define SecretTransitionLength 12
 
+//WESW-ENNE-SNWWW
 static s16 sSecretTransitionOrder[SecretTransitionLength][2] = {
-    {8,0},{8,0},
+    {5,0},{5,1},{0,1},{1,1}, {1,0},{0,0},{7,0},{8,1}, {7,1},{7,0},{8,0},{8,0}
 };
 
 static size_t sCurrentSecretIndex = 0;
@@ -144,13 +145,17 @@ void func_80A58DD4(EnHoll* this, PlayState* play) {
         if (absZ > sHorizTriggerDists[phi_t0][1]) {
             if (play->roomCtx.prevRoom.num >= 0 && play->roomCtx.status == 0) {
                 this->actor.room = play->transiActorCtx.list[transitionActorIdx].sides[this->side].room;
+                if (!(player->sCurrentSecretIndex < SecretTransitionLength &&
+                            sSecretTransitionOrder[player->sCurrentSecretIndex][0] == transitionActorIdx &&
+                            sSecretTransitionOrder[player->sCurrentSecretIndex][1] == this->side)) {
+                    player->sCurrentSecretIndex = 0;
+                }
                 if (player->sCurrentSecretIndex < SecretTransitionLength &&
                             sSecretTransitionOrder[player->sCurrentSecretIndex][0] == transitionActorIdx &&
                             sSecretTransitionOrder[player->sCurrentSecretIndex][1] == this->side) {
                     player->sCurrentSecretIndex++;
-                } else {
-                    player->sCurrentSecretIndex = 0;
                 }
+
                 EnHoll_SwapRooms(play);
                 func_80097534(play, &play->roomCtx);
             }

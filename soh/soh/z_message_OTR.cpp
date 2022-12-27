@@ -82,6 +82,17 @@ MessageTableEntry* OTRMessage_LoadTable(const char* filePath, bool isNES) {
         }\
     );
 
+#define MakeBlueMsgEng(txtID, text) \
+    CustomMessageManager::Instance->CreateMessage(\
+        questMessageTableID, (txtID) ,\
+        {\
+          TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,\
+          (text) ,\
+          "",\
+          "",\
+        }\
+    );
+
 #define MakeContinuingMsgEng(txtID, text, nextID, staticVar)\
     u16 staticVar = (nextID) ;\
     static std::string staticVar##Str = text ;\
@@ -266,6 +277,13 @@ extern "C" void OTRMessage_Init()
           "",
         }
     );
+
+    u16 StoneMsg = TextIDAllocator::Instance->allocateRange("stone", 64);
+    MakeBlueMsgEng(0x405, "They say that one part of&the secret directions&to a lost place is:^West&East&South&West");//Medigoron Crater Text
+    //MakeNormalMsgEng(0x417, );
+    MakeBlueMsgEng(StoneMsg+0,"There may be something special&behind falls that are not water...");
+    MakeBlueMsgEng(StoneMsg+8, "They say that one part of&the secret directions&to a lost place is:^South&North&West, West, West");
+    MakeBlueMsgEng(StoneMsg+26, "They say that one part of&the secret directions&to a lost place is:^East&North&North&East");
 
     u16 SariaMsg = TextIDAllocator::Instance->allocateRange("saria", 30);
     CustomMessageManager::Instance->CreateMessage(
