@@ -190,6 +190,22 @@ void ObjectKankyo_Destroy(Actor* thisx, PlayState* play) {
 void ObjectKankyo_Snow(ObjectKankyo* this, PlayState* play) {
 }
 
+void ObjectKankyo_Warp(ObjectKankyo* this, PlayState* play, Vec3f warpDist) {
+    this->actor.world.pos.x += warpDist.x;
+    this->actor.world.pos.y += warpDist.y;
+    this->actor.world.pos.z += warpDist.z;
+
+    this->prevEyePos.x += warpDist.x;
+    this->prevEyePos.y += warpDist.y;
+    this->prevEyePos.z += warpDist.z;
+
+    for (s16 ii = 0; ii < play->envCtx.unk_EE[3]; ii++) {
+        this->effects[ii].base.x += warpDist.x;
+        this->effects[ii].base.y += warpDist.y;
+        this->effects[ii].base.z += warpDist.z;
+    }
+}
+
 void ObjectKankyo_Fairies(ObjectKankyo* this, PlayState* play) {
     static Vec3f sSoundPos = { 0.0f, 0.0f, 0.0f };
     Player* player;

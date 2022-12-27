@@ -207,6 +207,12 @@ const std::map<u16, std::map<u16, std::vector<std::tuple<int, int, Ship::ActorSp
             { 3, -1, { ACTOR_EN_GOROIWA, 1243,322,100, 0,-20771,1, 0x1D00 }},
         } },
     } },
+    { SCENE_SYOTES2, {
+        { 0x00, {
+            //{ -1, 0, { 0x5D, 0,0, 100, 0,0,0,  0 }},
+            { -1, -1, { ACTOR_EN_ITEM00, 0,20,380, 0,0,0, 0x100+(uint16_t)ITEM00_HEART_PIECE  }},
+        } },
+    } },
 };
 
 //Dynamic plant locations
@@ -421,11 +427,14 @@ bool Scene_CommandEntranceList(PlayState* play, Ship::SceneCommand* cmd)
     else
     {
         play->setupEntranceList = (EntranceEntry*)malloc(otrEntrance->entrances.size() * sizeof(EntranceEntry));
+        SPDLOG_INFO("Scene: 0x{0:x}", (uint16_t)play->sceneNum);
 
         for (int i = 0; i < otrEntrance->entrances.size(); i++)
         {
             play->setupEntranceList[i].room = otrEntrance->entrances[i].roomToLoad;
             play->setupEntranceList[i].spawn = otrEntrance->entrances[i].startPositionIndex;
+            SPDLOG_INFO("Entry {0:d}\t Spawn: 0x{1:x}, \tRoom: 0x{2:x}",
+            i, play->setupEntranceList[i].spawn, play->setupEntranceList[i].room);
         }
 
         otrEntrance->cachedGameData = play->setupEntranceList;
@@ -735,7 +744,7 @@ const std::map<u16,  std::vector<std::tuple<int, int, Ship::TransitionActorEntry
         { -1, 12, { 1,255, 2,255,   ACTOR_EN_HOLL, 400,0, -800,  16384, 0x3F }},
         { -1, 13, { 2,255, 3,255,   ACTOR_EN_HOLL, 1600,0, -400,  -32768, 0x3F }},
         { -1, 14, { 7,255, 4,255,   ACTOR_EN_HOLL, 2000,0, -1600,  -16384, 0x3F }},
-        { -1, 15, { 7,255, 4,255,   ACTOR_EN_HOLL, 2000,0, -2400,  -16384, 0x3F }},
+        { -1, 15, { 7,255, 8,255,   ACTOR_EN_HOLL, 2000,0, -2400,  16384, 0x3F | (0x7 << 6) }},
         { -1, 16, { 8,255, 7,255,   ACTOR_EN_HOLL, 1600,0, -2800,  0, 0x3F }},
         { -1, 17, { 8,255, 7,255,   ACTOR_EN_HOLL, 400,0, -2400,  -16384, 0x3F | (0x7 << 6) }},
         { -1, 18, { 7,255, 8,255,   ACTOR_EN_HOLL, 800,0, -2800,  0, 0x3F }},

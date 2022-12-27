@@ -580,6 +580,12 @@ void DoorWarp1_ChildWarpOut(DoorWarp1* this, PlayState* play) {
         } else if (play->sceneNum == SCENE_BDAN_BOSS) {
             play->nextEntranceIndex = 0x10E;
             gSaveContext.nextCutsceneIndex = 0;
+        } else if (play->sceneNum == SCENE_SYOTES2) {
+            //if (LINK_IS_CHILD)
+                play->nextEntranceIndex = 252;
+            //else
+            //     play->nextEntranceIndex = 0x600;
+            gSaveContext.nextCutsceneIndex = 0;
         }
 
         if (gSaveContext.n64ddFlag && Randomizer_GetSettingValue(RSK_SHUFFLE_DUNGEON_ENTRANCES)) {

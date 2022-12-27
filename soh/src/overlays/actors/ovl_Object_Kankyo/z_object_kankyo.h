@@ -36,4 +36,6 @@ typedef struct ObjectKankyo {
     /* 0x165C */ ObjectKankyoActionFunc actionFunc;
 } ObjectKankyo; // size = 0x1660
 
+void ObjectKankyo_Warp(ObjectKankyo* this, PlayState* play, Vec3f warpDist);
+
 #endif
