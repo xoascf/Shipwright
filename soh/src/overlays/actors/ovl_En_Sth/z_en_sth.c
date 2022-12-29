@@ -87,6 +87,10 @@ static s16 sGetItemIds[6] = {
     GI_RUPEE_GOLD, GI_WALLET_ADULT, GI_STONE_OF_AGONY, GI_WALLET_GIANT, GI_BOMBCHUS_10, GI_HEART_PIECE,
 };
 
+static s16 sGetItemIds2[6] = {
+    GI_RUPEE_GOLD, GI_HEART_PIECE, GI_HEART_PIECE, GI_HEART_PIECE, GI_HEART_PIECE, GI_HEART_PIECE,
+};
+
 static Vec3f D_80B0B49C = { 700.0f, 400.0f, 0.0f };
 
 static Color_RGB8 sTunicColors[6] = {
@@ -162,7 +166,7 @@ void EnSth_SetupAfterObjectLoaded(EnSth* this, PlayState* play) {
 
     this->eventFlag = sEventFlags[this->actor.params];
     params = &this->actor.params;
-    if (gSaveContext.eventChkInf[13] & this->eventFlag) {
+    if ((gSaveContext.eventChkInf[13] & this->eventFlag) && ((gSaveContext.inventory.gsTokens < (this->actor.params * 10)+50) || (gSaveContext.eventChkInf[12] & this->eventFlag))) {
         EnSth_SetupAction(this, sRewardObtainedWaitActions[*params]);
     } else {
         EnSth_SetupAction(this, EnSth_RewardUnobtainedWait);
@@ -219,7 +223,10 @@ void EnSth_RewardObtainedTalk(EnSth* this, PlayState* play) {
         if (this->actor.params == 0) {
             EnSth_SetupAction(this, EnSth_ParentRewardObtainedWait);
         } else {
-            EnSth_SetupAction(this, EnSth_ChildRewardObtainedWait);
+            if ((gSaveContext.inventory.gsTokens < (this->actor.params * 10)+50) || (gSaveContext.eventChkInf[12] & this->eventFlag))
+                EnSth_SetupAction(this, EnSth_ChildRewardObtainedWait);
+            else
+                EnSth_SetupAction(this, EnSth_RewardUnobtainedWait);
         }
     }
     EnSth_FacePlayer(this, play);
@@ -238,7 +245,11 @@ void EnSth_ParentRewardObtainedWait(EnSth* this, PlayState* play) {
 }
 
 void EnSth_GivePlayerItem(EnSth* this, PlayState* play) {
-    u16 getItemId = sGetItemIds[this->actor.params];
+    u16 getItemId;
+    if (gSaveContext.eventChkInf[13] & this->eventFlag)
+        getItemId = sGetItemIds2[this->actor.params];
+    else
+        getItemId = sGetItemIds[this->actor.params];
     GetItemEntry getItemEntry = (GetItemEntry)GET_ITEM_NONE;
     
     if (gSaveContext.n64ddFlag) {
@@ -290,7 +301,10 @@ void EnSth_GiveReward(EnSth* this, PlayState* play) {
     if (Actor_HasParent(&this->actor, play)) {
         this->actor.parent = NULL;
         EnSth_SetupAction(this, EnSth_RewardObtainedTalk);
-        gSaveContext.eventChkInf[13] |= this->eventFlag;
+        if (gSaveContext.eventChkInf[13] & this->eventFlag)
+            gSaveContext.eventChkInf[12] |= this->eventFlag;
+        else
+            gSaveContext.eventChkInf[13] |= this->eventFlag;
     } else {
         EnSth_GivePlayerItem(this, play);
     }
@@ -310,10 +324,14 @@ void EnSth_RewardUnobtainedWait(EnSth* this, PlayState* play) {
     if (Actor_ProcessTalkRequest(&this->actor, play)) {
         EnSth_SetupAction(this, EnSth_RewardUnobtainedTalk);
     } else {
+        u16 CursedFamilyMsg = GetTextID("cursedfamily");
         if (this->actor.params == 0) {
             this->actor.textId = 0x28;
         } else {
-            this->actor.textId = 0x21;
+            if (gSaveContext.eventChkInf[13] & this->eventFlag)
+                this->actor.textId = CursedFamilyMsg+2;
+            else
+                this->actor.textId = 0x21;
         }
         if (this->actor.xzDistToPlayer < 100.0f) {
             func_8002F2CC(&this->actor, play, 100.0f);
@@ -326,10 +344,16 @@ void EnSth_ChildRewardObtainedWait(EnSth* this, PlayState* play) {
     if (Actor_ProcessTalkRequest(&this->actor, play)) {
         EnSth_SetupAction(this, EnSth_RewardObtainedTalk);
     } else {
+        u16 CursedFamilyMsg = GetTextID("cursedfamily");
         if (gSaveContext.inventory.gsTokens < 50) {
             this->actor.textId = 0x20;
         } else {
-            this->actor.textId = 0x1F;
+            if (gSaveContext.inventory.gsTokens < (this->actor.params * 10)+50)
+                this->actor.textId = CursedFamilyMsg+0;
+            else if (gSaveContext.inventory.gsTokens < 100)
+                this->actor.textId = CursedFamilyMsg+1;
+            else
+                this->actor.textId = 0x1F;
         }
         if (this->actor.xzDistToPlayer < 100.0f) {
             func_8002F2CC(&this->actor, play, 100.0f);

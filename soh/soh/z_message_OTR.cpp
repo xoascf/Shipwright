@@ -279,6 +279,7 @@ extern "C" void OTRMessage_Init()
     );
 
     u16 StoneMsg = TextIDAllocator::Instance->allocateRange("stone", 64);
+
     MakeBlueMsgEng(0x405, "They say that one part of&the secret directions&to a lost place is:^West&East&South&West");//Medigoron Crater Text
     //MakeNormalMsgEng(0x417, );
     MakeBlueMsgEng(StoneMsg+0,"There may be something special&behind falls that are not water...");
@@ -982,4 +983,9 @@ extern "C" void OTRMessage_Init()
     MakeNormalMsgEng(RutoMsg+24, "Why did you run away from me?");
     MakeNormalMsgEng(RutoMsg+25, "Why wouldn't you talk to me?\x0B\x02");
     MakeNormalMsgEng(RutoMsg+26, "\x08Oh, the tree is in the way,&how disappointing.\016<\x02");
+
+    u16 CursedFamilyMsg = TextIDAllocator::Instance->allocateRange("cursedfamily", 20);
+    MakeNormalMsgEng(CursedFamilyMsg+0, "Our father may be telling you&that he has no need for&any help, but please^ignore his politeness.&I may have more rewards&for you yet!");
+    MakeNormalMsgEng(CursedFamilyMsg+1, "I'm happy to have given&what I can, please keep&destroying the curse!");
+    MakeNormalMsgEng(CursedFamilyMsg+2, "You've done such good work!&Please accept this reward!\x0B\x02");
 }
