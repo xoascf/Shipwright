@@ -82,7 +82,7 @@ const char* GetLanguageCode() {
             break;
     }
     
-    return "en-US";
+    return "es-ES";
 }
 
 // MARK: - Boss Title Cards
@@ -355,48 +355,97 @@ void RegisterOnUpdateMainMenuSelection() {
 
 static uint8_t ttsHasMessage;
 static uint8_t ttsHasNewMessage;
-static char ttsMessageBuf[256];
 static int8_t ttsCurrentHighlightedChoice;
+static std::string msgOutput;
+const char* langcode = GetLanguageCode();
 
-void Message_TTS_Decode(uint8_t* sourceBuf, char* destBuf, uint16_t startOfset, uint16_t size) {
-    uint32_t destWriteIndex = 0;
+std::map<const char*, std::map<uint8_t, std::string>> langReplacements = {
+    { "en-US",
+      { { 0xA5, "C (up)" },
+        { 0xA6, "C (down)" },
+        { 0xA7, "C (left)" },
+        { 0xA8, "C (right)" },
+        { 0xAB, "D-Pad" },
+}},
+    { "es-ES",
+      { { 0xA5, "C (arriba)" },
+        { 0xA6, "C (abajo)" },
+        { 0xA7, "C (izquierda)" },
+        { 0xA8, "C (derecha)" },
+        { 0x3C, "\xA1" },
+        { 0x5C, "\xF1" },
+        { 0x81, "\xC1" },
+        { 0x86, "\xC9" },
+        { 0x89, "\xCD" },
+        { 0x8A, "\xD3" },
+        { 0x8D, "\xDA" },
+        { 0x91, "\xE1" },
+        { 0x96, "\xE9" },
+        { 0x99, "\xED" },
+        { 0x9A, "\xF3" },
+        { 0x9C, "\xFA" },
+        { 0xAA, "control" },
+        { 0xAB, "cruceta" },
+}},
+    { "fr-FR",
+      {
+        { 0xAB, "croix directionnelle" },
+}},
+    { "de-DE",
+      { 
+        { 0x8F, "\xDF" },
+        { 0x93, "\xE4" },
+        { 0x9B, "\xF6" },
+        { 0x9E, "\xFC" },
+        { 0xAB, "Steuerkreuz" },
+}},
+};
+
+std::string Message_TTS_Decode(uint8_t* sourceBuf, uint16_t startOffset, uint16_t size) {
+    std::string result;
+
+    std::map<uint8_t, std::string> replacements = langReplacements[langcode];
+    if (replacements.empty()) {
+        replacements = langReplacements["en-US"];
+    }
     uint8_t isListingChoices = 0;
-    
+
     for (uint16_t i = 0; i < size; i++) {
-        uint8_t cchar = sourceBuf[i + startOfset];
-        
-        if (cchar < ' ') {
-            switch (cchar) {
-                case MESSAGE_NEWLINE:
-                    destBuf[destWriteIndex++] = (isListingChoices) ? '\n' : ' ';
-                    break;
-                case MESSAGE_THREE_CHOICE:
-                case MESSAGE_TWO_CHOICE:
-                    destBuf[destWriteIndex++] = '\n';
-                    isListingChoices = 1;
-                    break;
-                case MESSAGE_COLOR:
-                case MESSAGE_SHIFT:
-                case MESSAGE_TEXT_SPEED:
-                case MESSAGE_BOX_BREAK_DELAYED:
-                case MESSAGE_FADE:
-                case MESSAGE_ITEM_ICON:
-                    i++;
-                    break;
-                case MESSAGE_FADE2:
-                case MESSAGE_SFX:
-                case MESSAGE_TEXTID:
-                    i += 2;
-                    break;
-                default:
-                    break;
-            }
+        uint8_t cchar = sourceBuf[i + startOffset];
+
+        if (cchar == MESSAGE_NEWLINE) {
+            result += (isListingChoices) ? '\n' : ' ';
+        } else if (cchar == MESSAGE_THREE_CHOICE || cchar == MESSAGE_TWO_CHOICE) {
+            result += '\n';
+            isListingChoices = 1;
+        } else if (cchar == MESSAGE_COLOR || cchar == MESSAGE_SHIFT || cchar == MESSAGE_TEXT_SPEED ||
+                   cchar == MESSAGE_BOX_BREAK_DELAYED || cchar == MESSAGE_FADE || cchar == MESSAGE_ITEM_ICON) {
+            i++;
+        } else if (cchar == MESSAGE_FADE2 || cchar == MESSAGE_SFX || cchar == MESSAGE_TEXTID) {
+            i += 2;
+        } else if (cchar == 0x1A || cchar == 0x08) { // skip
+        } else if (cchar == 0x9F) {
+            result += 'A';
+        } else if (cchar == 0xA0) {
+            result += 'B';
+        } else if (cchar == 0xA1) {
+            result += "C";
+        } else if (cchar == 0xA2) {
+            result += 'L';
+        } else if (cchar == 0xA3) {
+            result += 'R';
+        } else if (cchar == 0xA4) {
+            result += 'Z';
         } else {
-            destBuf[destWriteIndex++] = cchar;
+            auto it = replacements.find(cchar);
+            if (it != replacements.end()) {
+                result += it->second;
+            } else {
+                result += cchar;
+            }
         }
     }
-    
-    destBuf[destWriteIndex] = 0;
+    return result;
 }
 
 void RegisterOnDialogMessageHook() {
@@ -404,12 +453,21 @@ void RegisterOnDialogMessageHook() {
         if (!CVarGetInteger("gA11yTTS", 0)) return;
         
         MessageContext *msgCtx = &gPlayState->msgCtx;
+        Actor *msgTlk = msgCtx->talkActor;
+        s16 actorID = 0;
+        s16 actorArg = 0;
+        if (msgTlk != nullptr) {
+            actorID = msgTlk->id;
+            actorArg = msgTlk->params;
+            if (actorArg < 0)
+                actorArg += 256;
+        }
         
         if (msgCtx->msgMode == MSGMODE_TEXT_NEXT_MSG || msgCtx->msgMode == MSGMODE_DISPLAY_SONG_PLAYED_TEXT_BEGIN || (msgCtx->msgMode == MSGMODE_TEXT_CONTINUING && msgCtx->stateTimer == 1)) {
             ttsHasNewMessage = 1;
         } else if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING || msgCtx->msgMode == MSGMODE_TEXT_AWAIT_NEXT || msgCtx->msgMode == MSGMODE_TEXT_DONE || msgCtx->msgMode == MSGMODE_TEXT_DELAYED_BREAK
                    || msgCtx->msgMode == MSGMODE_OCARINA_STARTING || msgCtx->msgMode == MSGMODE_OCARINA_PLAYING
-                   || msgCtx->msgMode == MSGMODE_DISPLAY_SONG_PLAYED_TEXT || msgCtx->msgMode == MSGMODE_DISPLAY_SONG_PLAYED_TEXT || msgCtx->msgMode == MSGMODE_SONG_PLAYED_ACT_BEGIN || msgCtx->msgMode == MSGMODE_SONG_PLAYED_ACT || msgCtx->msgMode == MSGMODE_SONG_PLAYBACK_STARTING || msgCtx->msgMode == MSGMODE_SONG_PLAYBACK || msgCtx->msgMode == MSGMODE_SONG_DEMONSTRATION_STARTING || msgCtx->msgMode == MSGMODE_SONG_DEMONSTRATION_SELECT_INSTRUMENT || msgCtx->msgMode == MSGMODE_SONG_DEMONSTRATION
+                   || msgCtx->msgMode == MSGMODE_DISPLAY_SONG_PLAYED_TEXT || msgCtx->msgMode == MSGMODE_SONG_PLAYED_ACT_BEGIN || msgCtx->msgMode == MSGMODE_SONG_PLAYED_ACT || msgCtx->msgMode == MSGMODE_SONG_PLAYBACK_STARTING || msgCtx->msgMode == MSGMODE_SONG_PLAYBACK || msgCtx->msgMode == MSGMODE_SONG_DEMONSTRATION_STARTING || msgCtx->msgMode == MSGMODE_SONG_DEMONSTRATION_SELECT_INSTRUMENT || msgCtx->msgMode == MSGMODE_SONG_DEMONSTRATION
         ) {
             if (ttsHasNewMessage) {
                 ttsHasMessage = 1;
@@ -417,8 +475,39 @@ void RegisterOnDialogMessageHook() {
                 ttsCurrentHighlightedChoice = 0;
                 
                 uint16_t size = msgCtx->decodedTextLen;
-                Message_TTS_Decode(msgCtx->msgBufDecoded, ttsMessageBuf, 0, size);
-                SpeechSynthesizerSpeak(ttsMessageBuf, GetLanguageCode());
+                msgOutput = Message_TTS_Decode(msgCtx->msgBufDecoded, 0, size);
+                //
+                langcode = GetLanguageCode();
+                bool langIsES = (strcmp(langcode, "es-ES") == 0);
+                const char* lang;
+                std::string gend = "male";
+                if (langIsES)
+                    lang = "es-ES_tradnl";
+                else
+                    lang = langcode;
+
+                osSyncPrintf("ACTOR: id %d, arg '%d'\n", actorID, actorArg);
+
+                if (actorID == ACTOR_EN_SA) // Saria
+                    gend = "female";
+                else if (actorID == ACTOR_EN_ELF || actorID == ACTOR_EN_TITE || actorID == ACTOR_ELF_MSG || actorID == ACTOR_BOSS_MO) // Navi
+                {
+                    gend = "female";
+                    if (langIsES)
+                        lang = "es-CO";
+                }
+                else if (actorID == ACTOR_EN_KO) // Kokiri Kids
+                    if (actorArg == 6 || actorArg == 1 || actorArg == 12)
+                        gend = "female";
+                    else
+                        if (langIsES)
+                            lang = "es-AR";
+
+                std::string pfx = "<voice gender=\"" + gend + "\" languages=\"" + lang +
+                                  "\" required=\"languages gender variant\">" + msgOutput + "</voice>";
+
+                osSyncPrintf("MSG:'%s'\n", pfx.c_str());
+                SpeechSynthesizerSpeakStr(pfx, lang);
             } else if (msgCtx->msgMode == MSGMODE_TEXT_DONE && msgCtx->choiceNum > 0 && msgCtx->choiceIndex != ttsCurrentHighlightedChoice) {
                 ttsCurrentHighlightedChoice = msgCtx->choiceIndex;
                 uint16_t startOffset = 0;
@@ -453,8 +542,8 @@ void RegisterOnDialogMessageHook() {
                     
                     if (startOffset < msgCtx->decodedTextLen && startOffset != endOffset) {
                         uint16_t size = endOffset - startOffset;
-                        Message_TTS_Decode(msgCtx->msgBufDecoded, ttsMessageBuf, startOffset, size);
-                        SpeechSynthesizerSpeak(ttsMessageBuf, GetLanguageCode());
+                        msgOutput = Message_TTS_Decode(msgCtx->msgBufDecoded, startOffset, size);
+                        SpeechSynthesizerSpeakStr(msgOutput, GetLanguageCode());
                     }
                 }
             }
@@ -462,8 +551,10 @@ void RegisterOnDialogMessageHook() {
             ttsHasMessage = 0;
             ttsHasNewMessage = 0;
             
-            if (msgCtx->decodedTextLen < 3 || (msgCtx->msgBufDecoded[msgCtx->decodedTextLen - 2] != MESSAGE_FADE && msgCtx->msgBufDecoded[msgCtx->decodedTextLen - 3] != MESSAGE_FADE2)) {
-                SpeechSynthesizerSpeakEnglish(""); // cancel current speech (except for faded out messages)
+            if ((msgCtx->decodedTextLen < 3 ||
+                (msgCtx->msgBufDecoded[msgCtx->decodedTextLen - 2] != MESSAGE_FADE &&
+                    msgCtx->msgBufDecoded[msgCtx->decodedTextLen - 3] != MESSAGE_FADE2)) && msgCtx->ocarinaMode == OCARINA_MODE_00) {
+                SpeechSynthesizerSpeakEnglish(""); // cancel current speech (except for faded out messages and ocarina played songs)
             }
         }
     });
