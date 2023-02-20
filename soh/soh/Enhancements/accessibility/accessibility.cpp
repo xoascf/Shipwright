@@ -20,14 +20,87 @@ typedef enum {
     /* 0x03 */ TEXT_BANK_FILECHOOSE,
 } TextBank;
 
+const char* GetLanguageCode() {
+    switch (gSaveContext.language) {
+        case LANGUAGE_FRA:
+            return "fr-FR";
+            break;
+        case LANGUAGE_GER:
+            return "de-DE";
+            break;
+    }
+
+    return "en-US";
+}
+
+std::string GetJSONLanguage() {
+    std::string lang = "eng";
+    switch (gSaveContext.language) {
+        case LANGUAGE_FRA:
+            lang = "fra";
+            break;
+        case LANGUAGE_GER:
+            lang = "ger";
+            break;
+    }
+
+    return lang;
+}
+
 nlohmann::json sceneMap = nullptr;
 nlohmann::json unitsMap = nullptr;
 nlohmann::json kaleidoMap = nullptr;
 nlohmann::json fileChooseMap = nullptr;
+nlohmann::json charSetMap = nullptr;
+
+std::string langLoaded;
+bool UpdateJSON(const std::string jsonFilePath, nlohmann::json* jsonMap, const std::string language) {
+    auto file = OTRGlobals::Instance->context->GetResourceManager()->LoadFile(jsonFilePath + "_" + language + ".json");
+    if (file == nullptr) {
+        return false;
+    }
+    nlohmann::json map = nlohmann::json::parse(file->Buffer);
+    jsonMap->update(map);
+    return true;
+}
+
+void ParseJSON(const std::string jsonFilePath, nlohmann::json* jsonMap, const std::string lang) {
+    if (UpdateJSON(jsonFilePath, jsonMap, "eng") && lang != "eng") { // always load eng as fallback, if not, it won't load!
+        UpdateJSON(jsonFilePath, jsonMap, lang);
+    }
+}
+
+std::vector<std::pair<std::string, nlohmann::json*>> jsonFiles = {
+    {"accessibility/texts/scenes", &sceneMap},
+    {"accessibility/texts/units", &unitsMap},
+    {"accessibility/texts/kaleidoscope", &kaleidoMap},
+    {"accessibility/texts/filechoose", &fileChooseMap},
+    {"accessibility/texts/charset", &charSetMap}
+};
+
+std::map<std::uint8_t, std::string> charReplacements;
+
+void LoadAccessibilityTexts(std::string lang) {
+    if (langLoaded == lang)
+        return;
+
+    langLoaded = lang;
+    charReplacements.clear();
+    for (auto& [jsonFilePath, jsonMap] : jsonFiles) {
+        jsonMap->clear();
+        ParseJSON(jsonFilePath, jsonMap, lang);
+    }
+    if (charSetMap.is_object() && !charSetMap.empty()) {
+        for (auto& c : charSetMap.items()) {
+            charReplacements[static_cast<uint8_t>(std::strtoul(c.key().c_str(), nullptr, 16))] = c.value();
+        }
+    }
+}
 
 // MARK: - Helpers
 
 std::string GetParameritizedText(std::string key, TextBank bank, const char* arg) {
+    LoadAccessibilityTexts(GetJSONLanguage());
     switch (bank) {
         case TEXT_BANK_SCENES: {
             return sceneMap[key].get<std::string>();
@@ -72,22 +145,10 @@ std::string GetParameritizedText(std::string key, TextBank bank, const char* arg
     }
 }
 
-const char* GetLanguageCode() {
-    switch (gSaveContext.language) {
-        case LANGUAGE_FRA:
-            return "fr-FR";
-            break;
-        case LANGUAGE_GER:
-            return "de-DE";
-            break;
-    }
-    
-    return "es-ES";
-}
-
 // MARK: - Boss Title Cards
 
 const char* NameForSceneId(int16_t sceneId) {
+    LoadAccessibilityTexts(GetJSONLanguage());
     auto key = std::to_string(sceneId);
     auto name = GetParameritizedText(key, TEXT_BANK_SCENES, nullptr);
     return strdup(name.c_str());
@@ -98,7 +159,7 @@ static const char* titleCardText;
 void RegisterOnSceneInitHook() {
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnSceneInit>([](int16_t sceneNum) {
         if (!CVarGetInteger("gA11yTTS", 0)) return;
-        
+        LoadAccessibilityTexts(GetJSONLanguage());
         titleCardText = NameForSceneId(sceneNum);
     });
 }
@@ -106,7 +167,7 @@ void RegisterOnSceneInitHook() {
 void RegisterOnPresentTitleCardHook() {
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPresentTitleCard>([]() {
         if (!CVarGetInteger("gA11yTTS", 0)) return;
-        
+        LoadAccessibilityTexts(GetJSONLanguage());
         SpeechSynthesizerSpeak(titleCardText, GetLanguageCode());
     });
 }
@@ -116,7 +177,7 @@ void RegisterOnPresentTitleCardHook() {
 void RegisterOnInterfaceUpdateHook() {
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnInterfaceUpdate>([]() {
         if (!CVarGetInteger("gA11yTTS", 0)) return;
-        
+        LoadAccessibilityTexts(GetJSONLanguage());
         static uint32_t prevTimer = 0;
         static char ttsAnnounceBuf[32];
         
@@ -175,7 +236,7 @@ void RegisterOnInterfaceUpdateHook() {
 void RegisterOnKaleidoscopeUpdateHook() {
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnKaleidoscopeUpdate>([](int16_t inDungeonScene) {
         if (!CVarGetInteger("gA11yTTS", 0)) return;
-        
+        LoadAccessibilityTexts(GetJSONLanguage());
         static uint16_t prevCursorIndex = 0;
         static uint16_t prevCursorSpecialPos = 0;
         static uint16_t prevCursorPoint[5] = { 0 };
@@ -306,14 +367,14 @@ void RegisterOnKaleidoscopeUpdateHook() {
 void RegisterOnUpdateMainMenuSelection() {
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPresentFileSelect>([]() {
         if (!CVarGetInteger("gA11yTTS", 0)) return;
-        
+        LoadAccessibilityTexts(GetJSONLanguage());
         auto translation = GetParameritizedText("file1", TEXT_BANK_FILECHOOSE, nullptr);
         SpeechSynthesizerSpeak(strdup(translation.c_str()), GetLanguageCode());
     });
     
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnUpdateFileSelectSelection>([](uint16_t optionIndex) {
         if (!CVarGetInteger("gA11yTTS", 0)) return;
-        
+        LoadAccessibilityTexts(GetJSONLanguage());
         switch (optionIndex) {
             case FS_BTN_MAIN_FILE_1: {
                 auto translation = GetParameritizedText("file1", TEXT_BANK_FILECHOOSE, nullptr);
@@ -357,57 +418,9 @@ static uint8_t ttsHasMessage;
 static uint8_t ttsHasNewMessage;
 static int8_t ttsCurrentHighlightedChoice;
 static std::string msgOutput;
-const char* langcode = GetLanguageCode();
-
-std::map<const char*, std::map<uint8_t, std::string>> langReplacements = {
-    { "en-US",
-      { { 0xA5, "C (up)" },
-        { 0xA6, "C (down)" },
-        { 0xA7, "C (left)" },
-        { 0xA8, "C (right)" },
-        { 0xAB, "D-Pad" },
-}},
-    { "es-ES",
-      { { 0xA5, "C (arriba)" },
-        { 0xA6, "C (abajo)" },
-        { 0xA7, "C (izquierda)" },
-        { 0xA8, "C (derecha)" },
-        { 0x3C, "\xA1" },
-        { 0x5C, "\xF1" },
-        { 0x81, "\xC1" },
-        { 0x86, "\xC9" },
-        { 0x89, "\xCD" },
-        { 0x8A, "\xD3" },
-        { 0x8D, "\xDA" },
-        { 0x91, "\xE1" },
-        { 0x96, "\xE9" },
-        { 0x99, "\xED" },
-        { 0x9A, "\xF3" },
-        { 0x9C, "\xFA" },
-        { 0xAA, "control" },
-        { 0xAB, "cruceta" },
-}},
-    { "fr-FR",
-      {
-        { 0xAB, "croix directionnelle" },
-}},
-    { "de-DE",
-      { 
-        { 0x8F, "\xDF" },
-        { 0x93, "\xE4" },
-        { 0x9B, "\xF6" },
-        { 0x9E, "\xFC" },
-        { 0xAB, "Steuerkreuz" },
-}},
-};
 
 std::string Message_TTS_Decode(uint8_t* sourceBuf, uint16_t startOffset, uint16_t size) {
     std::string result;
-
-    std::map<uint8_t, std::string> replacements = langReplacements[langcode];
-    if (replacements.empty()) {
-        replacements = langReplacements["en-US"];
-    }
     uint8_t isListingChoices = 0;
 
     for (uint16_t i = 0; i < size; i++) {
@@ -424,21 +437,9 @@ std::string Message_TTS_Decode(uint8_t* sourceBuf, uint16_t startOffset, uint16_
         } else if (cchar == MESSAGE_FADE2 || cchar == MESSAGE_SFX || cchar == MESSAGE_TEXTID) {
             i += 2;
         } else if (cchar == 0x1A || cchar == 0x08) { // skip
-        } else if (cchar == 0x9F) {
-            result += 'A';
-        } else if (cchar == 0xA0) {
-            result += 'B';
-        } else if (cchar == 0xA1) {
-            result += "C";
-        } else if (cchar == 0xA2) {
-            result += 'L';
-        } else if (cchar == 0xA3) {
-            result += 'R';
-        } else if (cchar == 0xA4) {
-            result += 'Z';
         } else {
-            auto it = replacements.find(cchar);
-            if (it != replacements.end()) {
+            auto it = charReplacements.find(cchar);
+            if (it != charReplacements.end()) {
                 result += it->second;
             } else {
                 result += cchar;
@@ -451,7 +452,7 @@ std::string Message_TTS_Decode(uint8_t* sourceBuf, uint16_t startOffset, uint16_
 void RegisterOnDialogMessageHook() {
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnDialogMessage>([]() {
         if (!CVarGetInteger("gA11yTTS", 0)) return;
-        
+        LoadAccessibilityTexts(GetJSONLanguage());
         MessageContext *msgCtx = &gPlayState->msgCtx;
         Actor *msgTlk = msgCtx->talkActor;
         s16 actorID = 0;
@@ -476,38 +477,37 @@ void RegisterOnDialogMessageHook() {
                 
                 uint16_t size = msgCtx->decodedTextLen;
                 msgOutput = Message_TTS_Decode(msgCtx->msgBufDecoded, 0, size);
-                //
-                langcode = GetLanguageCode();
-                bool langIsES = (strcmp(langcode, "es-ES") == 0);
-                const char* lang;
-                std::string gend = "male";
+                const char* langCode = GetLanguageCode();
+                bool langIsES = (strcmp(langCode, "es-ES") == 0);
+                const char* langSpoken;
+                std::string gender = "male";
                 if (langIsES)
-                    lang = "es-ES_tradnl";
+                    langSpoken = "es-ES_tradnl";
                 else
-                    lang = langcode;
+                    langSpoken = langCode;
 
                 osSyncPrintf("ACTOR: id %d, arg '%d'\n", actorID, actorArg);
 
                 if (actorID == ACTOR_EN_SA) // Saria
-                    gend = "female";
+                    gender = "female";
                 else if (actorID == ACTOR_EN_ELF || actorID == ACTOR_EN_TITE || actorID == ACTOR_ELF_MSG || actorID == ACTOR_BOSS_MO) // Navi
                 {
-                    gend = "female";
+                    gender = "female";
                     if (langIsES)
-                        lang = "es-CO";
+                        langSpoken = "es-CO";
                 }
                 else if (actorID == ACTOR_EN_KO) // Kokiri Kids
                     if (actorArg == 6 || actorArg == 1 || actorArg == 12)
-                        gend = "female";
+                        gender = "female";
                     else
                         if (langIsES)
-                            lang = "es-AR";
+                            langSpoken = "es-AR";
 
-                std::string pfx = "<voice gender=\"" + gend + "\" languages=\"" + lang +
+                std::string pfx = "<voice gender=\"" + gender + "\" languages=\"" + langSpoken +
                                   "\" required=\"languages gender variant\">" + msgOutput + "</voice>";
 
                 osSyncPrintf("MSG:'%s'\n", pfx.c_str());
-                SpeechSynthesizerSpeakStr(pfx, lang);
+                SpeechSynthesizerSpeakStr(pfx, langSpoken);
             } else if (msgCtx->msgMode == MSGMODE_TEXT_DONE && msgCtx->choiceNum > 0 && msgCtx->choiceIndex != ttsCurrentHighlightedChoice) {
                 ttsCurrentHighlightedChoice = msgCtx->choiceIndex;
                 uint16_t startOffset = 0;
@@ -562,38 +562,6 @@ void RegisterOnDialogMessageHook() {
 
 // MARK: - Main Registration
 
-void InitAccessibilityTexts() {
-    std::string languageSuffix = "_eng.json";
-    switch (gSaveContext.language) {
-        case LANGUAGE_FRA:
-            languageSuffix = "_fra.json";
-            break;
-        case LANGUAGE_GER:
-            languageSuffix = "_ger.json";
-            break;
-    }
-
-    auto sceneFile = OTRGlobals::Instance->context->GetResourceManager()->LoadFile("accessibility/texts/scenes" + languageSuffix);
-    if (sceneFile != nullptr && sceneMap == nullptr) {
-        sceneMap = nlohmann::json::parse(sceneFile->Buffer);
-    }
-    
-    auto unitsFile = OTRGlobals::Instance->context->GetResourceManager()->LoadFile("accessibility/texts/units" + languageSuffix);
-    if (unitsFile != nullptr && unitsMap == nullptr) {
-        unitsMap = nlohmann::json::parse(unitsFile->Buffer);
-    }
-    
-    auto kaleidoFile = OTRGlobals::Instance->context->GetResourceManager()->LoadFile("accessibility/texts/kaleidoscope" + languageSuffix);
-    if (kaleidoFile != nullptr && kaleidoMap == nullptr) {
-        kaleidoMap = nlohmann::json::parse(kaleidoFile->Buffer);
-    }
-    
-    auto fileChooseFile = OTRGlobals::Instance->context->GetResourceManager()->LoadFile("accessibility/texts/filechoose" + languageSuffix);
-    if (fileChooseFile != nullptr && fileChooseMap == nullptr) {
-        fileChooseMap = nlohmann::json::parse(fileChooseFile->Buffer);
-    }
-}
-
 void RegisterAccessibilityModHooks() {
     RegisterOnDialogMessageHook();
     RegisterOnSceneInitHook();
@@ -604,6 +572,6 @@ void RegisterAccessibilityModHooks() {
 }
 
 void InitAccessibility() {
-    InitAccessibilityTexts();
+    LoadAccessibilityTexts(GetJSONLanguage());
     RegisterAccessibilityModHooks();
 }
