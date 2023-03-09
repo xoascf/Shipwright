@@ -20,7 +20,6 @@
 #include <time.h>
 #endif
 #include <AudioPlayer.h>
-#include "Enhancements/speechsynthesizer/SpeechSynthesizer.h"
 #include "Enhancements/controls/SohInputEditorWindow.h"
 #include "Enhancements/cosmetics/CosmeticsEditor.h"
 #include "Enhancements/audio/AudioCollection.h"
@@ -142,7 +141,6 @@ CustomMessageManager* CustomMessageManager::Instance;
 ItemTableManager* ItemTableManager::Instance;
 GameInteractor* GameInteractor::Instance;
 AudioCollection* AudioCollection::Instance;
-SpeechSynthesizer* SpeechSynthesizer::Instance;
 
 extern "C" char** cameraStrings;
 std::vector<std::shared_ptr<std::string>> cameraStdStrings;
@@ -337,6 +335,7 @@ OTRGlobals::OTRGlobals() {
     auto sohFast3dWindow =
         std::make_shared<Fast::Fast3dWindow>(std::vector<std::shared_ptr<Ship::GuiWindow>>({ sohInputEditorWindow }));
     context->InitWindow(sohFast3dWindow);
+    context->InitSpeechSynthesis();
 
     auto overlay = context->GetInstance()->GetWindow()->GetGui()->GetGameOverlay();
     overlay->LoadFont("Press Start 2P", 12.0f, "fonts/PressStart2P-Regular.ttf");
@@ -1224,16 +1223,7 @@ extern "C" void InitOTR() {
     OTRGlobals::Instance->gRandoContext->AddExcludedOptions();
     AudioCollection::Instance = new AudioCollection();
     ActorDB::Instance = new ActorDB();
-#ifdef __APPLE__
-    SpeechSynthesizer::Instance = new DarwinSpeechSynthesizer();
-    SpeechSynthesizer::Instance->Init();
-#elif defined(_WIN32)
-    SpeechSynthesizer::Instance = new SAPISpeechSynthesizer();
-    SpeechSynthesizer::Instance->Init();
-#else
-    SpeechSynthesizer::Instance = new SpeechLogger();
-    SpeechSynthesizer::Instance->Init();
-#endif
+    SpeechSynthesizerInit();
 
 #ifdef ENABLE_REMOTE_CONTROL
     CrowdControl::Instance = new CrowdControl();
