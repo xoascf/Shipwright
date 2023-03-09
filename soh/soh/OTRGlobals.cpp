@@ -28,7 +28,6 @@
 #define DRWAV_IMPLEMENTATION
 #include <dr_libs/wav.h>
 #include <AudioPlayer.h>
-#include "Enhancements/speechsynthesizer/SpeechSynthesizer.h"
 #include "Enhancements/controls/SohInputEditorWindow.h"
 #include "Enhancements/cosmetics/CosmeticsEditor.h"
 #include "Enhancements/audio/AudioCollection.h"
@@ -130,7 +129,6 @@ CustomMessageManager* CustomMessageManager::Instance;
 ItemTableManager* ItemTableManager::Instance;
 GameInteractor* GameInteractor::Instance;
 AudioCollection* AudioCollection::Instance;
-SpeechSynthesizer* SpeechSynthesizer::Instance;
 
 extern "C" char** cameraStrings;
 std::vector<std::shared_ptr<std::string>> cameraStdStrings;
@@ -250,9 +248,9 @@ const char* constCameraStrings[] = {
 OTRGlobals::OTRGlobals() {
     std::vector<std::string> OTRFiles;
     std::string mqPath = LUS::Context::LocateFileAcrossAppDirs("oot-mq.otr", appShortName);
-    if (std::filesystem::exists(mqPath)) { 
+    if (std::filesystem::exists(mqPath)) {
         OTRFiles.push_back(mqPath);
-    } 
+    }
     std::string ootPath = LUS::Context::LocateFileAcrossAppDirs("oot.otr", appShortName);
     if (std::filesystem::exists(ootPath)) {
         OTRFiles.push_back(ootPath);
@@ -285,7 +283,7 @@ OTRGlobals::OTRGlobals() {
         );
     });
     OTRFiles.insert(OTRFiles.end(), patchOTRs.begin(), patchOTRs.end());
-    std::unordered_set<uint32_t> ValidHashes = { 
+    std::unordered_set<uint32_t> ValidHashes = {
         OOT_PAL_MQ,
         OOT_NTSC_JP_MQ,
         OOT_NTSC_US_MQ,
@@ -320,6 +318,7 @@ OTRGlobals::OTRGlobals() {
 
     auto sohInputEditorWindow = std::make_shared<SohInputEditorWindow>("gControllerConfigurationEnabled", "Input Editor");
     context->InitWindow(sohInputEditorWindow);
+    context->InitSpeechSynthesis();
     context->InitAudio();
 
     SPDLOG_INFO("Starting Ship of Harkinian version {}", (char*)gBuildVersion);
@@ -711,7 +710,7 @@ std::unordered_map<ItemID, GetItemID> ItemIDtoGetItemIDMap {
     { ITEM_BUG, GI_BUGS },
     { ITEM_BULLET_BAG_30, GI_BULLET_BAG_30 },
     { ITEM_BULLET_BAG_40, GI_BULLET_BAG_40 },
-    { ITEM_BULLET_BAG_50, GI_BULLET_BAG_50 }, 
+    { ITEM_BULLET_BAG_50, GI_BULLET_BAG_50 },
     { ITEM_CHICKEN, GI_CHICKEN },
     { ITEM_CLAIM_CHECK, GI_CLAIM_CHECK },
     { ITEM_COJIRO, GI_COJIRO },
@@ -928,7 +927,7 @@ void CheckSoHOTRVersion(std::string otrPath) {
 }
 
 // Checks the program version stored in the otr and compares the major value to soh
-// For Windows/Mac/Linux if the version doesn't match, offer to 
+// For Windows/Mac/Linux if the version doesn't match, offer to
 void DetectOTRVersion(std::string fileName, bool isMQ) {
     bool isOtrOld = false;
     std::string otrPath = LUS::Context::LocateFileAcrossAppDirs(fileName, appShortName);
@@ -1105,16 +1104,7 @@ extern "C" void InitOTR() {
     SohGui::SetupGuiElements();
     AudioCollection::Instance = new AudioCollection();
     ActorDB::Instance = new ActorDB();
-#ifdef __APPLE__
-    SpeechSynthesizer::Instance = new DarwinSpeechSynthesizer();
-    SpeechSynthesizer::Instance->Init();
-#elif defined(_WIN32)
-    SpeechSynthesizer::Instance = new SAPISpeechSynthesizer();
-    SpeechSynthesizer::Instance->Init();
-#else
-    SpeechSynthesizer::Instance = new SpeechLogger();
-    SpeechSynthesizer::Instance->Init();
-#endif
+    SpeechSynthesizerInit();
 
 #ifdef ENABLE_REMOTE_CONTROL
     CrowdControl::Instance = new CrowdControl();
@@ -1159,7 +1149,7 @@ extern "C" void InitOTR() {
     }
 #endif
 
-    std::shared_ptr<LUS::Config> conf = OTRGlobals::Instance->context->GetConfig(); 
+    std::shared_ptr<LUS::Config> conf = OTRGlobals::Instance->context->GetConfig();
     conf->RegisterConfigVersionUpdater(std::make_shared<LUS::ConfigVersion1Updater>());
     conf->RegisterConfigVersionUpdater(std::make_shared<LUS::ConfigVersion2Updater>());
     conf->RunVersionUpdates();
@@ -1599,11 +1589,11 @@ std::shared_ptr<LUS::IResource> GetResourceByNameHandlingMQ(const char* path) {
 
 extern "C" char* GetResourceDataByNameHandlingMQ(const char* path) {
     auto res = GetResourceByNameHandlingMQ(path);
-    
+
     if (res == nullptr) {
         return nullptr;
     }
-    
+
     return (char*)res->GetRawPointer();
 }
 
@@ -1676,7 +1666,7 @@ extern "C" char* ResourceMgr_LoadIfDListByName(const char* filePath) {
 
     if (res->GetInitData()->Type == static_cast<uint32_t>(LUS::ResourceType::DisplayList))
         return (char*)&((std::static_pointer_cast<LUS::DisplayList>(res))->Instructions[0]);
-    
+
     return nullptr;
 }
 
@@ -2482,7 +2472,7 @@ extern "C" int CustomMessage_RetrieveIfExists(PlayState* play) {
               Player_GetMask(play) == PLAYER_MASK_TRUTH) ||
              (Randomizer_GetSettingValue(RSK_GOSSIP_STONE_HINTS) == RO_GOSSIP_STONES_NEED_STONE && CHECK_QUEST_ITEM(QUEST_STONE_OF_AGONY)))) {
 
-            Actor* stone = GET_PLAYER(play)->targetActor; 
+            Actor* stone = GET_PLAYER(play)->targetActor;
             actorParams = stone->params;
 
             // if we're in a generic grotto
@@ -2518,7 +2508,7 @@ extern "C" int CustomMessage_RetrieveIfExists(PlayState* play) {
                 messageEntry = CustomMessageManager::Instance->RetrieveMessage(Randomizer::hintMessageTableID, TEXT_GANONDORF);
             }
         } else if (textId == TEXT_SHEIK_NEED_HOOK || textId == TEXT_SHEIK_HAVE_HOOK) {
-            messageEntry = OTRGlobals::Instance->gRandomizer->GetSheikMessage(gPlayState->sceneNum, textId);            
+            messageEntry = OTRGlobals::Instance->gRandomizer->GetSheikMessage(gPlayState->sceneNum, textId);
         // textId: TEXT_SCRUB_RANDOM + (randomizerInf - RAND_INF_SCRUBS_PURCHASED_DODONGOS_CAVERN_DEKU_SCRUB_NEAR_BOMB_BAG_LEFT)
         } else if (textId >= TEXT_SCRUB_RANDOM && textId <= TEXT_SCRUB_RANDOM + NUM_SCRUBS) {
             RandomizerInf randoInf = (RandomizerInf)((textId - TEXT_SCRUB_RANDOM) + RAND_INF_SCRUBS_PURCHASED_DODONGOS_CAVERN_DEKU_SCRUB_NEAR_BOMB_BAG_LEFT);
@@ -2584,7 +2574,7 @@ extern "C" int CustomMessage_RetrieveIfExists(PlayState* play) {
             messageEntry = OTRGlobals::Instance->gRandomizer->GetGoronMessage(choice);
         } else if (Randomizer_GetSettingValue(RSK_FROGS_HINT) && textId == TEXT_FROGS_UNDERWATER) {
             messageEntry = OTRGlobals::Instance->gRandomizer->GetFrogsMessage(textId);
-        } else if (Randomizer_GetSettingValue(RSK_SARIA_HINT) && 
+        } else if (Randomizer_GetSettingValue(RSK_SARIA_HINT) &&
         (gPlayState->sceneNum == SCENE_SACRED_FOREST_MEADOW && textId == TEXT_SARIA_SFM) || (textId >= TEXT_SARIAS_SONG_FACE_TO_FACE && textId <= TEXT_SARIAS_SONG_CHANNELING_POWER)) {
             messageEntry = OTRGlobals::Instance->gRandomizer->GetSariaMessage(textId);
         } else if (textId == TEXT_BEAN_SALESMAN_BUY_FOR_100) {
@@ -2700,7 +2690,7 @@ void SoH_ProcessDroppedFiles(std::string filePath) {
         nlohmann::json configJson;
         configStream >> configJson;
 
-        // #region SOH [Randomizer] TODO: Refactor spoiler file handling for randomizer 
+        // #region SOH [Randomizer] TODO: Refactor spoiler file handling for randomizer
         if (configJson.contains("version") && configJson.contains("finalSeed")) {
             CVarSetString("gRandomizerDroppedFile", filePath.c_str());
             CVarSetInteger("gRandomizerNewFileDropped", 1);
