@@ -125,7 +125,6 @@ file(GLOB_RECURSE soh__ RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "soh/*.c" "soh/*.cp
 
 # Add specific files that don't match the pattern
 list(APPEND soh__ ${CMAKE_CURRENT_SOURCE_DIR}/soh/Enhancements/savestates_extern.inc)
-list(APPEND soh__ ${CMAKE_CURRENT_SOURCE_DIR}/soh/Enhancements/speechsynthesizer/DarwinSpeechSynthesizer.mm)
 
 # Create source groups that match the real file directory paths
 foreach(source IN LISTS soh__)
@@ -154,11 +153,6 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     list(FILTER soh__ EXCLUDE REGEX "soh/Enhancements/speechsynthesizer/SAPI")
 else()
     list(FILTER soh__ EXCLUDE REGEX "soh/Enhancements/speechsynthesizer/(Darwin|SAPI)")
-endif()
-
-find_library(ESPEAK espeak-ng)
-if (NOT ESPEAK)
-    list(FILTER soh__ EXCLUDE REGEX "soh/Enhancements/speechsynthesizer/ESpeak")
 endif()
 
 # soh/Extractor {{{
@@ -306,10 +300,6 @@ if (BUILD_REMOTE_CONTROL)
     else()
         set(SDL2-NET-INCLUDE ${SDL_NET_INCLUDE_DIRS})
     endif()
-endif()
-
-if (ESPEAK)
-    add_compile_definitions(ESPEAK=1)
 endif()
 
 ################################################################################

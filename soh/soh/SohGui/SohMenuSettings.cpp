@@ -233,7 +233,7 @@ void SohMenu::AddMenuSettings() {
                      .ComboMap(languages)
                      .DefaultIndex(LANGUAGE_ENG));
     AddWidget(path, "Accessibility", WIDGET_SEPARATOR_TEXT);
-#if defined(_WIN32) || defined(__APPLE__) || defined(ESPEAK)
+#if defined(_WIN32) || defined(__APPLE__)
     AddWidget(path, "Text to Speech", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_SETTING("A11yTTS"))
         .RaceDisable(false)

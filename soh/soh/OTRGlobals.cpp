@@ -22,7 +22,6 @@
 #include <time.h>
 #endif
 #include <ship/audio/AudioPlayer.h>
-#include "Enhancements/speechsynthesizer/SpeechSynthesizer.h"
 #include "Enhancements/controls/SohInputEditorWindow.h"
 #include "Enhancements/audio/AudioCollection.h"
 #include "Enhancements/debugconsole.h"
@@ -129,7 +128,6 @@ CustomMessageManager* CustomMessageManager::Instance;
 ItemTableManager* ItemTableManager::Instance;
 GameInteractor* GameInteractor::Instance;
 AudioCollection* AudioCollection::Instance;
-SpeechSynthesizer* SpeechSynthesizer::Instance;
 CrowdControl* CrowdControl::Instance;
 Sail* Sail::Instance;
 Anchor* Anchor::Instance;
@@ -300,6 +298,7 @@ OTRGlobals::OTRGlobals() {
     sohFast3dWindow =
         std::make_shared<Fast::Fast3dWindow>(std::vector<std::shared_ptr<Ship::GuiWindow>>({ sohInputEditorWindow }));
     context->InitWindow(sohFast3dWindow);
+    context->InitSpeechSynthesis();
 
     SohGui::SetupMenu();
 
@@ -1485,16 +1484,7 @@ extern "C" void InitOTR(int argc, char* argv[]) {
 
     AudioCollection::Instance = new AudioCollection();
     ActorDB::Instance = new ActorDB();
-#ifdef __APPLE__
-    SpeechSynthesizer::Instance = new DarwinSpeechSynthesizer();
-#elif defined(_WIN32)
-    SpeechSynthesizer::Instance = new SAPISpeechSynthesizer();
-#elif ESPEAK
-    SpeechSynthesizer::Instance = new ESpeakSpeechSynthesizer();
-#else
-    SpeechSynthesizer::Instance = new SpeechLogger();
-#endif
-    SpeechSynthesizer::Instance->Init();
+    SpeechSynthesizerInit();
 
     CrowdControl::Instance = new CrowdControl();
     Sail::Instance = new Sail();
