@@ -1,0 +1,16 @@
+{
+    "minutes_plural" : "$0 minutos",
+    "minutes_singular" : "un minuto",
+    "seconds_plural" : "$0 segundos",
+    "seconds_singular" : "un segundo",
+    "input_button_c_up": "C arriba",
+    "input_button_c_down": "C abajo",
+    "input_button_c_left": "C izquierda",
+    "input_button_c_right": "C derecha",
+    "input_d_pad_up": "cruceta arriba",
+    "input_d_pad_down": "cruceta abajo",
+    "input_d_pad_left": "cruceta izquierda",
+    "input_d_pad_right": "cruceta derecha",
+    "yes": "Sí",
+    "no": "No"
+}
