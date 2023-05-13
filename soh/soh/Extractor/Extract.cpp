@@ -92,7 +92,15 @@ enum class ButtonId : int {
 
 void Extractor::ShowErrorBox(const char* title, const char* text) {
 #ifdef _WIN32
-    MessageBoxA(nullptr, text, title, MB_OK | MB_ICONERROR);
+    int wTitle_n = MultiByteToWideChar(CP_UTF8, 0, title, -1, nullptr, 0);
+    int wText_n = MultiByteToWideChar(CP_UTF8, 0, text, -1, nullptr, 0);
+    wchar_t* wTitle = new wchar_t[wTitle_n];
+    wchar_t* wText = new wchar_t[wText_n];
+    MultiByteToWideChar(CP_UTF8, 0, title, -1, wTitle, wTitle_n);
+    MultiByteToWideChar(CP_UTF8, 0, text, -1, wText, wText_n);
+    MessageBoxW(nullptr, wText, wTitle, MB_OK | MB_ICONERROR);
+    delete[] wTitle;
+    delete[] wText;
 #else
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, title, text, nullptr);
 #endif
@@ -146,7 +154,15 @@ int Extractor::ShowRomPickBox(uint32_t verCrc) const {
 int Extractor::ShowYesNoBox(const char* title, const char* box) {
     int ret;
 #ifdef _WIN32
-    ret = MessageBoxA(nullptr, box, title, MB_YESNO | MB_ICONQUESTION);
+    int wTitle_n = MultiByteToWideChar(CP_UTF8, 0, title, -1, nullptr, 0);
+    int wBox_n = MultiByteToWideChar(CP_UTF8, 0, box, -1, nullptr, 0);
+    wchar_t* wTitle = new wchar_t[wTitle_n];
+    wchar_t* wBox = new wchar_t[wBox_n];
+    MultiByteToWideChar(CP_UTF8, 0, title, -1, wTitle, wTitle_n);
+    MultiByteToWideChar(CP_UTF8, 0, box, -1, wBox, wBox_n);
+    ret = MessageBoxW(nullptr, wBox, wTitle, MB_YESNO | MB_ICONQUESTION);
+    delete[] wTitle;
+    delete[] wBox;
 #else
     SDL_MessageBoxData boxData = { 0 };
     SDL_MessageBoxButtonData buttons[2] = { { 0 } };
@@ -287,7 +303,7 @@ bool Extractor::GetRomPathFromBox() {
                     errStr = "No se ha podido abrir el diálogo de archivo porque no hay suficiente RAM para hacerlo.";
                     break;
             }
-            MessageBoxA(nullptr, "Error al abrir", errStr, MB_OK | MB_ICONERROR);
+            ShowErrorBox("Error al abrir", errStr);
             return false;
         }
     }
