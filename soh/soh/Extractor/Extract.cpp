@@ -101,14 +101,14 @@ void Extractor::ShowErrorBox(const char* title, const char* text) {
 void Extractor::ShowSizeErrorBox() const {
     std::unique_ptr<char[]> boxBuffer = std::make_unique<char[]>(mCurrentRomPath.size() + 100);
     snprintf(boxBuffer.get(), mCurrentRomPath.size() + 100,
-             "The rom file %s was not a valid size. Was %zu MB, expecting 32, 54, or 64MB.", mCurrentRomPath.c_str(),
+             "El archivo ROM %s no tiene un tamaño válido. Es de %zu MB, se esperaba 32, 54, o 64MB.", mCurrentRomPath.c_str(),
              mCurRomSize / MB_BASE);
-    ShowErrorBox("Invalid Rom Size", boxBuffer.get());
+    ShowErrorBox("Tamaño de ROM no válido", boxBuffer.get());
 }
 
 void Extractor::ShowCrcErrorBox() const {
-    ShowErrorBox("Rom CRC invalid", "Rom CRC did not match the list of known compatible roms. Please find another.\n\n"
-                                    "Visit https://ship.equipment/ to validate your ROM and see a list of compatible versions");
+    ShowErrorBox("CRC de ROM no válida", "La CRC de la ROM no aparece en la lista de ROMs compatibles. Use otra.\n\n"
+                                    "Visite https://ship.equipment/ para validar su ROM y ver una lista de versiones compatibles.");
 }
 
 void Extractor::ShowCompressedErrorBox() const {
@@ -122,22 +122,22 @@ int Extractor::ShowRomPickBox(uint32_t verCrc) const {
     int ret;
 
     buttons[0].buttonid = 0;
-    buttons[0].text = "Yes";
+    buttons[0].text = "Sí";
     buttons[0].flags = SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT;
     buttons[1].buttonid = 1;
     buttons[1].text = "No";
     buttons[1].flags = SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT;
     buttons[2].buttonid = 2;
-    buttons[2].text = "Find ROM";
+    buttons[2].text = "Buscar ROM";
     boxData.numbuttons = 3;
     boxData.flags = SDL_MESSAGEBOX_INFORMATION;
     boxData.message = boxBuffer.get();
-    boxData.title = "Rom Detected";
+    boxData.title = "ROM detectada";
     boxData.window = nullptr;
 
     boxData.buttons = buttons;
     snprintf(boxBuffer.get(), mCurrentRomPath.size() + 100,
-             "Rom detected: %s, Header CRC32: %8X. It appears to be: %s. Use this rom?", mCurrentRomPath.c_str(),
+             "ROM detectada: %s, CRC32 de cabecera: %8X. Parece ser: %s. ¿Usar esta ROM?", mCurrentRomPath.c_str(),
              verCrc, verMap.at(verCrc));
 
     SDL_ShowMessageBox(&boxData, &ret);
@@ -153,7 +153,7 @@ int Extractor::ShowYesNoBox(const char* title, const char* box) {
     SDL_MessageBoxButtonData buttons[2] = { { 0 } };
 
     buttons[0].buttonid = IDYES;
-    buttons[0].text = "Yes";
+    buttons[0].text = "Sí";
     buttons[0].flags = SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT;
     buttons[1].buttonid = IDNO;
     buttons[1].text = "No";
@@ -269,9 +269,9 @@ bool Extractor::GetRomPathFromBox() {
     box.lStructSize = sizeof(box);
     box.lpstrFile = nameBuffer;
     box.nMaxFile = sizeof(nameBuffer) / sizeof(nameBuffer[0]);
-    box.lpstrTitle = "Open Rom";
+    box.lpstrTitle = "Abrir ROM";
     box.Flags = OFN_NOCHANGEDIR | OFN_ENABLESIZING | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
-    box.lpstrFilter = "N64 Roms\0*.z64;*.v64;*.n64\0\0";
+    box.lpstrFilter = "ROMs N64\0*.z64;*.v64;*.n64\0\0";
     if (!GetOpenFileNameA(&box)) {
         DWORD err = CommDlgExtendedError();
         // GetOpenFileName will return 0 but no error is set if the user just closes the box.
@@ -279,16 +279,16 @@ bool Extractor::GetRomPathFromBox() {
             const char* errStr = nullptr;
             switch (err) {
                 case FNERR_BUFFERTOOSMALL:
-                    errStr = "Path buffer too small. Move file closer to root of your drive";
+                    errStr = "Búfer de ruta demasiado pequeño. Mueva el archivo cerca de la raíz de la unidad.";
                     break;
                 case FNERR_INVALIDFILENAME:
-                    errStr = "File name for rom provided is invalid.";
+                    errStr = "El nombre de archivo de la ROM proporcionada no es válido.";
                     break;
                 case FNERR_SUBCLASSFAILURE:
-                    errStr = "Failed to open a filebox because there is not enough RAM to do so.";
+                    errStr = "No se ha podido abrir el diálogo de archivo porque no hay suficiente RAM para hacerlo.";
                     break;
             }
-            MessageBoxA(nullptr, "Box Error", errStr, MB_OK | MB_ICONERROR);
+            MessageBoxA(nullptr, "Error al abrir", errStr, MB_OK | MB_ICONERROR);
             return false;
         }
     }
@@ -298,7 +298,7 @@ bool Extractor::GetRomPathFromBox() {
     }
     mCurrentRomPath = nameBuffer;
     #else
-    auto selection = pfd::open_file("Select a file", mSearchPath, { "N64 Roms", "*.z64 *.n64 *.v64" }).result();
+    auto selection = pfd::open_file("Seleccione un archivo", mSearchPath, { "ROMs N64", "*.z64 *.n64 *.v64" }).result();
 
     if (selection.empty()) {
         return false;
@@ -381,7 +381,7 @@ bool Extractor::ManuallySearchForRom() {
     std::ifstream inFile;
 
     if (!GetRomPathFromBox()) {
-        ShowErrorBox("No rom selected", "No Rom selected. Exiting");
+        ShowErrorBox("No se ha seleccionado una ROM", "No se ha seleccionado una ROM. Saliendo...");
         return false;
     }
 
@@ -408,12 +408,12 @@ bool Extractor::ManuallySearchForRomMatchingType(RomSearchMode searchMode) {
     }
 
     char msgBuf[150];
-    snprintf(msgBuf, 150, "The selected rom does not match the expected game type\nExpected type: %s.\n\nDo you want to search again?",
+    snprintf(msgBuf, 150, "La ROM seleccionada no coincide con el tipo de juego esperado\nTipo esperado: %s.\n\n¿Desea volver a buscar?",
         searchMode == RomSearchMode::MQ ? "Master Quest" : "Vanilla");
 
     while ((searchMode == RomSearchMode::Vanilla && IsMasterQuest()) ||
            (searchMode == RomSearchMode::MQ && !IsMasterQuest())) {
-        int ret = ShowYesNoBox("Wrong Game Type", msgBuf);
+        int ret = ShowYesNoBox("Tipo de juego incorrecto", msgBuf);
         switch (ret) {
             case IDYES:
                 if (!ManuallySearchForRom()) {
@@ -441,7 +441,7 @@ bool Extractor::Run(std::string searchPath, RomSearchMode searchMode) {
     FilterRoms(roms, searchMode);
 
     if (roms.empty()) {
-        int ret = ShowYesNoBox("No roms found", "No roms found. Look for one?");
+        int ret = ShowYesNoBox("No se han encontrado ROMs", "No se han encontrado ROMs. ¿Buscar una?");
 
         switch (ret) {
             case IDYES:
@@ -450,7 +450,7 @@ bool Extractor::Run(std::string searchPath, RomSearchMode searchMode) {
                 }
                 break;
             case IDNO:
-                ShowErrorBox("No rom selected", "No rom selected. Exiting");
+                ShowErrorBox("No se ha seleccionado ninguna ROM", "No se ha seleccionado ninguna ROM. Saliendo...");
                 return false;
             default:
                 UNREACHABLE;
@@ -479,9 +479,9 @@ bool Extractor::Run(std::string searchPath, RomSearchMode searchMode) {
                 if (rom == roms.back()) {
                     ShowCrcErrorBox();
                 } else {
-                    ShowErrorBox("Rom CRC invalid",
-                                 "Rom CRC did not match the list of known compatible roms. Trying the next one...\n\n"
-                                 "Visit https://ship.equipment/ to validate your ROM and see a list of compatible versions");
+                    ShowErrorBox("CRC de ROM no válida",
+                                 "La CRC de la ROM no aparece en la lista de ROMs compatibles. Probando con la siguiente...\n\n"
+                                 "Visite https://ship.equipment/ para validar su ROM y ver una lista de versiones compatibles.");
                 }
                 continue;
             }
@@ -493,7 +493,7 @@ bool Extractor::Run(std::string searchPath, RomSearchMode searchMode) {
             break;
         } else if (option == (int)ButtonId::NO) {
             if (rom == roms.back()) {
-                ShowErrorBox("No rom provided", "No rom provided. Exiting");
+                ShowErrorBox("No se ha proporcionado una ROM", "No se ha proporcionado una ROM. Saliendo...");
                 return false;
             }
             continue;
