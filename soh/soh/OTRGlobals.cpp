@@ -846,7 +846,7 @@ void CheckSoHOTRVersion(std::string otrPath) {
 
     if (!std::filesystem::exists(otrPath)) {
 #if not defined(__SWITCH__) && not defined(__WIIU__)
-        Extractor::ShowErrorBox("soh.otr file is missing", msg.c_str());
+        Extractor::ShowErrorBox("El archivo soh.otr no existe", msg.c_str());
         exit(1);
 #elif defined(__SWITCH__)
         LUS::Switch::PrintErrorMessageToScreen(("\x1b[2;2HYou are missing the soh.otr file." + msg).c_str());
@@ -859,7 +859,7 @@ void CheckSoHOTRVersion(std::string otrPath) {
 
     if (otrVersion.major != gBuildVersionMajor || otrVersion.minor != gBuildVersionMinor || otrVersion.patch != gBuildVersionPatch) {
 #if not defined(__SWITCH__) && not defined(__WIIU__)
-        Extractor::ShowErrorBox("soh.otr file version does not match", msg.c_str());
+        Extractor::ShowErrorBox("La versión del archivo soh.otr no coincide", msg.c_str());
         exit(1);
 #elif defined(__SWITCH__)
         LUS::Switch::PrintErrorMessageToScreen(("\x1b[2;2HYou have an old soh.otr file." + msg).c_str());
@@ -894,25 +894,25 @@ void DetectOTRVersion(std::string fileName, bool isMQ) {
         if (otrVersion.major != 0 || otrVersion.minor != 0 || otrVersion.patch != 0) {
             snprintf(version, 18, "%d.%d.%d", otrVersion.major, otrVersion.minor, otrVersion.patch);
         } else {
-            snprintf(version, 18, "no version found");
+            snprintf(version, 25, "sin versión encontrada");
         }
 
         snprintf(msgBuf, 250,
-            "The %s file was generated with a different version of Ship of Harkinian.\nOTR version: %s\n\n"
-            "You must regenerate to be able to play, otherwise the program will exit.\nWould you like to regenerate it now?",
+            "El archivo %s fue generado con una versión diferente de Ship of Harkinian.\nVersión de OTR: %s\n\n"
+            "Debe regenerarlo para poder jugar, de lo contrario el programa se cerrará.\n¿Desea regenerarlo ahora?",
             fileName.c_str(), version);
 
-        if (Extractor::ShowYesNoBox("Old OTR File Found", msgBuf) == IDYES) {
+        if (Extractor::ShowYesNoBox("Archivo OTR antiguo encontrado", msgBuf) == IDYES) {
             std::string installPath = LUS::Context::GetAppBundlePath();
             if (!std::filesystem::exists(installPath + "/assets/extractor")) {
-                Extractor::ShowErrorBox("Extractor assets not found",
-                    "Unable to regenerate. Missing assets/extractor folder needed to generate OTR file.\n\nExiting...");
+                Extractor::ShowErrorBox("No se han encontrado los archivos del extractor",
+                    "Error de regeneración. Falta la carpeta assets/extractor necesaria para generar el archivo OTR.\n\nSaliendo...");
                 exit(1);
             }
 
             Extractor extract;
             if (!extract.Run(LUS::Context::GetAppDirectoryPath(appShortName), isMQ ? RomSearchMode::MQ : RomSearchMode::Vanilla)) {
-                Extractor::ShowErrorBox("Error", "An error occured, no OTR file was generated.\n\nExiting...");
+                Extractor::ShowErrorBox("Error", "Se ha producido un error, no se ha creado un archivo OTR.\n\nSaliendo...");
                 exit(1);
             }
             extract.CallZapd(installPath, LUS::Context::GetAppDirectoryPath(appShortName));
@@ -968,7 +968,7 @@ extern "C" void InitOTR() {
     GetModuleFileName(NULL, buffer, _countof(buffer));
     auto ownPath = std::filesystem::canonical(buffer).parent_path();
     if (IsSubpath(ownPath, tempPath)) {
-        Extractor::ShowErrorBox("Error", "SoH is running in a temp folder. Extract the .zip and run again.");
+        Extractor::ShowErrorBox("Error", "SoH se está ejecutando en una carpeta temporal. Extraiga el .zip y ejecútelo de nuevo.");
         exit(1);
     }
     FILE* tfile = fopen("./text.txt", "w");
@@ -980,13 +980,13 @@ extern "C" void InitOTR() {
         error = true;
     }
     if (tfile == NULL || error) {
-        Extractor::ShowErrorBox("Error", "SoH does not have proper file permissions. Please move it to a folder that does and run again.");
+        Extractor::ShowErrorBox("Error", "SoH no tiene los permisos de archivo adecuados. Muévalo a una carpeta que sí los tenga y ejecútelo de nuevo.");
         PathTestCleanup(tfile);
         exit(1);
     }
     fclose(tfile);
     if (!PathTestCleanup(tfile)) {
-        Extractor::ShowErrorBox("Error", "SoH does not have proper file permissions. Please move it to a folder that does and run again.");
+        Extractor::ShowErrorBox("Error", "SoH no tiene los permisos de archivo adecuados. Muévalo a una carpeta que sí los tenga y ejecútelo de nuevo.");
         exit(1);
     }
 #endif
@@ -999,16 +999,16 @@ extern "C" void InitOTR() {
 #if not defined(__SWITCH__) && not defined(__WIIU__)
         std::string installPath = LUS::Context::GetAppBundlePath();
         if (!std::filesystem::exists(installPath + "/assets/extractor")) {
-            Extractor::ShowErrorBox("Extractor assets not found",
-                "No OTR files found. Missing assets/extractor folder needed to generate OTR file.\n\nExiting...");
+            Extractor::ShowErrorBox("No se han encontrado los archivos del extractor",
+                "No se han encontrado archivos OTR. Falta la carpeta assets/extractor necesaria para generar el archivo OTR.\n\nSaliendo...");
             exit(1);
         }
 
         bool generatedOtrIsMQ = false;
-        if (Extractor::ShowYesNoBox("No OTR Files", "No OTR files found. Generate one now?") == IDYES) {
+        if (Extractor::ShowYesNoBox("No hay archivos OTR", "No se han encontrado archivos OTR. ¿Crear uno ahora?") == IDYES) {
             Extractor extract;
             if (!extract.Run(LUS::Context::GetAppDirectoryPath(appShortName))) {
-                Extractor::ShowErrorBox("Error", "An error occured, no OTR file was generated.\n\nExiting...");
+                Extractor::ShowErrorBox("Error", "Se ha producido un error, no se ha creado un archivo OTR.\n\nSaliendo...");
                 exit(1);
             }
             extract.CallZapd(installPath, LUS::Context::GetAppDirectoryPath(appShortName));
@@ -1016,10 +1016,10 @@ extern "C" void InitOTR() {
         } else {
             exit(1);
         }
-        if (Extractor::ShowYesNoBox("Extraction Complete", "ROM Extracted. Extract another?") == IDYES) {
+        if (Extractor::ShowYesNoBox("Extracción completada", "ROM extraída con éxito, ¿desea extraer otra ROM?") == IDYES) {
             Extractor extract;
             if (!extract.Run(LUS::Context::GetAppDirectoryPath(appShortName), generatedOtrIsMQ ? RomSearchMode::Vanilla : RomSearchMode::MQ)) {
-                Extractor::ShowErrorBox("Error", "An error occured, an OTR file may have been generated by a different step.\n\nContinuing...");
+                Extractor::ShowErrorBox("Error", "Se ha producido un error, es posible que se haya creado un archivo OTR en otro paso.\n\nContinuando...");
             } else {
                 extract.CallZapd(installPath, LUS::Context::GetAppDirectoryPath(appShortName));
             }
