@@ -13,7 +13,7 @@ void BuildNightGuardMessage(uint16_t* textId, bool* loadFromMessageTable) {
         return;
     }
 
-    CustomMessage msg = CustomMessage("You look bored. Wanna go out for a walk?\x1B%gYes&No%w",
+    CustomMessage msg = CustomMessage("Luces aburrido.&ÂQuieres salir a dar un paseo?\x1B&%gSï&No%w",
                                       "Du siehst gelangweilt aus. Willst Du einen Spaziergang machen?\x1B%gJa&Nein%w",
                                       "Tu as l'air de t'ennuyer. Tu veux aller faire un tour?\x1B%gOui&Non%w");
     msg.AutoFormat();
