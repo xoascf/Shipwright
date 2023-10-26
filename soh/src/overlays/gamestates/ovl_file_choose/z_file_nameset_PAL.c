@@ -834,7 +834,7 @@ static OptionsMenuTextureInfo gOptionsMenuHeaders[] = {
     },
     {
         { gFileSelCheckBrightnessENGTex, gFileSelCheckBrightnessGERTex, gFileSelCheckBrightnessFRATex },
-        { 96, 128, 128 },
+        { 128, 128, 128 }, // 96 for NTSC 1.0
         16,
     },
     {

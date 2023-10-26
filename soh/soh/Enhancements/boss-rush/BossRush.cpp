@@ -15,16 +15,16 @@ typedef struct BossRushSetting {
 
 BossRushSetting BossRushOptions[BOSSRUSH_OPTIONS_AMOUNT] = { 
     {
-        { "BOSSES:", "BOSSE:", "BOSS:" },
+        { "JEFES:", "BOSSE:", "BOSS:" },
         {
-            { "All", "Alle", "Tous" },
-            { "Child", "Kind", "Enfant" },
-            { "Adult", "Erwachsener", "Adulte" },
-            { "Ganondorf & Ganon", "Ganondorf & Ganon", "Ganondorf & Ganon" }
+            { "Todos", "Alle", "Tous" },
+            { "Niño", "Kind", "Enfant" },
+            { "Adulto", "Erwachsener", "Adulte" },
+            { "Ganondorf y Ganon", "Ganondorf & Ganon", "Ganondorf & Ganon" }
         }
     },
     {
-        { "HEARTS:", "HERZEN:", "COEURS:" },
+        { "CORAZONES:", "HERZEN:", "COEURS:" },
         {
             { "10", "10", "10" },
             { "15", "15", "15" },
@@ -35,78 +35,78 @@ BossRushSetting BossRushOptions[BOSSRUSH_OPTIONS_AMOUNT] = {
         }
     },
     {
-        { "AMMO:", "MUNITION:", "MUNITIONS:" },
+        { "MUNICIÓN:", "MUNITION:", "MUNITIONS:" },
         {
-            { "Limited", "Limitiert", "Limitées" },
-            { "Full", "Voll", "Pleines" },
-            { "Maxed", "Maximum", "Maximum" }
+            { "Limitada", "Limitiert", "Limitées" },
+            { "Llena", "Voll", "Pleines" }, 
+            { "Al máximo", "Maximum", "Maximum" }
         }
     },
     {
-        { "HEAL:", "REGENERATION:", "SOIN:" },
+        { "RECUPERACIÓN:", "REGENERATION:", "SOIN:" },
         {
-            { "Before Ganondorf", "Vor Ganondorf", "Avant Ganondorf" },
-            { "Every Boss", "Bei jedem Boss", "Tous les Boss" },
-            { "Never", "Niemals", "Jamais" }
+            { "Antes de Ganondorf", "Vor Ganondorf", "Avant Ganondorf" },
+            { "Con cada jefe", "Bei jedem Boss", "Tous les Boss" },
+            { "Nunca", "Niemals", "Jamais" }
         }
     },
     {
-        { "HYPER BOSSES:", "HYPER-BOSSE:", "HYPER BOSS:" },
+        { "HIPERJEFES:", "HYPER-BOSSE:", "HYPER BOSS:" },
         {
             { "No", "Nein", "Non" },
-            { "Yes", "Ja", "Oui" }
+            { "Sí", "Ja", "Oui" }
         }
     },
     {
-        { "MAGIC:", "MAGIE:", "MAGIE:" },
+        { "MAGIA:", "MAGIE:", "MAGIE:" },
         {
-            { "Single", "Einzel", "Simple" },
-            { "Double", "Doppel", "Double" }
+            { "Simple", "Einzel", "Simple" },
+            { "Doble", "Doppel", "Double" }
         }
     },
     {
-        { "BIG. SWORD:", "BIG.-SCHWERT:", "EPÉE DE BIG.:" },
-        {
-            { "No", "Nein", "Non" },
-            { "Yes", "Ja", "Oui" }
-        }
-    },
-    {
-        { "BOTTLE:", "FLASCHEN:", "BOUTEILLE:" },
+        { "ESPADA DE BIG.:", "BIG.-SCHWERT:", "EPÉE DE BIG.:" },
         {
             { "No", "Nein", "Non" },
-            { "Empty", "Leer", "Vide" },
-            { "Fairy", "Fee", "Fée" },
-            { "Red Potion", "Rotes Elixier", "Potion Rouge" },
-            { "Green Potion", "Grünes Elixier", "Potion Verte" },
-            { "Blue Potion", "Blaues Elixier", "Potion Bleue" }
+            { "Sí", "Ja", "Oui" }
         }
     },
     {
-        { "LONGSHOT:", "ENTERHAKEN:", "SUPER GRAPPIN:" },
+        { "BOTELLA:", "FLASCHEN:", "BOUTEILLE:" },
         {
             { "No", "Nein", "Non" },
-            { "Yes", "Ja", "Oui" }
+            { "Vacía", "Leer", "Vide" },
+            { "Hada", "Fee", "Fée" },
+            { "Poción Roja", "Rotes Elixier", "Potion Rouge" },
+            { "Poción Verde", "Grünes Elixier", "Potion Verte" },
+            { "Poción Azul", "Blaues Elixier", "Potion Bleue" }
         }
     },
     {
-        { "HOVER BOOTS:", "GLEITSTIEFEL:", "BOTTES DES AIRS:" },
+        { "GANCHO LARGO:", "ENTERHAKEN:", "SUPER GRAPPIN:" },
         {
             { "No", "Nein", "Non" },
-            { "Yes", "Ja", "Oui" }
+            { "Sí", "Ja", "Oui" }
         }
     },
     {
-        { "BUNNY HOOD:", "HASENOHREN:", "MASQUE DU LAPIN:" },
+        { "BOTAS FLOTANTES:", "GLEITSTIEFEL:", "BOTTES DES AIRS:" },
         {
             { "No", "Nein", "Non" },
-            { "Yes", "Ja", "Oui" }
+            { "Sí", "Ja", "Oui" }
         }
     },
     {
-        { "TIMER:", "TIMER:", "TIMER:" },
+        { "CAPUCHA CONEJO:", "HASENOHREN:", "MASQUE DU LAPIN:" },
         {
-            { "Yes", "Ja", "Oui" },
+            { "No", "Nein", "Non" },
+            { "Sí", "Ja", "Oui" }
+        }
+    },
+    {
+        { "CRONÓMETRO:", "TIMER:", "TIMER:" },
+        {
+            { "Sí", "Ja", "Oui" },
             { "No", "Nein", "Non" }
         }
     }
