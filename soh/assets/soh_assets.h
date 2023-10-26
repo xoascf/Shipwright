@@ -455,6 +455,9 @@ static const ALIGN_ASSET(2) char gFileSelPleaseChooseAQuestGERTex[] = dgFileSelP
 #define dgFileSelPleaseChooseAQuestJPNTex "__OTR__textures/title_static/gFileSelPleaseChooseAQuestJPNTex"
 static const ALIGN_ASSET(2) char gFileSelPleaseChooseAQuestJPNTex[] = dgFileSelPleaseChooseAQuestJPNTex;
 
+#define dgFileSelPleaseChooseAQuestSPATex "__OTR__textures/title_static/gFileSelPleaseChooseAQuestSPATex"
+static const ALIGN_ASSET(2) char gFileSelPleaseChooseAQuestSPATex[] = dgFileSelPleaseChooseAQuestSPATex;
+
 #define dgFileSelBossRushSettingsENGTex "__OTR__textures/title_static/gFileSelBossRushSettingsENGTex"
 static const ALIGN_ASSET(2) char gFileSelBossRushSettingsENGText[] = dgFileSelBossRushSettingsENGTex;
 
@@ -466,6 +469,9 @@ static const ALIGN_ASSET(2) char gFileSelBossRushSettingsGERText[] = dgFileSelBo
 
 #define dgFileSelBossRushSettingsJPNTex "__OTR__textures/title_static/gFileSelBossRushSettingsJPNTex"
 static const ALIGN_ASSET(2) char gFileSelBossRushSettingsJPNText[] = dgFileSelBossRushSettingsJPNTex;
+
+#define dgFileSelBossRushSettingsSPATex "__OTR__textures/title_static/gFileSelBossRushSettingsSPATex"
+static const ALIGN_ASSET(2) char gFileSelBossRushSettingsSPAText[] = dgFileSelBossRushSettingsSPATex;
 
 #define dgFileSelRANDButtonTex "__OTR__textures/title_static/gFileSelRANDButtonTex"
 static const ALIGN_ASSET(2) char gFileSelRANDButtonTex[] = dgFileSelRANDButtonTex;

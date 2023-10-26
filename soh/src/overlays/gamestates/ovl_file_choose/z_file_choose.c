@@ -1638,7 +1638,7 @@ const char* FileChoose_GetQuestChooseTitleTexName(Language lang) {
     switch (lang) {
         case LANGUAGE_ENG:
         default:
-            return gFileSelPleaseChooseAQuestENGTex;
+            return gFileSelPleaseChooseAQuestSPATex;
         case LANGUAGE_FRA:
             return gFileSelPleaseChooseAQuestFRATex;
         case LANGUAGE_GER:
@@ -1652,7 +1652,7 @@ const char* FileChoose_GetSohOptionsTitleTexName(Language lang) {
     switch (lang) {
         case LANGUAGE_ENG:
         default:
-            return gFileSelBossRushSettingsENGText;
+            return gFileSelBossRushSettingsSPAText;
         case LANGUAGE_FRA:
             return gFileSelBossRushSettingsFRAText;
         case LANGUAGE_GER:
@@ -2651,8 +2651,8 @@ static void (*gFileSelectUpdateFuncs[])(GameState*) = {
 };
 
 static const char* randoVersionWarningText[] = {
-    // English
-    "This save was created on a different version of SoH.\nThings may be broken. Play at your own risk.",
+    // Spanish
+    "Este guardado fue creado en una versión\ndiferente de SoH.\nPuede no funcionar.",
     // German
     "Dieser Spielstand wurde auf einer anderen Version\nvon SoH erstellt.\nEs könnten Fehler auftreten.",
     // French
@@ -2680,9 +2680,10 @@ void FileChoose_DrawRandoSaveVersionWarning(GameState* thisx) {
             }
 
             // Compute the height for a "squished" textbox texture
-            s16 height = ((gSaveContext.language == LANGUAGE_ENG) || (gSaveContext.language == LANGUAGE_JPN))
-                             ? 32
-                             : 40; // English is only 2 lines
+            ///s16 height = ((gSaveContext.language == LANGUAGE_ENG) || (gSaveContext.language == LANGUAGE_JPN))
+            ///                 ? 32
+            ///                 : 40; // English is only 2 lines
+            s16 height = 40;
             // float math to get a S5.10 number that will squish the texture
             f32 texCoordinateHeightF = 512 / ((f32)height / 64);
             s16 texCoordinateHeightScale = texCoordinateHeightF + 0.5f;
