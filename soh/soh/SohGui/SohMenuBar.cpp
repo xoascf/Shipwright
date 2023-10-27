@@ -73,9 +73,9 @@ static const char* filters[3] = {
 #ifdef __WIIU__
     "",
 #else
-    "Three-Point",
+    "Tripunto",
 #endif
-    "Linear", "None"
+    "Lineal", "Ninguno"
 };
 
 extern "C" SaveContext gSaveContext;
