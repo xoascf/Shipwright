@@ -65,18 +65,18 @@ static const char* imguiScaleOptions[4] = { "Small", "Normal", "Large", "X-Large
 #ifdef __WIIU__
             "",
 #else
-            "Three-Point",
+            "Tripunto",
 #endif
-            "Linear", "None"
+            "Lineal", "Ninguno"
     };
 
-    static const char* chestStyleMatchesContentsOptions[4] = { "Disabled", "Both", "Texture Only", "Size Only" };
-    static const char* bunnyHoodOptions[3] = { "Disabled", "Faster Run & Longer Jump", "Faster Run" };
+    static const char* chestStyleMatchesContentsOptions[4] = { "Desactivado", "Both", "Texture Only", "Size Only" };
+    static const char* bunnyHoodOptions[3] = { "Desactivado", "Faster Run & Longer Jump", "Faster Run" };
     static const char* mirroredWorldModes[9] = {
-        "Disabled",           "Always",        "Random",          "Random (Seeded)",          "Dungeons",
-        "Dungeons (Vanilla)", "Dungeons (MQ)", "Dungeons Random", "Dungeons Random (Seeded)",
+        "Desactivado",           "Siempre",        "Aleatorio",          "Aleatorio (según semilla)",          "Mazmorras",
+        "Mazmorras (Original)", "Mazmorras (MQ)", "Mazmorras aleatorias", "Mazmorras aleatorias (según semilla)",
     };
-    static const char* enemyRandomizerModes[3] = { "Disabled", "Random", "Random (Seeded)" };
+    static const char* enemyRandomizerModes[3] = { "Desactivado", "Aleatorio", "Aleatorio (según semilla)" };
     static const char* allPowers[9] = {
                         "Vanilla (1x)",
                         "Double (2x)",
@@ -89,10 +89,10 @@ static const char* imguiScaleOptions[4] = { "Small", "Normal", "Large", "X-Large
                         "OHKO (256x)" };
     static const char* subPowers[8] = { allPowers[0], allPowers[1], allPowers[2], allPowers[3], allPowers[4], allPowers[5], allPowers[6], allPowers[7] };
     static const char* subSubPowers[7] = { allPowers[0], allPowers[1], allPowers[2], allPowers[3], allPowers[4], allPowers[5], allPowers[6] };
-    static const char* zFightingOptions[3] = { "Disabled", "Consistent Vanish", "No Vanish" };
+    static const char* zFightingOptions[3] = { "Desactivado", "Desvanecimiento consistente", "Sin desvanecimiento" };
     static const char* autosaveLabels[6] = { "Off", "New Location + Major Item", "New Location + Any Item", "New Location", "Major Item", "Any Item" };
     static const char* DebugSaveFileModes[3] = { "Off", "Vanilla", "Maxed" };
-    static const char* FastFileSelect[5] = { "File N.1", "File N.2", "File N.3", "Zelda Map Select (require OoT Debug Mode)", "File select" };
+    static const char* FastFileSelect[5] = { "Archivo N.1", "Archivo N.2", "Archivo N.3", "Zelda Map Select (require OoT Debug Mode)", "Selección de archivo" };
     static const char* DekuStickCheat[3] = { "Normal", "Unbreakable", "Unbreakable + Always on Fire" };
     static const char* bonkDamageValues[8] = {
         "No Damage",
@@ -104,8 +104,8 @@ static const char* imguiScaleOptions[4] = { "Small", "Normal", "Large", "X-Large
         "8 Hearts",
         "OHKO"
     };
-    static const char* timeTravelOptions[3] = { "Disabled", "Ocarina of Time", "Any Ocarina" };
-    static const char* swordToggleModes[3] = { "Disabled", "Child Toggle", "Both Ages (May lead to unintended behaviour)"};
+    static const char* timeTravelOptions[3] = { "Desactivado", "Ocarina del Tiempo", "Cualquier ocarina" };
+    static const char* swordToggleModes[3] = { "Desactivado", "Alternar con la de niño", "Ambas edades (puede provocar comportamientos no deseados)"};
 
 extern "C" SaveContext gSaveContext;
 
@@ -138,7 +138,7 @@ void DrawMenuBarIcon() {
 
 void DrawShipMenu() {
     if (ImGui::BeginMenu("Ship")) {
-        if (ImGui::MenuItem("Hide Menu Bar",
+        if (ImGui::MenuItem("Ocultar barra de menús",
 #if !defined(__SWITCH__) && !defined(__WIIU__)
          "F1"
 #else
@@ -149,14 +149,14 @@ void DrawShipMenu() {
         }
         UIWidgets::Spacer(0);
 #if !defined(__SWITCH__) && !defined(__WIIU__)
-        if (ImGui::MenuItem("Toggle Fullscreen", "F11")) {
+        if (ImGui::MenuItem("Alternar pantalla completa", "F11")) {
             LUS::Context::GetInstance()->GetWindow()->ToggleFullscreen();
         }
         UIWidgets::Spacer(0);
 #endif
-        if (ImGui::MenuItem("Reset",
+        if (ImGui::MenuItem("Reiniciar",
 #ifdef __APPLE__
-                            "Command-R"
+                            "Comando-R"
 #elif !defined(__SWITCH__) && !defined(__WIIU__)
                             "Ctrl+R"
 #else
@@ -167,13 +167,13 @@ void DrawShipMenu() {
         }
 #if !defined(__SWITCH__) && !defined(__WIIU__)
         UIWidgets::Spacer(0);
-        if (ImGui::MenuItem("Open App Files Folder")) {
+        if (ImGui::MenuItem("Abrir carpeta del programa")) {
             std::string filesPath = LUS::Context::GetInstance()->GetAppDirectoryPath();
             SDL_OpenURL(std::string("file:///" + std::filesystem::absolute(filesPath).string()).c_str());
         }
         UIWidgets::Spacer(0);
 
-        if (ImGui::MenuItem("Quit")) {
+        if (ImGui::MenuItem("Salir")) {
             LUS::Context::GetInstance()->GetWindow()->Close();
         }
 #endif
@@ -187,29 +187,29 @@ extern std::shared_ptr<InputViewerSettingsWindow> mInputViewerSettings;
 extern std::shared_ptr<AdvancedResolutionSettings::AdvancedResolutionSettingsWindow> mAdvancedResolutionSettingsWindow;
 
 void DrawSettingsMenu() {
-    if (ImGui::BeginMenu("Settings"))
+    if (ImGui::BeginMenu("Configuración"))
     {
-        if (ImGui::BeginMenu("Audio")) {
-            UIWidgets::PaddedEnhancementSliderFloat("Master Volume: %.1f %%", "##Master_Vol", "gGameMasterVolume", 0.0f, 1.0f, "", 1.0f, true, true, false, true);
-            if (UIWidgets::PaddedEnhancementSliderFloat("Main Music Volume: %.1f %%", "##Main_Music_Vol", "gMainMusicVolume", 0.0f, 1.0f, "", 1.0f, true, true, false, true)) {
+        if (ImGui::BeginMenu("Sonido")) {
+            UIWidgets::PaddedEnhancementSliderFloat("Volumen general: %.1f %%", "##Master_Vol", "gGameMasterVolume", 0.0f, 1.0f, "", 1.0f, true, true, false, true);
+            if (UIWidgets::PaddedEnhancementSliderFloat("Volumen de música principal: %.1f %%", "##Main_Music_Vol", "gMainMusicVolume", 0.0f, 1.0f, "", 1.0f, true, true, false, true)) {
                 Audio_SetGameVolume(SEQ_BGM_MAIN, CVarGetFloat("gMainMusicVolume", 1.0f));
             }
-            if (UIWidgets::PaddedEnhancementSliderFloat("Sub Music Volume: %.1f %%", "##Sub_Music_Vol", "gSubMusicVolume", 0.0f, 1.0f, "", 1.0f, true, true, false, true)) {
+            if (UIWidgets::PaddedEnhancementSliderFloat("Volumen de música secundaria: %.1f %%", "##Sub_Music_Vol", "gSubMusicVolume", 0.0f, 1.0f, "", 1.0f, true, true, false, true)) {
                 Audio_SetGameVolume(SEQ_BGM_SUB, CVarGetFloat("gSubMusicVolume", 1.0f));
             }
-            if (UIWidgets::PaddedEnhancementSliderFloat("Sound Effects Volume: %.1f %%", "##Sound_Effect_Vol", "gSFXMusicVolume", 0.0f, 1.0f, "", 1.0f, true, true, false, true)) {
+            if (UIWidgets::PaddedEnhancementSliderFloat("Volumen de efectos: %.1f %%", "##Sound_Effect_Vol", "gSFXMusicVolume", 0.0f, 1.0f, "", 1.0f, true, true, false, true)) {
                 Audio_SetGameVolume(SEQ_SFX, CVarGetFloat("gSFXMusicVolume", 1.0f));
             }
-            if (UIWidgets::PaddedEnhancementSliderFloat("Fanfare Volume: %.1f %%", "##Fanfare_Vol", "gFanfareVolume", 0.0f, 1.0f, "", 1.0f, true, true, false, true)) {
+            if (UIWidgets::PaddedEnhancementSliderFloat("Volumen de banda: %.1f %%", "##Fanfare_Vol", "gFanfareVolume", 0.0f, 1.0f, "", 1.0f, true, true, false, true)) {
                 Audio_SetGameVolume(SEQ_FANFARE, CVarGetFloat("gFanfareVolume", 1.0f));
             }
 
             static std::unordered_map<LUS::AudioBackend, const char*> audioBackendNames = {
-                { LUS::AudioBackend::WASAPI, "Windows Audio Session API" },
+                { LUS::AudioBackend::WASAPI, "API de sesión de audio de Windows" },
                 { LUS::AudioBackend::SDL, "SDL" }
             };
 
-            ImGui::Text("Audio API (Needs reload)");
+            ImGui::Text("Interfaz de audio (requiere reinicio)");
             auto currentAudioBackend = LUS::Context::GetInstance()->GetAudio()->GetAudioBackend();
 
             if (LUS::Context::GetInstance()->GetAudio()->GetAvailableAudioBackends()->size() <= 1) {
@@ -233,13 +233,13 @@ void DrawSettingsMenu() {
 
         UIWidgets::Spacer(0);
 
-        if (ImGui::BeginMenu("Controller")) {
+        if (ImGui::BeginMenu("Mando")) {
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2 (12.0f, 6.0f));
             ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.0f));
             ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
             ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.22f, 0.38f, 0.56f, 1.0f));
             if (mInputEditorWindow) {
-                if (ImGui::Button(GetWindowButtonText("Controller Mapping", CVarGetInteger("gControllerConfigurationEnabled", 0)).c_str(), ImVec2 (-1.0f, 0.0f))) {
+                if (ImGui::Button(GetWindowButtonText("Mapeo de mando", CVarGetInteger("gControllerConfigurationEnabled", 0)).c_str(), ImVec2 (-1.0f, 0.0f))) {
                     mInputEditorWindow->ToggleVisibility();
                 }
             }
@@ -247,7 +247,7 @@ void DrawSettingsMenu() {
             ImGui::PopStyleColor(1);
             ImGui::PopStyleVar(3);
         #ifndef __SWITCH__
-            UIWidgets::EnhancementCheckbox("Menubar Controller Navigation", "gControlNav");
+            UIWidgets::EnhancementCheckbox("Navegación de la barra de menú con mando", "gControlNav");
             UIWidgets::Tooltip("Allows controller navigation of the SOH menu bar (Settings, Enhancements,...)\nCAUTION: This will disable game inputs while the menubar is visible.\n\nD-pad to move between items, A to select, and X to grab focus on the menu bar");
             UIWidgets::PaddedSeparator();
         #endif
@@ -276,11 +276,11 @@ void DrawSettingsMenu() {
 
         UIWidgets::Spacer(0);
 
-        if (ImGui::BeginMenu("Graphics")) {
+        if (ImGui::BeginMenu("Gráficos")) {
         #ifndef __APPLE__
             const bool disabled_resolutionSlider = CVarGetInteger("gAdvancedResolution.VerticalResolutionToggle", 0) &&
                                                    CVarGetInteger("gAdvancedResolution.Enabled", 0);
-            if (UIWidgets::EnhancementSliderFloat("Internal Resolution: %.1f %%", "##IMul", "gInternalResolution", 0.5f,
+            if (UIWidgets::EnhancementSliderFloat("Resolución interna: %.1f %%", "##IMul", "gInternalResolution", 0.5f,
                                                   2.0f, "", 1.0f, true, true, disabled_resolutionSlider)) {
                 LUS::Context::GetInstance()->GetWindow()->SetResolutionMultiplier(CVarGetFloat("gInternalResolution", 1));
             }
@@ -446,7 +446,7 @@ void DrawSettingsMenu() {
             if (UIWidgets::EnhancementCombobox("gImGuiScale", imguiScaleOptions, 1)) {
                 OTRGlobals::Instance->ScaleImGui();
             }
-            UIWidgets::Tooltip("Changes the scaling of the ImGui menu elements.");
+            UIWidgets::Tooltip("Cambia la escala de los elementos del menú ImGui.");
 
             UIWidgets::PaddedSeparator(true, true, 3.0f, 3.0f);
             
@@ -457,7 +457,7 @@ void DrawSettingsMenu() {
                 { LUS::WindowBackend::GX2, "GX2"}
             };
 
-            ImGui::Text("Renderer API (Needs reload)");
+            ImGui::Text("Interfaz de renderizado (requiere reinicio)");
             LUS::WindowBackend runningWindowBackend = LUS::Context::GetInstance()->GetWindow()->GetWindowBackend();
             LUS::WindowBackend configWindowBackend;
             int configWindowBackendId = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Backend.Id", -1);
@@ -487,8 +487,8 @@ void DrawSettingsMenu() {
             }
 
             if (LUS::Context::GetInstance()->GetWindow()->CanDisableVerticalSync()) {
-                UIWidgets::PaddedEnhancementCheckbox("Enable Vsync", "gVsyncEnabled", true, false);
-                UIWidgets::Tooltip("Activate vertical sync, to prevent screen tearing.");
+                UIWidgets::PaddedEnhancementCheckbox("Activar VSync", "gVsyncEnabled", true, false);
+                UIWidgets::Tooltip("Activa la sincronización vertical, para prevenir el screen tearing.");
             }
 
             if (LUS::Context::GetInstance()->GetWindow()->SupportsWindowedFullscreen()) {
@@ -501,7 +501,7 @@ void DrawSettingsMenu() {
             }
 
             // If more filters are added to LUS, make sure to add them to the filters list here
-            ImGui::Text("Texture Filtering (Needs reload)");
+            ImGui::Text("Filtro de texturas (requiere reinicio)");
             UIWidgets::EnhancementCombobox("gTextureFilter", filters, FILTER_THREE_POINT);
             UIWidgets::Tooltip("Texture filtering, aka texture smoothing. Requires a reload to take effect.\n\n"
                                "Three-Point: Replicates real N64 texture filtering.\n"
@@ -518,15 +518,15 @@ void DrawSettingsMenu() {
 
         UIWidgets::Spacer(0);
 
-        if (ImGui::BeginMenu("Languages")) {
-            UIWidgets::PaddedEnhancementCheckbox("Translate Title Screen", "gTitleScreenTranslation");
-            if (UIWidgets::EnhancementRadioButton("English", "gLanguages", LANGUAGE_ENG)) {
+        if (ImGui::BeginMenu("Idiomas")) {
+            UIWidgets::PaddedEnhancementCheckbox("Traducir pantalla de título", "gTitleScreenTranslation");
+            if (UIWidgets::EnhancementRadioButton("español", "gLanguages", LANGUAGE_ENG)) {
                 GameInteractor::Instance->ExecuteHooks<GameInteractor::OnSetGameLanguage>();
             }
-            if (UIWidgets::EnhancementRadioButton("German", "gLanguages", LANGUAGE_GER)) {
+            if (UIWidgets::EnhancementRadioButton("alemán", "gLanguages", LANGUAGE_GER)) {
                 GameInteractor::Instance->ExecuteHooks<GameInteractor::OnSetGameLanguage>();
             }
-            if (UIWidgets::EnhancementRadioButton("French", "gLanguages", LANGUAGE_FRA)) {
+            if (UIWidgets::EnhancementRadioButton("francés", "gLanguages", LANGUAGE_FRA)) {
                 GameInteractor::Instance->ExecuteHooks<GameInteractor::OnSetGameLanguage>();
             }
             ImGui::EndMenu();
@@ -534,13 +534,13 @@ void DrawSettingsMenu() {
         
         UIWidgets::Spacer(0);
         
-        if (ImGui::BeginMenu("Accessibility")) {
+        if (ImGui::BeginMenu("Accesibilidad")) {
         #if defined(_WIN32) || defined(__APPLE__)
-            UIWidgets::PaddedEnhancementCheckbox("Text to Speech", "gA11yTTS");
-            UIWidgets::Tooltip("Enables text to speech for in game dialog");
+            UIWidgets::PaddedEnhancementCheckbox("Texto a voz", "gA11yTTS");
+            UIWidgets::Tooltip("Conversión de texto a voz en los diálogos del juego.");
         #endif
-            UIWidgets::PaddedEnhancementCheckbox("Disable Idle Camera Re-Centering", "gA11yDisableIdleCam");
-            UIWidgets::Tooltip("Disables the automatic re-centering of the camera when idle.");
+            UIWidgets::PaddedEnhancementCheckbox("Desactivar recentrado de cámara en reposo", "gA11yDisableIdleCam");
+            UIWidgets::Tooltip("Desactiva el recentrado automático de la cámara en reposo.");
             
             ImGui::EndMenu();
         }
@@ -553,7 +553,7 @@ extern std::shared_ptr<CosmeticsEditorWindow> mCosmeticsEditorWindow;
 extern std::shared_ptr<GameplayStatsWindow> mGameplayStatsWindow;
 
 void DrawEnhancementsMenu() {
-    if (ImGui::BeginMenu("Enhancements"))
+    if (ImGui::BeginMenu("Mejoras"))
     {
         ImGui::BeginDisabled(CVarGetInteger("gDisableChangingSettings", 0));
 
@@ -561,9 +561,9 @@ void DrawEnhancementsMenu() {
 
         UIWidgets::PaddedSeparator();
 
-        if (ImGui::BeginMenu("Gameplay"))
+        if (ImGui::BeginMenu("Jugabilidad"))
         {
-            if (ImGui::BeginMenu("Time Savers"))
+            if (ImGui::BeginMenu("Ahorradores de tiempo"))
             {
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 8.0f);
                 ImGui::BeginTable("##timeSaversMenu", 2, ImGuiTableFlags_SizingFixedFit);
@@ -571,13 +571,13 @@ void DrawEnhancementsMenu() {
                 ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthStretch);
                 ImGui::TableNextColumn();
                 UIWidgets::Spacer(0);
-                ImGui::Text("Speed-ups:");
+                ImGui::Text("Aceleradores:");
                 UIWidgets::PaddedSeparator();
 
-                UIWidgets::PaddedEnhancementSliderInt("Text Speed: %dx", "##TEXTSPEED", "gTextSpeed", 1, 5, "", 1, true, false, true);
-                UIWidgets::PaddedEnhancementCheckbox("Skip Text", "gSkipText", false, true);
-                UIWidgets::Tooltip("Holding down B skips text");
-                UIWidgets::PaddedEnhancementSliderInt("King Zora Speed: %dx", "##MWEEPSPEED", "gMweepSpeed", 1, 5, "", 1, true, false, true);
+                UIWidgets::PaddedEnhancementSliderInt("Velocidad de textos: %dx", "##TEXTSPEED", "gTextSpeed", 1, 5, "", 1, true, false, true);
+                UIWidgets::PaddedEnhancementCheckbox("Saltar textos", "gSkipText", false, true);
+                UIWidgets::Tooltip("Manteniendo pulsado B se salta el texto");
+                UIWidgets::PaddedEnhancementSliderInt("Velocidad del Rey Zora: %dx", "##MWEEPSPEED", "gMweepSpeed", 1, 5, "", 1, true, false, true);
                 UIWidgets::PaddedEnhancementSliderInt("Vine/Ladder Climb speed +%d", "##CLIMBSPEED", "gClimbSpeed", 0, 12, "", 0, true, false, true);
                 UIWidgets::PaddedEnhancementSliderInt("Block pushing speed +%d", "##BLOCKSPEED", "gFasterBlockPush", 0, 5, "", 0, true, false, true);
                 UIWidgets::PaddedEnhancementSliderInt("Crawl speed %dx", "##CRAWLSPEED", "gCrawlSpeed", 1, 5, "", 1, true, false, true);
@@ -719,7 +719,7 @@ void DrawEnhancementsMenu() {
 
             UIWidgets::Spacer(0);
 
-            if (ImGui::BeginMenu("Difficulty Options"))
+            if (ImGui::BeginMenu("Opciones de dificultad"))
             {
                 if (ImGui::BeginMenu("Potion Values"))
                 {
@@ -1064,10 +1064,10 @@ void DrawEnhancementsMenu() {
 
         UIWidgets::Spacer(0);
 
-        if (ImGui::BeginMenu("Graphics"))
+        if (ImGui::BeginMenu("Gráficos"))
         {
-            if (ImGui::BeginMenu("Mods")) {
-                if (UIWidgets::PaddedEnhancementCheckbox("Use Alternate Assets", "gAltAssets", false, false)) {
+            if (ImGui::BeginMenu("Modificadores")) {
+                if (UIWidgets::PaddedEnhancementCheckbox("Usar recursos alternativos", "gAltAssets", false, false)) {
                     // The checkbox will flip the alt asset CVar, but we instead want it to change at the end of the game frame
                     // We toggle it back while setting the flag to update the CVar later
                     CVarSetInteger("gAltAssets", !CVarGetInteger("gAltAssets", 0));
@@ -1078,7 +1078,7 @@ void DrawEnhancementsMenu() {
                 UIWidgets::Tooltip("Disables bombs always rotating to face the camera. To be used in conjunction with mods that want to replace bombs with 3D objects.");
                 UIWidgets::PaddedEnhancementCheckbox("Disable Grotto Fixed Rotation", "gDisableGrottoRotation", true, false);
                 UIWidgets::Tooltip("Disables grottos rotating with the camera. To be used in conjunction with mods that want to replace grottos with 3D objects.");
-                UIWidgets::PaddedEnhancementCheckbox("Invisible Bunny Hood", "gHideBunnyHood", true, false);
+                UIWidgets::PaddedEnhancementCheckbox("Capucha de conejo invisible", "gHideBunnyHood", true, false);
                 UIWidgets::Tooltip("Turns Bunny Hood invisible while still maintaining its effects.");
                 UIWidgets::PaddedEnhancementCheckbox("Disable HUD Heart animations", "gNoHUDHeartAnimation", true, false);
                 UIWidgets::Tooltip("Disables the beating animation of the hearts on the HUD.");
@@ -1088,8 +1088,8 @@ void DrawEnhancementsMenu() {
 
             UIWidgets::Spacer(0);
 
-            if (ImGui::BeginMenu("Animated Link in Pause Menu")) {
-                ImGui::Text("Rotation");
+            if (ImGui::BeginMenu("Link con animación en el menú de pausa")) {
+                ImGui::Text("Rotación");
                 UIWidgets::EnhancementRadioButton("Disabled", "gPauseLiveLinkRotation", 0);
                 UIWidgets::EnhancementRadioButton("Rotate Link with D-pad", "gPauseLiveLinkRotation", 1);
                 UIWidgets::Tooltip("Allow you to rotate Link on the Equipment menu with the D-pad\nUse D-pad Up or D-pad Down to reset Link's rotation");
@@ -1101,7 +1101,7 @@ void DrawEnhancementsMenu() {
                     UIWidgets::EnhancementSliderInt("Rotation Speed: %d", "##MinRotationSpeed", "gPauseLiveLinkRotationSpeed", 1, 20, "", 1);
                 }
                 UIWidgets::PaddedSeparator();
-                ImGui::Text("Static loop");
+                ImGui::Text("Bucle estático");
                 UIWidgets::EnhancementRadioButton("Disabled", "gPauseLiveLink", 0);
                 UIWidgets::EnhancementRadioButton("Idle (standing)", "gPauseLiveLink", 1);
                 UIWidgets::EnhancementRadioButton("Idle (look around)", "gPauseLiveLink", 2);
@@ -1134,7 +1134,7 @@ void DrawEnhancementsMenu() {
 
             UIWidgets::Spacer(0);
 
-            UIWidgets::PaddedEnhancementCheckbox("Disable LOD", "gDisableLOD", true, false);
+            UIWidgets::PaddedEnhancementCheckbox("Desactivar nivel de detalle (LOD)", "gDisableLOD", true, false);
             UIWidgets::Tooltip("Turns off the Level of Detail setting, making models use their higher-poly variants at any distance");
             if (UIWidgets::PaddedEnhancementCheckbox("Disable Draw Distance", "gDisableDrawDistance", true, false)) {
                 if (CVarGetInteger("gDisableDrawDistance", 0) == 0) {
@@ -1174,7 +1174,7 @@ void DrawEnhancementsMenu() {
             }
             UIWidgets::Tooltip("When medallions are collected, the medallion imprints around the Master Sword pedestal in the Temple of Time will become colored");
             UIWidgets::PaddedEnhancementCheckbox("Show locked door chains on both sides of locked doors", "gShowDoorLocksOnBothSides", true, false);
-            UIWidgets::PaddedText("Fix Vanishing Paths", true, false);
+            UIWidgets::PaddedText("Corregir caminos que desvanecen", true, false);
             if (UIWidgets::EnhancementCombobox("gSceneSpecificDirtPathFix", zFightingOptions, ZFIGHT_FIX_DISABLED) && gPlayState != NULL) {
                 UpdateDirtPathFixState(gPlayState->sceneNum);
             }
@@ -1193,7 +1193,7 @@ void DrawEnhancementsMenu() {
 
         UIWidgets::Spacer(0);
 
-        if (ImGui::BeginMenu("Fixes"))
+        if (ImGui::BeginMenu("Correcciones"))
         {
             UIWidgets::EnhancementCheckbox("Fix L&R Pause menu", "gUniformLR");
             UIWidgets::Tooltip("Makes the L and R buttons in the pause menu the same color");
@@ -1265,11 +1265,11 @@ void DrawEnhancementsMenu() {
 
         UIWidgets::Spacer(0);
 
-        if (ImGui::BeginMenu("Restoration"))
+        if (ImGui::BeginMenu("Restauración"))
         {
-            UIWidgets::EnhancementCheckbox("Authentic Logo Screen", "gAuthenticLogo");
+            UIWidgets::EnhancementCheckbox("Pantalla de arranque original", "gAuthenticLogo");
             UIWidgets::Tooltip("Hide the game version and build details and display the authentic model and texture on the boot logo start screen");
-            UIWidgets::PaddedEnhancementCheckbox("Red Ganon blood", "gRedGanonBlood", true, false);
+            UIWidgets::PaddedEnhancementCheckbox("Sangre de Ganon roja", "gRedGanonBlood", true, false);
             UIWidgets::Tooltip("Restore the original red blood from NTSC 1.0/1.1. Disable for green blood");
             UIWidgets::PaddedEnhancementCheckbox("Fish while hovering", "gHoverFishing", true, false);
             UIWidgets::Tooltip("Restore a bug from NTSC 1.0 that allows casting the Fishing Rod while using the Hover Boots");
@@ -1291,7 +1291,7 @@ void DrawEnhancementsMenu() {
 
         UIWidgets::Spacer(0);
 
-        if (ImGui::BeginMenu("Extra Modes")) {
+        if (ImGui::BeginMenu("Modos adicionales")) {
             UIWidgets::PaddedText("Mirrored World", true, false);
             if (UIWidgets::EnhancementCombobox("gMirroredWorldMode", mirroredWorldModes, MIRRORED_WORLD_OFF) && gPlayState != NULL) {
                 UpdateMirrorModeState(gPlayState->sceneNum);
@@ -1436,7 +1436,7 @@ void DrawEnhancementsMenu() {
 }
 
 void DrawCheatsMenu() {
-    if (ImGui::BeginMenu("Cheats"))
+    if (ImGui::BeginMenu("Trucos"))
     {
         ImGui::BeginDisabled(CVarGetInteger("gDisableChangingSettings", 0));
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 8.0f);
@@ -1472,12 +1472,12 @@ void DrawCheatsMenu() {
         UIWidgets::Spacer(0);
         UIWidgets::EnhancementSliderFloat("Hookshot Reach Multiplier: %.2fx", "##gCheatHookshotReachMultiplier", "gCheatHookshotReachMultiplier", 1.0f, 5.0f, "", 1.0f, false);
         UIWidgets::Spacer(2.0f);
-        if (ImGui::Button("Change Age")) {
+        if (ImGui::Button("Cambiar edad")) {
             CVarSetInteger("gSwitchAge", 1);
         }
         UIWidgets::Tooltip("Switches Link's age and reloads the area.");  
         UIWidgets::Spacer(2.0f);
-        if (ImGui::Button("Clear Cutscene Pointer")) {
+        if (ImGui::Button("Despejar puntero de escena")) {
             GameInteractor::RawAction::ClearCutscenePointer();
         }
         UIWidgets::Tooltip("Clears the cutscene pointer to a value safe for wrong warps.");   
@@ -1485,13 +1485,13 @@ void DrawCheatsMenu() {
         ImGui::TableNextColumn();
         UIWidgets::Spacer(2.0f);
 
-        if (ImGui::BeginMenu("Infinite...")) {
-            UIWidgets::EnhancementCheckbox("Money", "gInfiniteMoney");
-            UIWidgets::PaddedEnhancementCheckbox("Health", "gInfiniteHealth", true, false);
-            UIWidgets::PaddedEnhancementCheckbox("Ammo", "gInfiniteAmmo", true, false);
-            UIWidgets::PaddedEnhancementCheckbox("Magic", "gInfiniteMagic", true, false);
-            UIWidgets::PaddedEnhancementCheckbox("Nayru's Love", "gInfiniteNayru", true, false);
-            UIWidgets::PaddedEnhancementCheckbox("Epona Boost", "gInfiniteEpona", true, false);
+        if (ImGui::BeginMenu("Cantidad infinita de...")) {
+            UIWidgets::EnhancementCheckbox("Dinero", "gInfiniteMoney");
+            UIWidgets::PaddedEnhancementCheckbox("Salud", "gInfiniteHealth", true, false);
+            UIWidgets::PaddedEnhancementCheckbox("Munición", "gInfiniteAmmo", true, false);
+            UIWidgets::PaddedEnhancementCheckbox("Magia", "gInfiniteMagic", true, false);
+            UIWidgets::PaddedEnhancementCheckbox("Amor de Nayru", "gInfiniteNayru", true, false);
+            UIWidgets::PaddedEnhancementCheckbox("Impulso de Epona", "gInfiniteEpona", true, false);
 
             ImGui::EndMenu();
         }
@@ -1631,10 +1631,10 @@ extern std::shared_ptr<ValueViewerWindow> mValueViewerWindow;
 extern std::shared_ptr<MessageViewer> mMessageViewerWindow;
 
 void DrawDeveloperToolsMenu() {
-    if (ImGui::BeginMenu("Developer Tools")) {
+    if (ImGui::BeginMenu("Para desarrolladores")) {
         ImGui::BeginDisabled(CVarGetInteger("gDisableChangingSettings", 0));
 
-        UIWidgets::EnhancementCheckbox("OoT Debug Mode", "gDebugEnabled");
+        UIWidgets::EnhancementCheckbox("Modo debug de OoT", "gDebugEnabled");
         UIWidgets::Tooltip("Enables Debug Mode, allowing you to select maps with L + R + Z, noclip with L + D-pad Right, and open the debug menu with L on the pause screen");
         if (CVarGetInteger("gDebugEnabled", 0)) {
             UIWidgets::EnhancementCheckbox("OoT Registry Editor", "gRegEditEnabled");
@@ -1693,32 +1693,32 @@ void DrawDeveloperToolsMenu() {
         }
         UIWidgets::Spacer(0);
         if (mConsoleWindow) {
-            if (ImGui::Button(GetWindowButtonText("Console", CVarGetInteger("gConsoleEnabled", 0)).c_str(), ImVec2(-1.0f, 0.0f))) {
+            if (ImGui::Button(GetWindowButtonText("Consola", CVarGetInteger("gConsoleEnabled", 0)).c_str(), ImVec2(-1.0f, 0.0f))) {
                 mConsoleWindow->ToggleVisibility();
             }
             UIWidgets::Tooltip("Enables the console window, allowing you to input commands, type help for some examples");
         }
         UIWidgets::Spacer(0);
         if (mSaveEditorWindow) {
-            if (ImGui::Button(GetWindowButtonText("Save Editor", CVarGetInteger("gSaveEditorEnabled", 0)).c_str(), ImVec2(-1.0f, 0.0f))) {
+            if (ImGui::Button(GetWindowButtonText("Editor de guardado", CVarGetInteger("gSaveEditorEnabled", 0)).c_str(), ImVec2(-1.0f, 0.0f))) {
                 mSaveEditorWindow->ToggleVisibility();
             }
         }
         UIWidgets::Spacer(0);
         if (mColViewerWindow) {
-            if (ImGui::Button(GetWindowButtonText("Collision Viewer", CVarGetInteger("gCollisionViewerEnabled", 0)).c_str(), ImVec2(-1.0f, 0.0f))) {
+            if (ImGui::Button(GetWindowButtonText("Visor de colisiones", CVarGetInteger("gCollisionViewerEnabled", 0)).c_str(), ImVec2(-1.0f, 0.0f))) {
                 mColViewerWindow->ToggleVisibility();
             }
         }
         UIWidgets::Spacer(0);
         if (mActorViewerWindow) {
-            if (ImGui::Button(GetWindowButtonText("Actor Viewer", CVarGetInteger("gActorViewerEnabled", 0)).c_str(), ImVec2(-1.0f, 0.0f))) {
+            if (ImGui::Button(GetWindowButtonText("Visor de actores", CVarGetInteger("gActorViewerEnabled", 0)).c_str(), ImVec2(-1.0f, 0.0f))) {
                 mActorViewerWindow->ToggleVisibility();
             }
         }
         UIWidgets::Spacer(0);
         if (mDLViewerWindow) {
-            if (ImGui::Button(GetWindowButtonText("Display List Viewer", CVarGetInteger("gDLViewerEnabled", 0)).c_str(), ImVec2(-1.0f, 0.0f))) {
+            if (ImGui::Button(GetWindowButtonText("Visor de Display Lists", CVarGetInteger("gDLViewerEnabled", 0)).c_str(), ImVec2(-1.0f, 0.0f))) {
                 mDLViewerWindow->ToggleVisibility();
             }
         }
@@ -1892,7 +1892,7 @@ void DrawRandomizerMenu() {
         static ImVec2 buttonSize(200.0f, 0.0f);
     #endif
         if (mRandomizerSettingsWindow) {
-            if (ImGui::Button(GetWindowButtonText("Randomizer Settings", CVarGetInteger("gRandomizerSettingsEnabled", 0)).c_str(), buttonSize)) {
+            if (ImGui::Button(GetWindowButtonText("Ajustes del Randomizer", CVarGetInteger("gRandomizerSettingsEnabled", 0)).c_str(), buttonSize)) {
                 mRandomizerSettingsWindow->ToggleVisibility();
             }
         }
