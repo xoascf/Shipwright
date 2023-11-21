@@ -16,4 +16,5 @@ void SaveContext_Init(void) {
     gSaveContext.dogIsLost = true;
     gSaveContext.nextTransitionType = TRANS_NEXT_TYPE_DEFAULT;
     gSaveContext.unk_13EE = 50;
+    gSaveContext.inventory.items2[0] = ITEM_JUMP;
 }
