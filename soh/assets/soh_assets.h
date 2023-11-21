@@ -117,3 +117,7 @@ static const ALIGN_ASSET(2) char gFileSelLanguageGERTex[] = dgFileSelLanguageGER
 
 #define dgEmptyTexture "__OTR__textures/virtual/gEmptyTexture"
 static const ALIGN_ASSET(2) char gEmptyTexture[] = dgEmptyTexture;
+
+//SSBJUMP
+#define dgJumpIconTex "__OTR__textures/icon_item_static/gJumpIconTex"
+ static const ALIGN_ASSET(2) char gJumpIconTex[] = dgJumpIconTex;

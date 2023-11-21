@@ -161,6 +161,7 @@ s32 func_8083C1DC(Player* this, PlayState* play);
 s32 func_8083C2B0(Player* this, PlayState* play);
 s32 func_8083C544(Player* this, PlayState* play);
 s32 func_8083C61C(PlayState* play, Player* this);
+s32 SSBJump(PlayState* play, Player* this);
 void func_8083CA20(PlayState* play, Player* this);
 void func_8083CA54(PlayState* play, Player* this);
 void func_8083CA9C(PlayState* play, Player* this);
@@ -362,6 +363,11 @@ static Input* sControlInput;
 // .data
 
 static u8 D_80853410[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+
+//MY VARIABLES
+int numJumps = 0;
+int jump3timer = 0;
+
 
 static PlayerAgeProperties sAgeProperties[] = {
     {
@@ -1062,6 +1068,7 @@ static s8 sItemActionParams[] = {
     PLAYER_IA_BOOTS_KOKIRI,
     PLAYER_IA_BOOTS_IRON,
     PLAYER_IA_BOOTS_HOVER,
+    PLAYER_IA_JUMP
 };
 
 static u8 sMaskMemory;
@@ -1848,6 +1855,8 @@ s8 Player_ItemToItemAction(s32 item) {
         return PLAYER_IA_LAST_USED;
     } else if (item == ITEM_FISHING_POLE) {
         return PLAYER_IA_FISHING_POLE;
+    } else if (item == ITEM_JUMP){
+        return PLAYER_IA_JUMP;
     } else {
         return sItemActionParams[item];
     }
@@ -2972,6 +2981,10 @@ void func_80835F44(PlayState* play, Player* this, s32 item) {
                 func_80078884(NA_SE_SY_ERROR);
                 return;
             }
+            if (actionParam == PLAYER_IA_JUMP) {
+                SSBJump(play, this);
+                return;
+            }
 
             if (actionParam >= PLAYER_IA_SHIELD_DEKU) {
                 // Changing shields through action commands is unimplemented
@@ -4051,6 +4064,7 @@ s32 func_808382DC(Player* this, PlayState* play) {
 }
 
 void func_80838940(Player* this, LinkAnimationHeader* anim, f32 arg2, PlayState* play, u16 sfxId) {
+    numJumps++; // Autojump counts as first manual jump
     func_80835C58(play, this, func_8084411C, 1);
 
     if (anim != NULL) {
@@ -5311,6 +5325,7 @@ s32 func_8083B998(Player* this, PlayState* play) {
 }
 
 void func_8083BA90(PlayState* play, Player* this, s32 arg2, f32 xzVelocity, f32 yVelocity) {
+    if (numJumps < 3) {
     func_80837948(play, this, arg2);
     func_80835C58(play, this, func_80844AF4, 0);
 
@@ -5325,6 +5340,7 @@ void func_8083BA90(PlayState* play, Player* this, s32 arg2, f32 xzVelocity, f32 
 
     func_80832854(this);
     func_80832698(this, NA_SE_VO_LI_SWORD_L);
+    }
 }
 
 s32 func_8083BB20(Player* this) {
@@ -5577,7 +5593,7 @@ s32 func_8083C544(Player* this, PlayState* play) {
     return 0;
 }
 
-s32 func_8083C61C(PlayState* play, Player* this) {
+s32 func_8083C61C(PlayState* play, Player* this) { //use deku nut
     if ((play->roomCtx.curRoom.behaviorType1 != ROOM_BEHAVIOR_TYPE1_2) && (this->actor.bgCheckFlags & 1) &&
         (AMMO(ITEM_NUT) != 0)) {
         func_80835C58(play, this, func_8084E604, 0);
@@ -5587,6 +5603,33 @@ s32 func_8083C61C(PlayState* play, Player* this) {
     }
 
     return 0;
+}
+
+s32 SSBJump(PlayState* play, Player* this) { //use deku nut
+    if (numJumps == 0)func_80838940(this, gPlayerAnim_link_normal_run_jump, 6.7f, play, NA_SE_VO_LI_AUTO_JUMP); //First Jump
+    else if (numJumps == 1) {
+        func_80838940(this, &gPlayerAnim_link_fighter_backturn_jump, 6.7f, play, NA_SE_VO_LI_AUTO_JUMP); //Double Jump
+        Vec3f splashPos = this->actor.world.pos;
+        splashPos.x += this->actor.velocity.x * 3.0f;
+        splashPos.z += this->actor.velocity.z * 3.0f;
+        splashPos.y -= 0.0f;
+        EffectSsGRipple_Spawn(play, &splashPos, 10, 250, 0);
+        EffectSsGRipple_Spawn(play, &splashPos, 10, 250, 0);
+        EffectSsGRipple_Spawn(play, &splashPos, 10, 250, 0);
+
+    }
+    else if (numJumps == 2) { //Triple Jump
+        if (CUR_EQUIP_VALUE(EQUIP_TYPE_SWORD) != EQUIP_VALUE_SWORD_NONE) { // cant spin jump if no sword equipped
+            this->heldItemAction = PLAYER_IA_SWORD_KOKIRI; //Equip Sword
+                this->heldItemId = ITEM_SWORD_KOKIRI;
+                this->meleeWeaponState = 1; //Sword Does Damage
+                jump3timer = 0;
+
+                func_80838940(this, &gPlayerAnim_link_fighter_Wrolling_kiru, 10.0f, play, NA_SE_VO_LI_SWORD_L);
+        }
+
+    }
+    return 1;
 }
 
 static struct_80854554 D_80854554[] = {
@@ -9544,7 +9587,7 @@ static u8 D_808546F0[] = { ITEM_SWORD_MASTER, ITEM_SWORD_KOKIRI };
 
 void func_80846720(PlayState* play, Player* this, s32 arg2) {
     s32 item = D_808546F0[(void)0, gSaveContext.linkAge];
-    s32 actionParam = sItemActionParams[item];
+    s32 actionParam = sItemActionParams[item]; //nope
 
     func_80835EFC(this);
     func_808323B4(play, this);
@@ -10700,6 +10743,34 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     s32 pad;
 
     sControlInput = input;
+
+    if (this->actor.bgCheckFlags & 1) {  //When standing on ground - Reset numJumps, Turn off sword attack
+        if (numJumps != 0) this->meleeWeaponState = 0;
+        numJumps = 0;
+    }
+
+    if (this->stateFlags1 & PLAYER_STATE1_CLIMBING_LADDER) {  //1_21 //When climbing somthing - set to already jumped once
+        this->meleeWeaponState = 0;
+        numJumps = 1;
+    }
+
+    if (this->stateFlags2 & PLAYER_STATE2_DISABLE_ROTATION_ALWAYS) { //2_6 //When hanging from a ledge- set to already jumped once
+        this->meleeWeaponState = 0;
+        numJumps = 1;
+    }
+    if (this->stateFlags1 & PLAYER_STATE1_IN_WATER) {
+        this->meleeWeaponState = 0;
+        numJumps = 1;
+    }
+    if (numJumps == 3) {
+        if (jump3timer >= 13) {//once jump 3 attack is done - turn off sword, start flickering link
+            this->meleeWeaponState = 0;
+            if (((jump3timer - 13) % 2) == 0) { //every other frame set filter to black
+                Actor_SetColorFilter(&this->actor, 0x8000, 0, 0, 1);
+            }
+        }
+        jump3timer++;
+    }
 
     if (this->unk_A86 < 0) {
         this->unk_A86++;

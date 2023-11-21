@@ -142,7 +142,9 @@ typedef enum {
     /* 0x49 */ PLAYER_IA_BOOTS_KOKIRI,
     /* 0x4A */ PLAYER_IA_BOOTS_IRON,
     /* 0x4B */ PLAYER_IA_BOOTS_HOVER,
-    /* 0x4C */ PLAYER_IA_MAX
+               PLAYER_IA_JUMP,
+    /* 0x4C */ PLAYER_IA_MAX,
+
 } PlayerItemAction;
 
 typedef enum {
