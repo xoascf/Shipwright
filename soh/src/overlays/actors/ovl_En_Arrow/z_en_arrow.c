@@ -184,7 +184,7 @@ void EnArrow_Init(Actor* thisx, PlayState* play) {
                 gSaveContext.equips.cButtonSlots[2] == ITEM_BOMB) {
                 if (AMMO(ITEM_BOMB) > 0) {
                     this->payload = (EnBom*) Actor_Spawn(&play->actorCtx, play, ACTOR_EN_BOM,
-                        ((Actor*)this)->world.pos.x, ((Actor*)this)->world.pos.y - 25, ((Actor*)this)->world.pos.z, 0, 0, 0, 0);
+                        ((Actor*)this)->world.pos.x, ((Actor*)this)->world.pos.y - 25, ((Actor*)this)->world.pos.z, 0, 0, 0, 0, false);
                     if (this->payload != NULL) {
                         this->payload->bombCollider.base.acFlags = 0; // Disable hit detection on bomb
                         Inventory_ChangeAmmo(ITEM_BOMB, -1);
