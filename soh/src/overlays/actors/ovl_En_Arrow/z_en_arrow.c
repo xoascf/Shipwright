@@ -177,6 +177,21 @@ void EnArrow_Init(Actor* thisx, PlayState* play) {
             this->collider.info.toucher.dmgFlags = dmgFlags[this->actor.params];
             LOG_HEX("this->at_info.cl_elem.at_btl_info.at_type", this->collider.info.toucher.dmgFlags);
         }
+
+        if (this->actor.params == ARROW_SEED || this->actor.params == ARROW_NORMAL ||
+            this->actor.params == ARROW_NORMAL_HORSE) {
+            if (gSaveContext.equips.cButtonSlots[0] == ITEM_BOMB || gSaveContext.equips.cButtonSlots[1] == ITEM_BOMB ||
+                gSaveContext.equips.cButtonSlots[2] == ITEM_BOMB) {
+                if (AMMO(ITEM_BOMB) > 0) {
+                    this->payload = (EnBom*) Actor_Spawn(&play->actorCtx, play, ACTOR_EN_BOM,
+                        ((Actor*)this)->world.pos.x, ((Actor*)this)->world.pos.y - 25, ((Actor*)this)->world.pos.z, 0, 0, 0, 0);
+                    if (this->payload != NULL) {
+                        this->payload->bombCollider.base.acFlags = 0; // Disable hit detection on bomb
+                        Inventory_ChangeAmmo(ITEM_BOMB, -1);
+                    }
+                }
+            }
+        }
     }
 
     EnArrow_SetupAction(this, EnArrow_Shoot);
@@ -195,6 +210,11 @@ void EnArrow_Destroy(Actor* thisx, PlayState* play) {
     if ((this->hitActor != NULL) && (this->hitActor->update != NULL)) {
         this->hitActor->flags &= ~ACTOR_FLAG_DRAGGED_BY_ARROW;
     }
+
+   if (this->payload != NULL && this->payload->timer > 0  && !(this->hitFlags & 0x04)) { // Put unfired arrow away with unexploded bomb
+       Actor_Kill(this->payload);
+       Inventory_ChangeAmmo(ITEM_BOMB, 1);
+   }
 }
 
 void EnArrow_Shoot(EnArrow* this, PlayState* play) {
@@ -234,6 +254,10 @@ void EnArrow_Shoot(EnArrow* this, PlayState* play) {
         } else {
             func_8002D9A4(&this->actor, 150.0f);
             this->timer = 12;
+        }
+
+        if (this->payload != NULL) { // Have bomb
+            this->hitFlags |= 0x04; // Has fired
         }
     }
 }
@@ -410,6 +434,16 @@ void EnArrow_Fly(EnArrow* this, PlayState* play) {
             this->hitActor = NULL;
         }
     }
+
+    if (this->payload != NULL) {
+        ((Actor*)this->payload)->world.pos.x = this->actor.world.pos.x;
+        ((Actor*)this->payload)->world.pos.y = this->actor.world.pos.y;
+        ((Actor*)this->payload)->world.pos.z = this->actor.world.pos.z;
+        if (atTouched || this->touchedPoly) {
+            this->payload->timer = 0;
+            Actor_Kill(&this->actor);
+        }
+    }
 }
 
 void func_809B45E0(EnArrow* this, PlayState* play) {
@@ -454,6 +488,12 @@ void EnArrow_Update(Actor* thisx, PlayState* play) {
         static Color_RGBA8 envColor = { 255, 50, 0, 0 };
         // spawn dust for the flame
         func_8002836C(play, &this->unk_21C, &velocity, &accel, &primColor, &envColor, 100, 0, 8);
+    }
+
+    if (this->payload != NULL && !(this->hitFlags & 0x04)) { // Move unfired bomb with arrow
+        ((Actor*)this->payload)->world.pos.x = this->actor.world.pos.x;
+        ((Actor*)this->payload)->world.pos.y = this->actor.world.pos.y - 25;
+        ((Actor*)this->payload)->world.pos.z = this->actor.world.pos.z;
     }
 }
 

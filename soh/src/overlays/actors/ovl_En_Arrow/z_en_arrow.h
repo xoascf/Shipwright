@@ -3,6 +3,7 @@
 
 #include <libultraship/libultra.h>
 #include "global.h"
+#include "overlays/actors/ovl_En_Bom/z_en_bom.h"
 
 struct EnArrow;
 
@@ -23,6 +24,7 @@ typedef struct EnArrow {
     /* 0x024C */ Actor* hitActor;
     /* 0x0250 */ Vec3f unk_250;
     /* 0x025C */ EnArrowActionFunc actionFunc;
+    EnBom* payload;
 } EnArrow; // size = 0x0260
 
 typedef enum {
