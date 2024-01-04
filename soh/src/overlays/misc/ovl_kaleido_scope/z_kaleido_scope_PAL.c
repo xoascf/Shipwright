@@ -2235,7 +2235,7 @@ void KaleidoScope_UpdateNamePanel(PlayState* play) {
                 const char* textureName = gArmcannonItemNameENGTex;
                 memcpy(pauseCtx->nameSegment, textureName, strlen(textureName) + 1);
             }
-            else if (pauseCtx->namedItem == ITEM_ARMCANNON) {
+            else if (pauseCtx->namedItem == ITEM_MASK_FOX) {
                 const char* textureName = gMaskFoxItemNameENGTex;
                 memcpy(pauseCtx->nameSegment, textureName, strlen(textureName) + 1);
             }
