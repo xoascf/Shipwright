@@ -415,8 +415,8 @@ Gfx* sPlayerRightHandBowSlingshotDLs[] = {
 
 //CUSTOM
 Gfx* sPlayerRightHandCustomProjectileDLs[] = {
-    gUltrahandDL,//ADULT ULTRAHAND
-    gUltrahandDL,//CHILD ULTRAHAND
+    gUltrahandAdultDL,//ADULT ULTRAHAND
+    gUltrahandChildDL,//CHILD ULTRAHAND
     gArmcannonAdultDL,//ADULT ARMCANNON
     gArmcannonChildDL,//CHILD ARMCANNON
 };
@@ -663,13 +663,7 @@ void Player_SetModelsForHoldingShield(Player* this) {
         if ((CVarGetInteger("gShieldTwoHanded", 0) && (this->heldItemAction != PLAYER_IA_DEKU_STICK) ||
             !Player_HoldsTwoHandedWeapon(this)) && !Player_IsChildWithHylianShield(this)) {
             this->rightHandType = PLAYER_MODELTYPE_RH_SHIELD;
-            //CUSTOM
-            if (this->currentMask != PLAYER_MASK_FOX) {
-                this->rightHandDLists = &sPlayerDListGroups[PLAYER_MODELTYPE_RH_SHIELD][gSaveContext.linkAge];
-            }
-            else {
-                this->rightHandDLists = &sPlayerDListGroups[PLAYER_MODELTYPE_RH_OPEN][gSaveContext.linkAge];
-            }
+            this->rightHandDLists = &sPlayerDListGroups[PLAYER_MODELTYPE_RH_SHIELD][gSaveContext.linkAge];
             if (this->sheathType == PLAYER_MODELTYPE_SHEATH_18) {
                 this->sheathType = PLAYER_MODELTYPE_SHEATH_16;
             } else if (this->sheathType == PLAYER_MODELTYPE_SHEATH_19) {
@@ -1354,8 +1348,8 @@ s32 Player_OverrideLimbDrawGameplayDefault(PlayState* play, s32 limbIndex, Gfx**
             *dList = ResourceMgr_LoadGfxByName(dLists[sDListsLodOffset]);
         } else if (limbIndex == PLAYER_LIMB_R_HAND) {
             Gfx** dLists = this->rightHandDLists;
-
-            if (sRightHandType == PLAYER_MODELTYPE_RH_SHIELD) {
+            //CUSTOM
+            if ((sRightHandType == PLAYER_MODELTYPE_RH_SHIELD) & ((this->currentMask != PLAYER_MASK_FOX))) {
                 dLists += this->currentShield * 4;
                 *dList = ResourceMgr_LoadGfxByName(dLists[sDListsLodOffset]);
             } else if ((this->rightHandType == PLAYER_MODELTYPE_RH_OPEN) && (this->actor.speedXZ > 2.0f) && !(this->stateFlags1 & 0x8000000)) {
@@ -2030,6 +2024,7 @@ void Player_PostLimbDrawGameplay(PlayState* play, s32 limbIndex, Gfx** dList, Ve
         }
     } else if (this->actor.scale.y >= 0.0f) {
         if (limbIndex == PLAYER_LIMB_WAIST) {
+            //CUSTOM TAILS HERE
             if (this->currentMask == PLAYER_MASK_FOX) {
                 OPEN_DISPS(play->state.gfxCtx);
                 gSPDisplayList(POLY_OPA_DISP++, gFoxTailDL);

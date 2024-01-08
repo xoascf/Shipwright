@@ -712,6 +712,18 @@ typedef struct Player {
     u8 ivanDamageMultiplier;
 
     //CUSTOM
+    int actionButtonTimer;
+
+    int numJumps;
+    int jump3timer;
+
+    int lanternType;
+
+    bool isGliding;
+    int glideResetTimer;
+    bool landedAfterGliding;
+    int personalUpdraftTimer;
+
     bool thirdPersonAiming;
     Actor* customProjectile;
     bool hasReflector;

@@ -376,18 +376,7 @@ static Vec3f D_80858AA8;
 static Input* sControlInput;
 
 // .data
-
 static u8 D_80853410[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-
-//MY VARIABLES
-int numJumps = 0;
-int jump3timer = 0;
-bool isGliding = false;
-int glideResetTimer = 0;
-bool landedAfterGliding = true;
-int lanternType = 0;
-int actionButtonTimer = 0;
-int personalUpdraftTimer = 0;
 
 
 static PlayerAgeProperties sAgeProperties[] = {
@@ -2197,7 +2186,7 @@ void func_80833DF8(Player* this, PlayState* play) {
         } else {
             this->heldItemButton = i;
             func_80835F44(play, this, item); //do item action if button just pressed
-            actionButtonTimer = 0;
+            this->actionButtonTimer = 0;
         }
     }
 }
@@ -4400,7 +4389,7 @@ s32 func_808382DC(Player* this, PlayState* play) {
 }
 
 void func_80838940(Player* this, LinkAnimationHeader* anim, f32 arg2, PlayState* play, u16 sfxId) {
-    numJumps++; // Autojump counts as first manual jump
+    this->numJumps++; // Autojump counts as first manual jump
     func_80835C58(play, this, func_8084411C, 1);
 
     if (anim != NULL) {
@@ -5631,7 +5620,7 @@ s32 func_8083B998(Player* this, PlayState* play) {
 }
 
 void func_8083BA90(PlayState* play, Player* this, s32 arg2, f32 xzVelocity, f32 yVelocity) {
-    if (numJumps < 3) {
+    if (this->numJumps < 3) {
     func_80837948(play, this, arg2);
     func_80835C58(play, this, func_80844AF4, 0);
 
@@ -5929,8 +5918,8 @@ bool IsHoldingCustomProjectile(Player* player) {
 
 
 s32 SSBJump(PlayState* play, Player* this) {
-    if (numJumps == 0)func_80838940(this, gPlayerAnim_link_normal_run_jump, 6.7f, play, NA_SE_VO_LI_AUTO_JUMP); //First Jump
-    else if (numJumps == 1) {
+    if (this->numJumps == 0)func_80838940(this, gPlayerAnim_link_normal_run_jump, 6.7f, play, NA_SE_VO_LI_AUTO_JUMP); //First Jump
+    else if (this->numJumps == 1) {
         func_80838940(this, &gPlayerAnim_link_fighter_backturn_jump, 6.7f, play, NA_SE_VO_LI_AUTO_JUMP); //Double Jump
         Vec3f splashPos = this->actor.world.pos;
         splashPos.x += this->actor.velocity.x * 3.0f;
@@ -5941,12 +5930,12 @@ s32 SSBJump(PlayState* play, Player* this) {
         EffectSsGRipple_Spawn(play, &splashPos, 10, 250, 0);
 
     }
-    else if (numJumps == 2) { //Triple Jump
+    else if (this->numJumps == 2) { //Triple Jump
         if (CUR_EQUIP_VALUE(EQUIP_TYPE_SWORD) != EQUIP_VALUE_SWORD_NONE) { // cant spin jump if no sword equipped
             this->heldItemAction = PLAYER_IA_SWORD_KOKIRI; //Equip Sword
             this->heldItemId = ITEM_SWORD_KOKIRI;
             this->meleeWeaponState = 1; //Sword Does Damage
-            jump3timer = 0;
+            this->jump3timer = 0;
 
             func_80838940(this, &gPlayerAnim_link_fighter_Wrolling_kiru, 10.0f, play, NA_SE_VO_LI_SWORD_L);
         }
@@ -5993,16 +5982,16 @@ void DespawnHeldGlider(PlayState* play, Player* this) {
     if (heldActor->id == ACTOR_EN_GLIDER) {
         heldActor->scale = (Vec3f){ 0.0f,0.0f,0.0f };
         func_80834644(play, this);
-        glideResetTimer = 5;
-        isGliding = false;
+        this->glideResetTimer = 5;
+        this->isGliding = false;
     }
 }
 
 s32 Glide(PlayState* play, Player* this) {
     s32 nextAnimType;
-    personalUpdraftTimer = 0;
-    if (numJumps == 0)func_80838940(this, gPlayerAnim_link_normal_run_jump, 6.7f, play, NA_SE_VO_LI_AUTO_JUMP); //First Jump
-    else if ((numJumps >= 1) & (glideResetTimer == 0)) {
+    this->personalUpdraftTimer = 0;
+    if (this->numJumps == 0)func_80838940(this, gPlayerAnim_link_normal_run_jump, 6.7f, play, NA_SE_VO_LI_AUTO_JUMP); //First Jump
+    else if ((this->numJumps >= 1) & (this->glideResetTimer == 0)) {
         this->nextModelGroup = Player_ActionToModelGroup(this, PLAYER_IA_GLIDER);
         nextAnimType = gPlayerModelTypes[this->nextModelGroup][PLAYER_MODELGROUPENTRY_ANIM];
 
@@ -6017,11 +6006,11 @@ s32 Glide(PlayState* play, Player* this) {
             func_80835EFC(this); //HeldActor stuff
             func_808323B4(play, this); //HeldActor stuff
             func_80833664(play, this, PLAYER_IA_GLIDER);
-            isGliding = true;
+            this->isGliding = true;
         }
 
-        if (landedAfterGliding) {
-            landedAfterGliding = false;
+        if (this->landedAfterGliding) {
+            this->landedAfterGliding = false;
             this->actor.velocity.y += 8.0f;
             if (this->actor.velocity.y >= 4.0f) this->actor.velocity.y = 4.0f;
         }
@@ -6034,24 +6023,24 @@ s32 Glide(PlayState* play, Player* this) {
 
 s32 SpawnWindZone(PlayState* play, Player* this) {
     if ((this->actor.bgCheckFlags & 1) && (this->actor.speedXZ == 0.0f)) { //is on ground and not moving
-        if (personalUpdraftTimer == 0) {
+        if (this->personalUpdraftTimer == 0) {
             func_808322D0(play, this, &gPlayerAnim_link_magic_honoo2);
         }
-        if (personalUpdraftTimer == 20) {
+        if (this->personalUpdraftTimer == 20) {
             Audio_PlayActorSound2(&this->actor, NA_SE_EV_ICE_MELT);
             Actor_Spawn(&play->actorCtx, play, ACTOR_WIND_ZONE, this->actor.world.pos.x,
                 this->actor.world.pos.y, this->actor.world.pos.z, 0,
                 this->actor.shape.rot.y, 0, 1, 0); //param 0 makes permanent wind zone 
             this->actor.gravity = +2.0f;
             this->actor.velocity.y = 6.7f;
-            numJumps = 1;
+            this->numJumps = 1;
             this->actor.bgCheckFlags &= ~1;
             this->stateFlags1 |= PLAYER_STATE1_JUMPING;
             Glide(play, this);
         }
-        personalUpdraftTimer++;
+        this->personalUpdraftTimer++;
     }
-    else personalUpdraftTimer = -1;
+    else this->personalUpdraftTimer = -1;
 }
 
 
@@ -6065,7 +6054,7 @@ void SwingItem(Player* this, PlayState* play) {
 void SpawnFire(PlayState* play, Player* this) {
     Actor_Spawn(&play->actorCtx, play, ACTOR_LANTERN_FIRE, this->bodyPartsPos[PLAYER_BODYPART_R_HAND].x,
         this->bodyPartsPos[PLAYER_BODYPART_R_HAND].y + 20.0f, this->bodyPartsPos[PLAYER_BODYPART_R_HAND].z, 0,
-        this->actor.shape.rot.y, 0, lanternType, 0);
+        this->actor.shape.rot.y, 0, this->lanternType, 0);
  /*   Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_LANTERN_FIRE, this->bodyPartsPos[PLAYER_BODYPART_R_HAND].x,
         this->bodyPartsPos[PLAYER_BODYPART_R_HAND].y + 20.0f, this->bodyPartsPos[PLAYER_BODYPART_R_HAND].z, 0,
         this->actor.shape.rot.y - 9000, 0, 1);
@@ -6078,14 +6067,14 @@ void SpawnFire(PlayState* play, Player* this) {
         */
 }
 void ChangeLantern(PlayState* play, Player* this) {
-    if (actionButtonTimer == 10) {
-        lanternType++;
-        if (lanternType > 3) lanternType = 0;
+    if (this->actionButtonTimer == 10) {
+        this->lanternType++;
+        if (this->lanternType > 3) this->lanternType = 0;
         Lantern(play, this);
-        actionButtonTimer = 0;
+        this->actionButtonTimer = 0;
        
     }
-    else actionButtonTimer++;
+    else this->actionButtonTimer++;
 }
 
 s32 Lantern(PlayState* play, Player* this) {
@@ -11421,41 +11410,41 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     // gSaveContext.rupees= (this->unk_836 * 48) + 16;
 
 
-    if (glideResetTimer > 0) glideResetTimer--;
-    if (this->actor.bgCheckFlags & 1) {  //When standing on ground - Reset numJumps, Turn off sword attack
-        if (numJumps != 0) this->meleeWeaponState = 0;
-        numJumps = 0;
-        landedAfterGliding = true;
-        if (isGliding) {
+    if (this->glideResetTimer > 0) this->glideResetTimer--;
+    if (this->actor.bgCheckFlags & 1) {  //When standing on ground - Reset this->numJumps, Turn off sword attack
+        if (this->numJumps != 0) this->meleeWeaponState = 0;
+        this->numJumps = 0;
+        this->landedAfterGliding = true;
+        if (this->isGliding) {
             if (this->stateFlags1 & PLAYER_STATE1_ITEM_OVER_HEAD) {
                 DespawnHeldGlider(play, this);
             }
-            isGliding = false;
-            glideResetTimer = 0;
+            this->isGliding = false;
+            this->glideResetTimer = 0;
         }
     }
 
     if (this->stateFlags1 & PLAYER_STATE1_CLIMBING_LADDER) {  //1_21 //When climbing somthing - set to already jumped once
         this->meleeWeaponState = 0;
-        numJumps = 1;
+        this->numJumps = 1;
     }
 
     if (this->stateFlags2 & PLAYER_STATE2_DISABLE_ROTATION_ALWAYS) { //2_6 //When hanging from a ledge- set to already jumped once
         this->meleeWeaponState = 0;
-        numJumps = 1;
+        this->numJumps = 1;
     }
     if (this->stateFlags1 & PLAYER_STATE1_IN_WATER) {
         this->meleeWeaponState = 0;
-        numJumps = 1;
+        this->numJumps = 1;
     }
-    if (numJumps == 3) {
-        if (jump3timer >= 13) {//once jump 3 attack is done - turn off sword, start flickering link
+    if (this->numJumps == 3) {
+        if (this->jump3timer >= 13) {//once jump 3 attack is done - turn off sword, start flickering link
             this->meleeWeaponState = 0;
-            if (((jump3timer - 13) % 2) == 0) { //every other frame set filter to black
+            if (((this->jump3timer - 13) % 2) == 0) { //every other frame set filter to black
                 Actor_SetColorFilter(&this->actor, 0x8000, 0, 0, 1);
             }
         }
-        jump3timer++;
+        this->jump3timer++;
     }
     //TIMERS
     if (this->unk_A86 < 0) {

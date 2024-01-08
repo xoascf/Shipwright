@@ -43,7 +43,7 @@ const ActorInit Custom_Projectile_InitVars = {
 static ColliderQuadInit quadColliderUltrahand = {
     {
         COLTYPE_NONE,
-        AT_ON | AT_TYPE_ALL,
+        AT_ON | AT_TYPE_PLAYER | AT_TYPE_OTHER,
         AC_NONE,
         OC1_NONE,
         OC2_NONE,
@@ -564,7 +564,7 @@ void DrawHexSegment(Actor* thisx, PlayState* play, float scale) {
     Matrix_Scale(scale * 3.0f, scale, scale, MTXMODE_APPLY);
     gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
         G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-    gSPDisplayList(POLY_XLU_DISP++, gReflectorsDL);
+    gSPDisplayList(POLY_XLU_DISP++, gReflectorDL);
     Matrix_Pop();
     CLOSE_DISPS(play->state.gfxCtx);
 }

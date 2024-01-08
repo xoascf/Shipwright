@@ -173,7 +173,7 @@ static const ALIGN_ASSET(2) char gMagicMeterFillTex[] = dgMagicMeterFillTex;
 
 
 //CUSTOM
-#define dgCrosshairTex "__OTR__textures/parameter_static/gCrosshairTex"
+#define dgCrosshairTex "__OTR__customitems/parameter_static/gCrosshairTex"
 static const ALIGN_ASSET(2) char gCrosshairTex[] = dgCrosshairTex;
 
 #endif // TEXTURES_PARAMETER_STATIC_H
