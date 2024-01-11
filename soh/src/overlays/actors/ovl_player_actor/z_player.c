@@ -363,6 +363,9 @@ static Input* sControlInput;
 
 static u8 D_80853410[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
+//MY VARIABLES
+int rollCharge = 0;
+
 static PlayerAgeProperties sAgeProperties[] = {
     {
         56.0f,
@@ -1519,13 +1522,17 @@ void func_80832924(Player* this, struct_80832924* entry) {
         flags = data & 0x7800;
         if (LinkAnimation_OnFrame(&this->skelAnime, fabsf(data & 0x7FF))) {
             if (flags == 0x800) {
-                Player_PlaySfx(&this->actor, entry->sfxId);
+                //Player_PlaySfx(&this->actor, entry->sfxId);
+                Audio_PlayActorSound2(&this->actor, NA_SE_EV_DIG_UP); //	NA_SE_IT_DM_FLYING_GOD_DASH
             } else if (flags == 0x1000) {
                 func_80832770(this, entry->sfxId);
+                Audio_PlayActorSound2(&this->actor, NA_SE_EV_DIG_UP);
             } else if (flags == 0x1800) {
-                func_808327C4(this, entry->sfxId);
+                Audio_PlayActorSound2(&this->actor, NA_SE_EV_DIG_UP);
+                //func_808327C4(this, entry->sfxId);
             } else if (flags == 0x2000) {
-                func_80832698(this, entry->sfxId);
+                //func_80832698(this, entry->sfxId);
+                //Audio_PlayActorSound2(&this->actor, NA_SE_VO_RT_FALL);
             } else if (flags == 0x2800) {
                 func_808328A0(this);
             } else if (flags == 0x3000) {
@@ -2454,7 +2461,7 @@ s32 func_80834D2C(Player* this, PlayState* play) {
         LinkAnimation_PlayOnce(play, &this->skelAnime2, anim);
     } else {
         func_80833638(this, func_80835884);
-        this->unk_834 = 10;
+        this->unk_834 = 19;
         LinkAnimation_PlayOnce(play, &this->skelAnime2, &gPlayerAnim_link_boom_throw_wait2waitR);
     }
 
@@ -2598,7 +2605,7 @@ s32 func_808351D4(Player* this, PlayState* play) {
         this->unk_836 = 2;
     }
 
-    if (this->unk_834 > 10) {
+    if (this->unk_834 > 19) {
         this->unk_834--;
     }
 
@@ -2615,7 +2622,7 @@ s32 func_808351D4(Player* this, PlayState* play) {
                 func_808350A4(play, this);
             }
         }
-        this->unk_834 = 10;
+        this->unk_834 = 19;
         Player_ZeroSpeedXZ(this);
     } else {
         this->stateFlags1 |= PLAYER_STATE1_READY_TO_FIRE;
@@ -2789,14 +2796,16 @@ s32 func_808359FC(Player* this, PlayState* play) {
         f32 posX = (Math_SinS(this->actor.shape.rot.y) * 10.0f) + this->actor.world.pos.x;
         f32 posZ = (Math_CosS(this->actor.shape.rot.y) * 10.0f) + this->actor.world.pos.z;
         s32 yaw = (this->unk_664 != NULL) ? this->actor.shape.rot.y + 14000 : this->actor.shape.rot.y;
+        int throwAngle = this->actor.focus.rot.x - 6000;
+        if (throwAngle < -12000) throwAngle = -12000;
         EnBoom* boomerang =
             (EnBoom*)Actor_Spawn(&play->actorCtx, play, ACTOR_EN_BOOM, posX, this->actor.world.pos.y + 30.0f,
-                                 posZ, this->actor.focus.rot.x, yaw, 0, 0, true);
+                                 posZ, throwAngle, yaw, 0, 0, true);
 
         this->boomerangActor = &boomerang->actor;
         if (boomerang != NULL) {
             boomerang->moveTo = this->unk_664;
-            boomerang->returnTimer = 20;
+            boomerang->returnTimer = 40;
             this->stateFlags1 |= PLAYER_STATE1_THREW_BOOMERANG;
             if (!func_8008E9C4(this)) {
                 func_808355DC(this);
@@ -2829,6 +2838,10 @@ s32 spawn_boomerang_ivan(EnPartner* this, PlayState* play) {
     }
 
     return 1;
+}
+
+void PlayBoomAnim(Player* this, PlayState* play) {
+    LinkAnimation_PlayOnce(play, &this->skelAnime2, &gPlayerAnim_link_boom_catch);
 }
 
 s32 func_80835B60(Player* this, PlayState* play) {
@@ -4937,7 +4950,7 @@ s32 func_8083AD4C(PlayState* play, Player* this) {
             
             cameraMode = shouldUseBowCamera ? CAM_MODE_BOWARROW : CAM_MODE_SLINGSHOT;
         } else {
-            cameraMode = CAM_MODE_BOOMERANG;
+            cameraMode = CAM_MODE_BOOMERANG;//CAM_MODE_BOOMERANG;
         }
     } else {
         cameraMode = CAM_MODE_FIRSTPERSON;
@@ -5313,15 +5326,28 @@ s32 func_8083BBA0(Player* this, PlayState* play) {
     return 0;
 }
 
+/* PLAYER_ANIMGROUP_16
+    &gPlayerAnim_link_normal_landing_roll_free,
+        & gPlayerAnim_link_normal_landing_roll,
+        & gPlayerAnim_link_normal_landing_roll,
+        & gPlayerAnim_link_fighter_landing_roll_long,
+        & gPlayerAnim_link_normal_landing_roll_free,
+        & gPlayerAnim_link_normal_landing_roll_free,
+},
+ */
+
 void func_8083BC04(Player* this, PlayState* play) {
+    this->actor.gravity = -100.0f;
     func_80835C58(play, this, func_80844708, 0);
-    LinkAnimation_PlayOnceSetSpeed(play, &this->skelAnime, D_80853914[PLAYER_ANIMGROUP_landing_roll][this->modelAnimType],
+    LinkAnimation_PlayOnceSetSpeed(play, &this->skelAnime, gPlayerAnim_link_normal_landing_roll_free, //THIS ONE
                                    1.25f * D_808535E8);
     gSaveContext.sohStats.count[COUNT_ROLLS]++;
+    rollCharge++;
 }
 
 s32 func_8083BC7C(Player* this, PlayState* play) {
-    if ((this->unk_84B[this->unk_846] == 0) && (D_808535E4 != 7)) {
+    //if ((this->unk_84B[this->unk_846] == 0) && (D_808535E4 != 7)) {
+    if ((D_808535E4 != 7)) {
         func_8083BC04(this, play);
         return 1;
     }
@@ -5445,8 +5471,8 @@ void func_8083C148(Player* this, PlayState* play) {
 
 s32 func_8083C1DC(Player* this, PlayState* play) {
     if (!func_80833B54(this) && (D_808535E0 == 0) && !(this->stateFlags1 & PLAYER_STATE1_ON_HORSE) &&
-        CHECK_BTN_ALL(sControlInput->press.button, BTN_A)) {
-        if (func_8083BC7C(this, play)) {
+        CHECK_BTN_ALL(sControlInput->cur.button, BTN_A)) {
+        if (func_8083BC7C(this, play)) { //perform a roll
             return 1;
         }
         if ((this->unk_837 == 0) && (this->heldItemAction >= PLAYER_IA_SWORD_MASTER)) {
@@ -5454,6 +5480,8 @@ s32 func_8083C1DC(Player* this, PlayState* play) {
         } else {
             this->stateFlags2 ^= PLAYER_STATE2_NAVI_OUT;
         }
+    } else {
+        rollCharge = 0;
     }
 
     return 0;
@@ -8653,7 +8681,7 @@ static struct_80832924 D_8085460C[] = {
     { 0, -0x2812 },
 };
 
-void func_80844708(Player* this, PlayState* play) {
+void func_80844708(Player* this, PlayState* play) { // mave during roll animation?
     Actor* cylinderOc;
     s32 temp;
     s32 sp44;
@@ -8724,13 +8752,23 @@ void func_80844708(Player* this, PlayState* play) {
                     sp38 = 3.0f;
                 }
 
-                func_8083DF68(this, sp38, this->actor.shape.rot.y);
+                //func_8083DF68(this, sp38, this->actor.shape.rot.y);
+                func_80077D10(&D_808535D4, &D_808535D8, sControlInput);
+
+                float rollVel = 0;
+                if (rollCharge >= 4) rollVel = 25.0f;
+
+                float rollDir = Camera_GetInputDirYaw(GET_ACTIVE_CAM(play)) + D_808535D8; //get joystick direction compared to camera angle
+                if (D_808535D4 < 1.0f) rollDir = this->actor.world.rot.y; //if no joystick direction, then conttinue in same direction
+
+                func_8083DF68(this, rollVel, rollDir);
 
                 if (func_8084269C(play, this)) {
                     func_8002F8F0(&this->actor, NA_SE_PL_ROLL_DUST - SFX_FLAG);
                 }
 
-                func_80832924(this, D_8085460C);
+                func_80832924(this, D_8085460C); // play rolling "hyah" noise
+                // Audio_PlayActorSound2(&this->actor, NA_SE_VO_RT_FALL);
             }
         }
     }
@@ -10309,7 +10347,7 @@ void Player_UpdateCamAndSeqModes(PlayState* play, Player* this) {
                     camMode = CAM_MODE_TALK;
                 } else if (this->stateFlags1 & PLAYER_STATE1_TARGET_LOCKED) {
                     if (this->stateFlags1 & PLAYER_STATE1_THREW_BOOMERANG) {
-                        camMode = CAM_MODE_FOLLOWBOOMERANG;
+                        camMode = CAM_MODE_FOLLOWBOOMERANG; //CAM_MODE_FOLLOWBOOMERANG
                     } else {
                         camMode = CAM_MODE_FOLLOWTARGET;
                     }
@@ -10355,7 +10393,9 @@ void Player_UpdateCamAndSeqModes(PlayState* play, Player* this) {
                 }
             }
 
-            Camera_ChangeMode(Play_GetCamera(play, 0), camMode);
+            if (camMode != CAM_MODE_BOOMERANG) {
+                Camera_ChangeMode(Play_GetCamera(play, 0), camMode);
+            }
         } else {
             // First person mode
             seqMode = SEQ_MODE_STILL;
@@ -10955,7 +10995,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         func_80847298(this);
         func_8083315C(play, this);
 
-        if (this->stateFlags1 & PLAYER_STATE1_IN_WATER) {
+        if (this->stateFlags1 & PLAYER_STATE1_IN_WATER) { //something joystick related
             D_808535E8 = 0.5f;
         } else {
             D_808535E8 = 1.0f;
