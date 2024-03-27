@@ -753,6 +753,7 @@ void FileChoose_UpdateOptionsMenu(GameState* thisx) {
     // Persist the new language so it is not overridden on the next frame
     if (languageChanged) {
         CVarSetInteger("gLanguages", gSaveContext.language);
+        CVarSave();
         GameInteractor_ExecuteOnSetGameLanguage();
     }
 
