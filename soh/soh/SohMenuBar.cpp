@@ -28,7 +28,7 @@
 #include "Enhancements/randomizer/randomizer_item_tracker.h"
 #include "Enhancements/randomizer/randomizer_settings_window.h"
 
-extern bool ShouldClearTextureCacheAtEndOfFrame;
+extern bool ToggleAltAssetsAtEndOfFrame;
 extern bool isBetaQuestEnabled;
 
 extern "C" PlayState* gPlayState;
@@ -558,7 +558,7 @@ void DrawEnhancementsMenu() {
                 UIWidgets::Tooltip("Pierre appears when Ocarina is pulled out. Requires learning scarecrow song.");
                 UIWidgets::PaddedEnhancementCheckbox("Remember Save Location", "gRememberSaveLocation", true, false);
                 UIWidgets::Tooltip("When loading a save, places Link at the last entrance he went through.\n"
-                        "This doesn't work if the save was made in a grotto.");
+                        "This doesn't work if the save was made in grottos/fairy fountains or dungeons.");
                 UIWidgets::PaddedEnhancementCheckbox("Skip Magic Arrow Equip Animation", "gSkipArrowAnimation", true, false);
                 UIWidgets::PaddedEnhancementCheckbox("Skip save confirmation", "gSkipSaveConfirmation", true, false);
                 UIWidgets::Tooltip("Skip the \"Game saved.\" confirmation screen");
@@ -908,8 +908,10 @@ void DrawEnhancementsMenu() {
         {
             if (ImGui::BeginMenu("Mods")) {
                 if (UIWidgets::PaddedEnhancementCheckbox("Use Alternate Assets", "gAltAssets", false, false)) {
-                    ShouldClearTextureCacheAtEndOfFrame = true;
-                    GameInteractor::Instance->ExecuteHooks<GameInteractor::OnAssetAltChange>();
+                    // The checkbox will flip the alt asset CVar, but we instead want it to change at the end of the game frame
+                    // We toggle it back while setting the flag to update the CVar later
+                    CVarSetInteger("gAltAssets", !CVarGetInteger("gAltAssets", 0));
+                    ToggleAltAssetsAtEndOfFrame = true;
                 }
                 UIWidgets::Tooltip("Toggle between standard assets and alternate assets. Usually mods will indicate if this setting has to be used or not.");
                 UIWidgets::PaddedEnhancementCheckbox("Disable Bomb Billboarding", "gDisableBombBillboarding", true, false);
