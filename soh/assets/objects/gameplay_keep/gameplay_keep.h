@@ -2847,5 +2847,38 @@ static const ALIGN_ASSET(2) char gFishSkelLimbsLimb_018FB0DL_018950[] = dgFishSk
 #define dgFishSkelLimbsLimb_018FBCDL_0188B0 "__OTR__objects/gameplay_keep/gFishSkelLimbsLimb_018FBCDL_0188B0"
 static const ALIGN_ASSET(2) char gFishSkelLimbsLimb_018FBCDL_0188B0[] = dgFishSkelLimbsLimb_018FBCDL_0188B0;
 
+//CUSTOM
+
+#define dgGliderDL "__OTR__customitems/glider/gGliderDL" 
+static const ALIGN_ASSET(2) char gGliderDL[] = dgGliderDL;
+
+#define dgLanternDL "__OTR__customitems/lantern/gLanternDL"
+static const ALIGN_ASSET(2) char gLanternDL[] = dgLanternDL;
+
+#define dgFoxMaskDL "__OTR__customitems/foxmask/mask/gFoxMaskDL"
+static const ALIGN_ASSET(2) char gFoxMaskDL[] = dgFoxMaskDL;
+
+#define dgFoxTailDL "__OTR__customitems/foxmask/tail/gFoxTailDL"
+static const ALIGN_ASSET(2) char gFoxTailDL[] = dgFoxTailDL;
+
+#define dgReflectorDL "__OTR__customitems/foxmask/reflector/gReflectorDL"
+static const ALIGN_ASSET(2) char gReflectorDL[] = dgReflectorDL;
+
+#define dgArmcannonChildDL "__OTR__customitems/armcannon/child/gArmcannonChildDL"
+static const ALIGN_ASSET(2) char gArmcannonChildDL[] = dgArmcannonChildDL;
+
+#define dgArmcannonAdultDL "__OTR__customitems/armcannon/adult/gArmcannonAdultDL"
+static const ALIGN_ASSET(2) char gArmcannonAdultDL[] = dgArmcannonAdultDL;
+
+#define dgUltrahandChildDL "__OTR__customitems/ultrahand/child/gUltrahandChildDL" 
+static const ALIGN_ASSET(2) char gUltrahandChildDL[] = dgUltrahandChildDL;
+
+#define dgUltrahandAdultDL "__OTR__customitems/ultrahand/adult/gUltrahandAdultDL" 
+static const ALIGN_ASSET(2) char gUltrahandAdultDL[] = dgUltrahandAdultDL;
+
+#define dgUltrahandProjectileDL "__OTR__customitems/ultrahand/projectile/gUltrahandProjectileDL"
+static const ALIGN_ASSET(2) char gUltrahandProjectileDL[] = dgUltrahandProjectileDL;
+
+
 
 #endif // OBJECTS_GAMEPLAY_KEEP_H
