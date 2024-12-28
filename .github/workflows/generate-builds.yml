@@ -9,11 +9,11 @@ jobs:
   generate-soh-otr:
     runs-on: ${{ (vars.LINUX_RUNNER && fromJSON(vars.LINUX_RUNNER)) || 'ubuntu-latest' }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: ccache
-      uses: hendrikmuhs/ccache-action@v1.2
+      uses: hendrikmuhs/ccache-action@v1.2.14
       with:
         key: ${{ runner.os }}-soh-otr-ccache
     - name: Install dependencies
@@ -48,45 +48,49 @@ jobs:
         export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
         cmake --no-warn-unused-cli -H. -Bbuild-cmake -GNinja -DCMAKE_BUILD_TYPE:STRING=Release
         cmake --build build-cmake --config Release --target GenerateSohOtr
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: soh.otr
         path: soh.otr
         retention-days: 1
   build-macos:
     needs: generate-soh-otr
-    runs-on: ${{ (vars.MAC_RUNNER && fromJSON(vars.MAC_RUNNER)) || 'macos-12' }}
+    runs-on: ${{ (vars.MAC_RUNNER && fromJSON(vars.MAC_RUNNER)) || 'macos-14' }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: ccache
-      uses: hendrikmuhs/ccache-action@v1.2
+      uses: hendrikmuhs/ccache-action@v1.2.14
       with:
-        key: ${{ runner.os }}-ccache
+        create-symlink: true
+        key: ${{ runner.os }}-14-ccache-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-14-ccache-${{ github.ref }}
+          ${{ runner.os }}-14-ccache-
     - name: Install gtar wrapper
       if: ${{ !vars.MAC_RUNNER }}
       run: |
-        sudo mv /usr/local/bin/gtar /usr/local/bin/gtar.orig
-        sudo cp .github/workflows//gtar /usr/local/bin/gtar
-        sudo chmod +x /usr/local/bin/gtar
+        sudo mv /opt/homebrew/bin/gtar /opt/homebrew/bin/gtar.orig
+        sudo cp .github/workflows//gtar /opt/homebrew/bin/gtar
+        sudo chmod +x /opt/homebrew/bin/gtar
     - name: Cache MacPorts
       id: cache-macports
       if: ${{ !vars.MAC_RUNNER }}
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: /opt/local/
-        key: ${{ runner.os }}-macports-${{ hashFiles('.github/workflows/macports-deps.txt') }}
+        key: ${{ runner.os }}-14-macports-${{ hashFiles('.github/workflows/macports-deps.txt') }}
         restore-keys: |
-          ${{ runner.os }}-macports-
+          ${{ runner.os }}-14-macports-
     - name: Install MacPorts (if necessary)
       if: ${{ !vars.MAC_RUNNER }}
       run: |
         if [ -d /opt/local/ ]; then
           echo "MacPorts already installed"
         else
-          wget https://github.com/macports/macports-base/releases/download/v2.7.2/MacPorts-2.7.2-12-Monterey.pkg
-          sudo installer -pkg ./MacPorts-2.7.2-12-Monterey.pkg -target /
+          wget https://github.com/macports/macports-base/releases/download/v2.9.3/MacPorts-2.9.3-14-Sonoma.pkg
+          sudo installer -pkg ./MacPorts-2.9.3-14-Sonoma.pkg -target /
         fi
         echo "/opt/local/bin:/opt/local/sbin" >> $GITHUB_PATH
     - name: Install dependencies
@@ -96,7 +100,7 @@ jobs:
         sudo port install $(cat .github/workflows/macports-deps.txt)
         brew install ninja
     - name: Download soh.otr
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: soh.otr
     - name: Build SoH
@@ -110,7 +114,7 @@ jobs:
         mv _packages/*.dmg SoH.dmg
         mv README.md readme.txt
     - name: Upload build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: soh-mac
         path: |
@@ -130,7 +134,7 @@ jobs:
           archive-suffix: performance
     runs-on: ${{ (matrix.os == 'ubuntu-20.04' && ((vars.LINUX_COMPATIBILITY_RUNNER && fromJSON(vars.LINUX_COMPATIBILITY_RUNNER)) || matrix.os)) || (matrix.os == 'ubuntu-22.04' && ((vars.LINUX_PERFORMANCE_RUNNER && fromJSON(vars.LINUX_PERFORMANCE_RUNNER)) || matrix.os)) }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Install dependencies
@@ -139,7 +143,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y $(cat .github/workflows/apt-deps.txt)
     - name: ccache
-      uses: hendrikmuhs/ccache-action@v1.2
+      uses: hendrikmuhs/ccache-action@v1.2.14
       with:
         key: ${{ matrix.os }}-ccache
     - name: Install latest SDL
@@ -165,7 +169,7 @@ jobs:
         sudo make install
         sudo cp -av /usr/local/lib/libSDL* /lib/x86_64-linux-gnu/
     - name: Download soh.otr
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: soh.otr
     - name: Build SoH
@@ -181,7 +185,7 @@ jobs:
         CC: gcc-${{ matrix.gcc }}
         CXX: g++-${{ matrix.gcc }}
     - name: Upload build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: soh-linux-${{ matrix.archive-suffix }}
         path: |
@@ -200,11 +204,11 @@ jobs:
     - name: Fix dubious ownership error
       if: ${{ vars.LINUX_RUNNER }}
       run: git config --global --add safe.directory '*'
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: ccache
-      uses: hendrikmuhs/ccache-action@v1.2
+      uses: hendrikmuhs/ccache-action@v1.2.14
       with:
         key: ${{ runner.os }}-switch-ccache
     - name: Build SoH
@@ -215,11 +219,11 @@ jobs:
         mv build-switch/soh/*.nro soh.nro
         mv README.md readme.txt
     - name: Download soh.otr
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: soh.otr
     - name: Upload build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: soh-switch
         path: |
@@ -236,11 +240,11 @@ jobs:
       if: ${{ !vars.LINUX_RUNNER }}
       run: |
         sudo apt-get install -y ninja-build
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: ccache
-      uses: hendrikmuhs/ccache-action@v1.2
+      uses: hendrikmuhs/ccache-action@v1.2.14
       with:
         key: ${{ runner.os }}-wiiu-ccache
     - name: Build SoH
@@ -255,11 +259,11 @@ jobs:
         DEVKITPRO: /opt/devkitpro
         DEVKITPPC: /opt/devkitpro/devkitPPC
     - name: Download soh.otr
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: soh.otr
     - name: Upload build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: soh-wiiu
         path: |
@@ -276,7 +280,7 @@ jobs:
       run: |
         choco install ninja
         Remove-Item -Path "C:\ProgramData\Chocolatey\bin\ccache.exe" -Force -ErrorAction SilentlyContinue
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: ccache
@@ -285,7 +289,7 @@ jobs:
         key: ${{ runner.os }}-ccache
     - uses: ilammy/msvc-dev-cmd@v1
     - name: Build SoH
-      env: 
+      env:
         VCPKG_ROOT: D:/a/vcpkg
       run: |
         set $env:PATH="$env:USERPROFILE/.cargo/bin;$env:PATH"
@@ -302,12 +306,12 @@ jobs:
         mv ./build-windows/gamecontrollerdb.txt ./soh-windows/gamecontrollerdb.txt
         mv ./x64/Release/assets ./soh-windows
     - name: Download soh.otr
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: soh.otr
         path: soh-windows
     - name: Upload build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: soh-windows
         path: soh-windows
