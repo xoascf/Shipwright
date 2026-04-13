@@ -1,10 +1,11 @@
-﻿#include "SohMenu.h"
+#include "SohMenu.h"
 #include <soh/Enhancements/enhancementTypes.h>
 #include <soh/Enhancements/mods.h>
 #include <soh/Enhancements/game-interactor/GameInteractor.h>
 #include <soh/OTRGlobals.h>
 #include <soh/Enhancements/cosmetics/authenticGfxPatches.h>
 #include <soh/Enhancements/TimeDisplay/TimeDisplay.h>
+#include "SohGui.hpp"
 
 extern "C" {
 #include "functions.h"
@@ -53,10 +54,10 @@ static const std::map<int32_t, const char*> skipForcedDialogOptions = {
 };
 
 static const std::map<int32_t, const char*> timeTravelOptions = {
-    { TIME_TRAVEL_DISABLED, "Disabled" },
-    { TIME_TRAVEL_OOT, "Ocarina of Time" },
+    { TIME_TRAVEL_DISABLED, "Desactivado" },
+    { TIME_TRAVEL_OOT, "Ocarina del Tiempo" },
     { TIME_TRAVEL_OOT_MS, "Ocarina of Time + Master Sword" },
-    { TIME_TRAVEL_ANY, "Any Ocarina" },
+    { TIME_TRAVEL_ANY, "Cualquier ocarina" },
     { TIME_TRAVEL_ANY_MS, "Any Ocarina + Master Sword" },
 };
 
@@ -98,7 +99,7 @@ static const std::map<int32_t, const char*> bonkDamageValues = {
 static const std::map<int32_t, const char*> dampeDropRates = {
     { DAMPE_NONE, "None" },
     { DAMPE_NORMAL, "Vanilla" },
-    { DAMPE_JALAPENO, "Jalapeño" },
+    { DAMPE_JALAPENO, "Jalape�o" },
     { DAMPE_CHIPOTLE, "Serrano" },
     { DAMPE_SCOTCH_BONNET, "Habanero" },
     { DAMPE_GHOST_PEPPER, "Ghost Pepper" },
@@ -112,36 +113,37 @@ static const std::map<int32_t, const char*> cursorAnywhereValues = {
 };
 
 static const std::map<int32_t, const char*> zFightingOptions = {
-    { ZFIGHT_FIX_DISABLED, "Disabled" },
-    { ZFIGHT_FIX_CONSISTENT_VANISH, "Consistent Vanish" },
-    { ZFIGHT_FIX_NO_VANISH, "No Vanish" },
+    { ZFIGHT_FIX_DISABLED, "Desactivado" },
+    { ZFIGHT_FIX_CONSISTENT_VANISH, "Desvanecimiento consistente" },
+    { ZFIGHT_FIX_NO_VANISH, "Sin desvanecimiento" },
 };
 
 static const std::map<int32_t, const char*> swordToggleModes = {
-    { SWORD_TOGGLE_NONE, "None" },
-    { SWORD_TOGGLE_CHILD, "Child Toggle" },
-    { SWORD_TOGGLE_BOTH_AGES, "Both Ages" },
+    { SWORD_TOGGLE_NONE, "Desactivado" },
+    { SWORD_TOGGLE_CHILD, "Alternar con la de ni�o" },
+    { SWORD_TOGGLE_BOTH_AGES, "Ambas edades (puede provocar comportamientos no deseados)" },
 };
 
 static const std::map<int32_t, const char*> mirroredWorldModes = {
-    { MIRRORED_WORLD_OFF, "Disabled" },
-    { MIRRORED_WORLD_ALWAYS, "Always" },
-    { MIRRORED_WORLD_RANDOM, "Random" },
-    { MIRRORED_WORLD_RANDOM_SEEDED, "Random (Seeded)" },
-    { MIRRORED_WORLD_DUNGEONS_ALL, "Dungeons" },
-    { MIRRORED_WORLD_DUNGEONS_VANILLA, "Dungeons (Vanilla)" },
+    { MIRRORED_WORLD_OFF, "Desactivado" },
+    { MIRRORED_WORLD_ALWAYS, "Siempre" },
+    { MIRRORED_WORLD_RANDOM, "Aleatorio" },
+    { MIRRORED_WORLD_RANDOM_SEEDED, "Aleatorio (seg�n semilla)" },
+    { MIRRORED_WORLD_DUNGEONS_ALL, "Mazmorras" },
+    { MIRRORED_WORLD_DUNGEONS_VANILLA, "Mazmorras (Original)" },
     { MIRRORED_WORLD_DUNGEONS_MQ, "Dungeons (MQ)" },
-    { MIRRORED_WORLD_DUNGEONS_RANDOM, "Dungeons Random" },
-    { MIRRORED_WORLD_DUNGEONS_RANDOM_SEEDED, "Dungeons Random (Seeded)" },
+    { MIRRORED_WORLD_DUNGEONS_RANDOM, "Mazmorras aleatorias" },
+    { MIRRORED_WORLD_DUNGEONS_RANDOM_SEEDED, "Mazmorras aleatorias (seg�n semilla)" },
 };
 
 void SohMenu::AddMenuEnhancements() {
     // Add Enhancements Menu
-    AddMenuEntry("Enhancements", CVAR_SETTING("Menu.EnhancementsSidebarSection"));
+    AddMenuEntry(SohGuiStrings::SidebarSections::Enhancements, CVAR_SETTING("Menu.EnhancementsSidebarSection"));
 
     // Quality of Life
-    WidgetPath path = { "Enhancements", "Quality of Life", SECTION_COLUMN_1 };
-    AddSidebarEntry("Enhancements", path.sidebarName, 3);
+    WidgetPath path = { SohGuiStrings::SidebarSections::Enhancements,
+                        SohGuiStrings::SidebarEntryNames::Enhancements::QualityOfLife, SECTION_COLUMN_1 };
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Enhancements, path.sidebarName, 3);
     path.column = SECTION_COLUMN_1;
 
     AddWidget(path, "Saving", WIDGET_SEPARATOR_TEXT);
@@ -342,8 +344,8 @@ void SohMenu::AddMenuEnhancements() {
         .Options(CheckboxOptions().Tooltip("Allow Link to enter Jabu-Jabu without feeding him a fish."));
 
     // Skips & Speed-ups
-    path.sidebarName = "Skips & Speed-ups";
-    AddSidebarEntry("Enhancements", path.sidebarName, 3);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Enhancements::SkipsAndSpeedups;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Enhancements, path.sidebarName, 3);
     path.column = SECTION_COLUMN_1;
 
     AddWidget(path, "Cutscenes", WIDGET_SEPARATOR_TEXT);
@@ -431,10 +433,10 @@ void SohMenu::AddMenuEnhancements() {
                      .ComboMap(skipForcedDialogOptions)
                      .DefaultIndex(FORCED_DIALOG_SKIP_NONE)
                      .Tooltip("Prevent forced conversations with Navi and/or other NPCs."));
-    AddWidget(path, "Skip Text", WIDGET_CVAR_CHECKBOX)
+    AddWidget(path, "Saltar textos", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("SkipText"))
-        .Options(CheckboxOptions().Tooltip("Holding down B skips text."));
-    AddWidget(path, "Text Speed: %dx", WIDGET_CVAR_SLIDER_INT)
+        .Options(CheckboxOptions().Tooltip("Manteniendo pulsado B se salta el texto."));
+    AddWidget(path, "Velocidad de textos: %dx", WIDGET_CVAR_SLIDER_INT)
         .CVar(CVAR_ENHANCEMENT("TextSpeed"))
         .Options(IntSliderOptions().Min(1).Max(5).DefaultValue(1).Format("%dx"));
     AddWidget(path, "Slow Text Speed: %dx", WIDGET_CVAR_SLIDER_INT)
@@ -475,7 +477,7 @@ void SohMenu::AddMenuEnhancements() {
         .PreFunc([](WidgetInfo& info) { info.isHidden = CVarGetInteger(CVAR_ENHANCEMENT("CrawlSpeed"), 0) == 1; })
         .Options(CheckboxOptions().Tooltip("Don't increase crawl speed when exiting glitch-useful crawlspaces."
                                            "Currently it is only the BOTW crawlspace to locked door"));
-    AddWidget(path, "King Zora Speed: %.2fx", WIDGET_CVAR_SLIDER_FLOAT)
+    AddWidget(path, "Velocidad del Rey Zora: %.2fx", WIDGET_CVAR_SLIDER_FLOAT)
         .CVar(CVAR_ENHANCEMENT("MweepSpeed"))
         .Options(FloatSliderOptions().Min(0.1f).Max(5.0f).DefaultValue(1.0f).Format("%.2fx"));
     AddWidget(path, "Faster Pause Menu", WIDGET_CVAR_CHECKBOX)
@@ -534,8 +536,8 @@ void SohMenu::AddMenuEnhancements() {
             "Biggoron to forge the Biggoron's Sword."));
 
     // Graphics
-    path.sidebarName = "Graphics";
-    AddSidebarEntry("Enhancements", path.sidebarName, 3);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Enhancements::Graphics;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Enhancements, path.sidebarName, 3);
     path.column = SECTION_COLUMN_1;
 
     AddWidget(path, "Mods", WIDGET_SEPARATOR_TEXT);
@@ -748,8 +750,8 @@ void SohMenu::AddMenuEnhancements() {
             " - Darunia\n"
             " - Gold Skulltulas"));
 
-    path.sidebarName = "Items";
-    AddSidebarEntry("Enhancements", path.sidebarName, 3);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Enhancements::Items;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Enhancements, path.sidebarName, 3);
     path.column = SECTION_COLUMN_1;
 
     AddWidget(path, "Equipment", WIDGET_SEPARATOR_TEXT);
@@ -980,8 +982,8 @@ void SohMenu::AddMenuEnhancements() {
         .Options(CheckboxOptions().Tooltip("Blue Fire dropped from bottle can be bottled."));
 
     // Fixes
-    path.sidebarName = "Fixes";
-    AddSidebarEntry("Enhancements", path.sidebarName, 3);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Enhancements::Fixes;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Enhancements, path.sidebarName, 3);
     path.column = SECTION_COLUMN_1;
     AddWidget(path, "Gameplay Fixes", WIDGET_SEPARATOR_TEXT);
     AddWidget(path, "Fix the Gravedigging Tour Glitch", WIDGET_CVAR_CHECKBOX)
@@ -992,10 +994,10 @@ void SohMenu::AddMenuEnhancements() {
         })
         .Options(CheckboxOptions().Tooltip(
             "Fixes a bug where the Gravedigging Tour Heart Piece disappears if the area reloads."));
-    AddWidget(path, "Fix Dampé Going Backwards", WIDGET_CVAR_CHECKBOX)
+    AddWidget(path, "Fix Damp� Going Backwards", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("FixDampeGoingBackwards"))
         .Options(CheckboxOptions().Tooltip(
-            "Fixes Dampé going backwards in certain circumstances when the player is going backwards."));
+            "Fixes Damp� going backwards in certain circumstances when the player is going backwards."));
     AddWidget(path, "Fix Kokiri Forest Quest State", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("FixKokiriForestQuestState"))
         .Options(CheckboxOptions().Tooltip("Fixes kokiri animation state to match their text state when getting "
@@ -1228,8 +1230,8 @@ void SohMenu::AddMenuEnhancements() {
             "Restores NTSC 1.0 behavior where Link jumps over grave holes and grabs the ledges."));
 
     // Difficulty Options
-    path.sidebarName = "Difficulty";
-    AddSidebarEntry("Enhancements", path.sidebarName, 3);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Enhancements::Difficulty;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Enhancements, path.sidebarName, 3);
     path.column = SECTION_COLUMN_1;
 
     AddWidget(path, "Health", WIDGET_SEPARATOR_TEXT);
@@ -1365,8 +1367,8 @@ void SohMenu::AddMenuEnhancements() {
                      .Tooltip("The time between groups of Leevers spawning."));
 
     // Minigames
-    path.sidebarName = "Minigames";
-    AddSidebarEntry("Enhancements", path.sidebarName, 3);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Enhancements::Minigames;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Enhancements, path.sidebarName, 3);
     path.column = SECTION_COLUMN_1;
 
     AddWidget(path, "Shooting Gallery", WIDGET_SEPARATOR_TEXT);
@@ -1570,8 +1572,8 @@ void SohMenu::AddMenuEnhancements() {
             "The minimum weight for the unique fishing reward as an adult."));
 
     // Extra Modes
-    path.sidebarName = "Extra Modes";
-    AddSidebarEntry("Enhancements", path.sidebarName, 3);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Enhancements::ExtraModes;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Enhancements, path.sidebarName, 3);
     path.column = SECTION_COLUMN_1;
 
     AddWidget(path, "Bounce off Walls", WIDGET_CVAR_CHECKBOX)
@@ -1680,8 +1682,8 @@ void SohMenu::AddMenuEnhancements() {
             [](WidgetInfo& info) { info.isHidden = CVarGetInteger(CVAR_ENHANCEMENT("ExtraTraps.Enabled"), 0) == 0; });
 
     // Cheats
-    path.sidebarName = "Cheats";
-    AddSidebarEntry("Enhancements", path.sidebarName, 3);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Enhancements::Cheats;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Enhancements, path.sidebarName, 3);
     path.column = SECTION_COLUMN_1;
 
     AddWidget(path, "Infinite...", WIDGET_SEPARATOR_TEXT);
@@ -1863,54 +1865,54 @@ void SohMenu::AddMenuEnhancements() {
             "Ctrl+Click to type in a value."));
 
     // Cosmetics Editor
-    path.sidebarName = "Cosmetics Editor";
-    AddSidebarEntry("Enhancements", path.sidebarName, 1);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Enhancements::CosmeticsEditor;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Enhancements, path.sidebarName, 1);
     path.column = SECTION_COLUMN_1;
-    AddWidget(path, "Popout Cosmetics Editor Window", WIDGET_WINDOW_BUTTON)
+    AddWidget(path, "Abrir en ventana: Editor de cosméticos", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("CosmeticsEditor"))
         .RaceDisable(false)
-        .WindowName("Cosmetics Editor")
+        .WindowName(SohGuiStrings::WindowNames::CosmeticsEditor)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Enables the separate Cosmetics Editor Window."));
+        .Options(WindowButtonOptions().Tooltip("Abre el Editor de cosméticos de forma independiente."));
 
     // Audio Editor
-    path.sidebarName = "Audio Editor";
-    AddSidebarEntry("Enhancements", path.sidebarName, 1);
-    AddWidget(path, "Popout Audio Editor Window", WIDGET_WINDOW_BUTTON)
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Enhancements::AudioEditor;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Enhancements, path.sidebarName, 1);
+    AddWidget(path, "Abrir en ventana: Editor de audio", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("AudioEditor"))
         .RaceDisable(false)
-        .WindowName("Audio Editor")
+        .WindowName(SohGuiStrings::WindowNames::AudioEditor)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Enables the separate Audio Editor Window."));
+        .Options(WindowButtonOptions().Tooltip("Abre el Editor de audio de forma independiente."));
 
     // Gameplay Stats
-    path.sidebarName = "Gameplay Stats";
-    AddSidebarEntry("Enhancements", path.sidebarName, 2);
-    AddWidget(path, "Popout Gameplay Stats Window", WIDGET_WINDOW_BUTTON)
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Enhancements::GameplayStats;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Enhancements, path.sidebarName, 2);
+    AddWidget(path, "Abrir en ventana: Estadísticas de juego", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("GameplayStats"))
         .RaceDisable(false)
-        .WindowName("Gameplay Stats")
+        .WindowName(SohGuiStrings::WindowNames::GameplayStats)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Enables the separate Gameplay Stats Window."));
+        .Options(WindowButtonOptions().Tooltip("Abre las Estadísticas de juego de forma independiente."));
 
     // Time Splits
-    path.sidebarName = "Time Splits";
-    AddSidebarEntry("Enhancements", path.sidebarName, 1);
-    AddWidget(path, "Popout Time Splits Window", WIDGET_WINDOW_BUTTON)
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Enhancements::TimeSplits;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Enhancements, path.sidebarName, 1);
+    AddWidget(path, "Abrir en ventana: Splits de tiempo", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("TimeSplits"))
         .RaceDisable(false)
-        .WindowName("Time Splits")
+        .WindowName(SohGuiStrings::WindowNames::TimeSplits)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Enables the separate Time Splits Window."));
+        .Options(WindowButtonOptions().Tooltip("Abre los Splits de tiempo de forma independiente."));
 
     // Timers
-    path.sidebarName = "Timers";
-    AddSidebarEntry("Enhancements", path.sidebarName, 3);
-    AddWidget(path, "Toggle Timers Window", WIDGET_WINDOW_BUTTON)
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Enhancements::Timers;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Enhancements, path.sidebarName, 3);
+    AddWidget(path, "Activar ventana: Temporizadores adicionales", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("TimeDisplayEnabled"))
         .RaceDisable(false)
-        .WindowName("Additional Timers")
-        .Options(WindowButtonOptions().Tooltip("Enables the separate Additional Timers Window."));
+        .WindowName(SohGuiStrings::WindowNames::AdditionalTimers)
+        .Options(WindowButtonOptions().Tooltip("Activa la ventana de Temporizadores adicionales."));
     AddWidget(path, "Font Scale: %.2fx", WIDGET_CVAR_SLIDER_FLOAT)
         .CVar(CVAR_TIME_DISPLAY("FontScale"))
         .RaceDisable(false)
@@ -1929,3 +1931,4 @@ void SohMenu::AddMenuEnhancements() {
 }
 
 } // namespace SohGui
+

@@ -70,8 +70,8 @@ const char* SohFileSelect_GetSettingText(uint8_t optionIndex, uint8_t language) 
 
 void SohFileSelect_ShowPresetMenu() {
     SohGui::ShowEscMenu();
-    CVarSetString(CVAR_SETTING("Menu.ActiveHeader"), "Settings");
-    CVarSetString(CVAR_SETTING("Menu.SettingsSidebarSection"), "Presets");
+    CVarSetString(CVAR_SETTING("Menu.ActiveHeader"), SohGui::SohGuiStrings::SidebarSections::Settings);
+    CVarSetString(CVAR_SETTING("Menu.SettingsSidebarSection"), SohGui::SohGuiStrings::SidebarEntryNames::Settings::Presets);
     CVarSetInteger(CVAR_GENERAL("HasSeenPresetModal"), 1);
 }
 
@@ -84,7 +84,7 @@ void SohFileSelect_ShowPresetModal() {
         return;
     }
     std::shared_ptr<SohModalWindow> modal = static_pointer_cast<SohModalWindow>(
-        Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Modal Window"));
+        Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow(SohGui::GuiWindowNames::ModalWindow));
     if (modal->IsPopupOpen("Take a look at our presets!")) {
         modal->DismissPopup();
     } else {

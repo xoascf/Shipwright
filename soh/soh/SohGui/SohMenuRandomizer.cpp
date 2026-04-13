@@ -530,11 +530,12 @@ void DrawTricksMenu(WidgetInfo& info) {
 
 void SohMenu::AddMenuRandomizer() {
     // Add Randomizer Menu
-    AddMenuEntry("Randomizer", CVAR_SETTING("Menu.RandomizerSidebarSection"));
+    AddMenuEntry(SohGuiStrings::SidebarSections::Randomizer, CVAR_SETTING("Menu.RandomizerSidebarSection"));
 
     // Seed Settings
-    WidgetPath path = { "Randomizer", "General", SECTION_COLUMN_1 };
-    AddSidebarEntry("Randomizer", path.sidebarName, 2);
+    WidgetPath path = { SohGuiStrings::SidebarSections::Randomizer, SohGuiStrings::SidebarEntryNames::Common::General,
+                        SECTION_COLUMN_1 };
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Randomizer, path.sidebarName, 2);
     AddWidget(path,
               "Be sure to explore the Presets and Enhancements Menus for various Speedups and Quality of life changes!",
               WIDGET_TEXT)
@@ -674,82 +675,83 @@ void SohMenu::AddMenuRandomizer() {
     randoSettings->GetOptionGroup(RSG_MENU_SIDEBAR_SHUFFLES).AddWidgets(path);
     randoSettings->GetOptionGroup(RSG_MENU_SIDEBAR_HINTS_TRAPS).AddWidgets(path);
     randoSettings->GetOptionGroup(RSG_MENU_SIDEBAR_STARTING_ITEMS).AddWidgets(path);
-    path.sidebarName = "Locations";
-    AddSidebarEntry("Randomizer", path.sidebarName, 1);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Randomizer::Locations;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Randomizer, path.sidebarName, 1);
     AddWidget(path, "Excluded Locations", WIDGET_CUSTOM).CustomFunction(DrawLocationsMenu);
-    path.sidebarName = "Tricks/Glitches";
-    AddSidebarEntry("Randomizer", path.sidebarName, 1);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Randomizer::TricksGlitches;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Randomizer, path.sidebarName, 1);
     AddWidget(path, "Tricks/Glitches", WIDGET_CUSTOM).CustomFunction(DrawTricksMenu);
 
     // Plandomizer
-    path.sidebarName = "Plandomizer";
-    AddSidebarEntry("Randomizer", path.sidebarName, 1);
-    AddWidget(path, "Popout Plandomizer Window", WIDGET_WINDOW_BUTTON)
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Randomizer::Plandomizer;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Randomizer, path.sidebarName, 1);
+    AddWidget(path, "Abrir en ventana: Plandomizer", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("PlandomizerEditor"))
         .RaceDisable(false)
-        .WindowName("Plandomizer Editor")
+        .WindowName(SohGuiStrings::WindowNames::Plandomizer)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Enables the separate Randomizer Settings Window."));
+        .Options(WindowButtonOptions().Tooltip("Abre el Editor de plandomizer de forma independiente."));
 
     // Item Tracker
-    path.sidebarName = "Item Tracker";
-    AddSidebarEntry("Randomizer", path.sidebarName, 1);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Randomizer, path.sidebarName, 1);
 
     AddWidget(path, "Item Tracker", WIDGET_SEPARATOR_TEXT);
-    AddWidget(path, "Toggle Item Tracker", WIDGET_WINDOW_BUTTON)
+    AddWidget(path, "Activar ventana: Rastreador de objetos", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("ItemTracker"))
         .RaceDisable(false)
-        .WindowName("Item Tracker")
+        .WindowName(SohGuiStrings::WindowNames::ItemTracker)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Toggles the Item Tracker.").EmbedWindow(false));
+        .Options(WindowButtonOptions().Tooltip("Activa el Rastreador de objetos.").EmbedWindow(false));
 
     AddWidget(path, "Item Tracker Settings", WIDGET_SEPARATOR_TEXT);
-    AddWidget(path, "Popout Item Tracker Settings", WIDGET_WINDOW_BUTTON)
+    AddWidget(path, "Abrir en ventana: Ajustes del Rastreador de objetos", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("ItemTrackerSettings"))
         .RaceDisable(false)
-        .WindowName("Item Tracker Settings")
+        .WindowName(SohGuiStrings::WindowNames::ItemTrackerSettings)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Enables the separate Item Tracker Settings Window."));
+        .Options(WindowButtonOptions().Tooltip("Abre los Ajustes del Rastreador de objetos de forma independiente."));
 
     // Entrance Tracker
-    path.sidebarName = "Entrance Tracker";
-    AddSidebarEntry("Randomizer", path.sidebarName, 1);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Randomizer::EntranceTracker;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Randomizer, path.sidebarName, 1);
 
     AddWidget(path, "Entrance Tracker", WIDGET_SEPARATOR_TEXT);
-    AddWidget(path, "Toggle Entrance Tracker", WIDGET_WINDOW_BUTTON)
+    AddWidget(path, "Activar ventana: Rastreador de entradas", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("EntranceTracker"))
         .RaceDisable(false)
-        .WindowName("Entrance Tracker")
+        .WindowName(SohGuiStrings::WindowNames::EntranceTracker)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Toggles the Entrance Tracker.").EmbedWindow(false));
+        .Options(WindowButtonOptions().Tooltip("Activa el Rastreador de entradas.").EmbedWindow(false));
 
     AddWidget(path, "Entrance Tracker Settings", WIDGET_SEPARATOR_TEXT);
-    AddWidget(path, "Popout Entrance Tracker Settings", WIDGET_WINDOW_BUTTON)
+    AddWidget(path, "Abrir en ventana: Ajustes del Rastreador de entradas", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("EntranceTrackerSettings"))
         .RaceDisable(false)
-        .WindowName("Entrance Tracker Settings")
+        .WindowName(SohGuiStrings::WindowNames::EntranceTrackerSettings)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Enables the separate Entrance Tracker Settings Window."));
+        .Options(WindowButtonOptions().Tooltip("Abre los Ajustes del Rastreador de entradas de forma independiente."));
 
     // Check Tracker
-    path.sidebarName = "Check Tracker";
-    AddSidebarEntry("Randomizer", path.sidebarName, 1);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Randomizer::CheckTracker;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Randomizer, path.sidebarName, 1);
 
     AddWidget(path, "Check Tracker", WIDGET_SEPARATOR_TEXT);
-    AddWidget(path, "Toggle Check Tracker", WIDGET_WINDOW_BUTTON)
+    AddWidget(path, "Activar ventana: Rastreador de chequeos", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("CheckTracker"))
         .RaceDisable(false)
-        .WindowName("Check Tracker")
+        .WindowName(SohGuiStrings::WindowNames::CheckTracker)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Toggles the Check Tracker.").EmbedWindow(false));
+        .Options(WindowButtonOptions().Tooltip("Activa el Rastreador de chequeos.").EmbedWindow(false));
 
     AddWidget(path, "Check Tracker Settings", WIDGET_SEPARATOR_TEXT);
-    AddWidget(path, "Popout Check Tracker Settings", WIDGET_WINDOW_BUTTON)
+    AddWidget(path, "Abrir en ventana: Ajustes del Rastreador de chequeos", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("CheckTrackerSettings"))
         .RaceDisable(false)
-        .WindowName("Check Tracker Settings")
+        .WindowName(SohGuiStrings::WindowNames::CheckTrackerSettings)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Enables the separate Check Tracker Settings Window."));
+        .Options(WindowButtonOptions().Tooltip("Abre los Ajustes del Rastreador de chequeos de forma independiente."));
 }
 
 } // namespace SohGui
+

@@ -2720,7 +2720,9 @@ void RegisterCosmeticWidgets() {
                      .Step(10.0f)
                      .Size(ImVec2(300.0f, 0.0f))
                      .Color(THEME_COLOR));
-    SohGui::mSohMenu->AddSearchWidget({ goronNeck, "Enhancements", "Cosmetics Editor", "Silly" });
+    SohGui::mSohMenu->AddSearchWidget(
+        { goronNeck, SohGui::SohGuiStrings::SidebarSections::Enhancements,
+          SohGui::SohGuiStrings::SidebarEntryNames::Enhancements::CosmeticsEditor, "Silly" });
 }
 
 static RegisterShipInitFunc initFunc(RegisterCosmeticHooks, {

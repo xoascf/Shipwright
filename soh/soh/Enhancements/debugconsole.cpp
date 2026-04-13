@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include "soh/OTRGlobals.h"
+#include "soh/SohGui/SohGui.hpp"
 #include "soh/cvar_prefixes.h"
 #include <soh/Enhancements/item-tables/ItemTableManager.h>
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
@@ -39,11 +40,11 @@ extern PlayState* gPlayState;
 // TODO: Commands should be using the output passed in.
 #define ERROR_MESSAGE                                                                 \
     std::reinterpret_pointer_cast<Ship::ConsoleWindow>(                               \
-        Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")) \
+        Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow(SohGui::GuiWindowNames::ConsoleLookup)) \
         ->SendErrorMessage
 #define INFO_MESSAGE                                                                  \
     std::reinterpret_pointer_cast<Ship::ConsoleWindow>(                               \
-        Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")) \
+        Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow(SohGui::GuiWindowNames::ConsoleLookup)) \
         ->SendInfoMessage
 
 static bool ActorSpawnHandler(std::shared_ptr<Ship::Console> Console, const std::vector<std::string>& args,

@@ -382,7 +382,8 @@ void RegisterResolutionWidgets() {
     auto fastWnd = dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow());
     mInterpreter = fastWnd->GetInterpreterWeak();
 
-    WidgetPath path = { "Settings", "Graphics", SECTION_COLUMN_2 };
+    WidgetPath path = { SohGuiStrings::SidebarSections::Settings, SohGuiStrings::SidebarEntryNames::Settings::Graphics,
+                        SECTION_COLUMN_2 };
 
     // Resolution visualiser
     mSohMenu->AddWidget(path, "Viewport dimensions: {} x {}", WIDGET_TEXT)
@@ -596,7 +597,9 @@ bool IsDroppingFrames() {
     return ImGui::GetIO().Framerate < targetFPS - threshold;
 }
 
-static RegisterMenuUpdateFunc updateFunc(UpdateResolutionVars, "Settings", "Graphics");
+static RegisterMenuUpdateFunc updateFunc(UpdateResolutionVars, SohGuiStrings::SidebarSections::Settings,
+                                         SohGuiStrings::SidebarEntryNames::Settings::Graphics);
 static RegisterMenuInitFunc menuInitFunc(RegisterResolutionWidgets);
 
 } // namespace SohGui
+

@@ -29,6 +29,7 @@
 #include "soh/Enhancements/timesplits/TimeSplits.h"
 #include "soh/Enhancements/randomizer/Plandomizer.h"
 #include "SohModals.h"
+#include "SohGuiStrings.hpp"
 
 namespace SohGui {
 void SetupHooks();

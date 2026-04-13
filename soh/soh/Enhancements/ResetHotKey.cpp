@@ -3,6 +3,7 @@
 #include "soh/ShipInit.hpp"
 #include "functions.h"
 #include "soh/OTRGlobals.h"
+#include "soh/SohGui/SohGui.hpp"
 
 extern "C" {
 #include "z64.h"

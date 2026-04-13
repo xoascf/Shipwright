@@ -2,6 +2,7 @@
 #include "soh/Notification/Notification.h"
 #include "soh/Enhancements/enhancementTypes.h"
 #include "SohModals.h"
+#include "SohGui.hpp"
 #include "soh/OTRGlobals.h"
 #include <soh/GameVersions.h>
 #include "soh/ResourceManagerHelpers.h"
@@ -44,9 +45,9 @@ static const std::map<int32_t, const char*> menuThemeOptions = {
 };
 
 static const std::map<int32_t, const char*> textureFilteringMap = {
-    { Fast::FILTER_THREE_POINT, "Three-Point" },
-    { Fast::FILTER_LINEAR, "Linear" },
-    { Fast::FILTER_NONE, "None" },
+    { Fast::FILTER_THREE_POINT, "Tripunto" },
+    { Fast::FILTER_LINEAR, "Lineal" },
+    { Fast::FILTER_NONE, "Ninguno" },
 };
 
 static const std::map<int32_t, const char*> notificationPosition = {
@@ -124,9 +125,9 @@ void SohMenu::UpdateLanguageMap(std::map<int32_t, const char*>& languageMap) {
 
 void SohMenu::AddMenuSettings() {
     // Add Settings Menu
-    AddMenuEntry("Settings", CVAR_SETTING("Menu.SettingsSidebarSection"));
-    AddSidebarEntry("Settings", "General", 2);
-    WidgetPath path = { "Settings", "General", SECTION_COLUMN_1 };
+    AddMenuEntry(SohGuiStrings::SidebarSections::Settings, CVAR_SETTING("Menu.SettingsSidebarSection"));
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Settings, SohGuiStrings::SidebarEntryNames::Common::General, 2);
+    WidgetPath path = { SohGuiStrings::SidebarSections::Settings, SohGuiStrings::SidebarEntryNames::Common::General, SECTION_COLUMN_1 };
 
     // General - Settings
     AddWidget(path, "Menu Settings", WIDGET_SEPARATOR_TEXT);
@@ -192,7 +193,7 @@ void SohMenu::AddMenuSettings() {
     AddWidget(path, "Reset Button Combination:", WIDGET_CVAR_BTN_SELECTOR)
         .CVar("gSettings.ResetBtn")
         .Options(BtnSelectorOptions().DefaultValue(BTN_CUSTOM_MODIFIER2));
-    AddWidget(path, "Open App Files Folder", WIDGET_BUTTON)
+    AddWidget(path, "Abrir carpeta del programa", WIDGET_BUTTON)
         .RaceDisable(false)
         .Callback([](WidgetInfo& info) {
             std::string filesPath = Ship::Context::GetInstance()->GetAppDirectoryPath();
@@ -217,7 +218,7 @@ void SohMenu::AddMenuSettings() {
                               "Warp Point: Skip to active warp point (if set), see Dev Tools -> General"));
 
     AddWidget(path, "Languages", WIDGET_SEPARATOR_TEXT);
-    AddWidget(path, "Translate Title Screen", WIDGET_CVAR_CHECKBOX)
+    AddWidget(path, "Traducir pantalla de título", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_SETTING("TitleScreenTranslation"))
         .RaceDisable(false);
     AddWidget(path, "Language", WIDGET_CVAR_COMBOBOX)
@@ -234,15 +235,15 @@ void SohMenu::AddMenuSettings() {
                      .DefaultIndex(LANGUAGE_ENG));
     AddWidget(path, "Accessibility", WIDGET_SEPARATOR_TEXT);
 #if defined(_WIN32) || defined(__APPLE__)
-    AddWidget(path, "Text to Speech", WIDGET_CVAR_CHECKBOX)
+    AddWidget(path, "Texto a voz", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_SETTING("A11yTTS"))
         .RaceDisable(false)
-        .Options(CheckboxOptions().Tooltip("Enables text to speech for in game dialog"));
+        .Options(CheckboxOptions().Tooltip("Conversión de texto a voz en los diálogos del juego."));
 #endif
-    AddWidget(path, "Disable Idle Camera Re-Centering", WIDGET_CVAR_CHECKBOX)
+    AddWidget(path, "Desactivar recentrado de cámara en reposo", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_SETTING("A11yDisableIdleCam"))
         .RaceDisable(false)
-        .Options(CheckboxOptions().Tooltip("Disables the automatic re-centering of the camera when idle."));
+        .Options(CheckboxOptions().Tooltip("Desactiva el recentrado automático de la cámara en reposo."));
     AddWidget(path, "Disable Screen Flash for Finishing Blow", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_SETTING("A11yNoScreenFlashForFinishingBlow"))
         .RaceDisable(false)
@@ -279,15 +280,15 @@ void SohMenu::AddMenuSettings() {
     }
 
     // Audio Settings
-    path.sidebarName = "Audio";
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Settings::Audio;
     path.column = SECTION_COLUMN_1;
-    AddSidebarEntry("Settings", "Audio", 3);
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Settings, SohGuiStrings::SidebarEntryNames::Settings::Audio, 3);
 
-    AddWidget(path, "Master Volume: %d %%", WIDGET_CVAR_SLIDER_INT)
+    AddWidget(path, "Volumen general: %d %%", WIDGET_CVAR_SLIDER_INT)
         .CVar(CVAR_SETTING("Volume.Master"))
         .RaceDisable(false)
         .Options(IntSliderOptions().Min(0).Max(100).DefaultValue(40).ShowButtons(true).Format(""));
-    AddWidget(path, "Main Music Volume: %d %%", WIDGET_CVAR_SLIDER_INT)
+    AddWidget(path, "Volumen de música principal: %d %%", WIDGET_CVAR_SLIDER_INT)
         .CVar(CVAR_SETTING("Volume.MainMusic"))
         .RaceDisable(false)
         .Options(IntSliderOptions().Min(0).Max(100).DefaultValue(100).ShowButtons(true).Format(""))
@@ -295,7 +296,7 @@ void SohMenu::AddMenuSettings() {
             Audio_SetGameVolume(SEQ_PLAYER_BGM_MAIN,
                                 ((float)CVarGetInteger(CVAR_SETTING("Volume.MainMusic"), 100) / 100.0f));
         });
-    AddWidget(path, "Sub Music Volume: %d %%", WIDGET_CVAR_SLIDER_INT)
+    AddWidget(path, "Volumen de música secundaria: %d %%", WIDGET_CVAR_SLIDER_INT)
         .CVar(CVAR_SETTING("Volume.SubMusic"))
         .RaceDisable(false)
         .Options(IntSliderOptions().Min(0).Max(100).DefaultValue(100).ShowButtons(true).Format(""))
@@ -303,7 +304,7 @@ void SohMenu::AddMenuSettings() {
             Audio_SetGameVolume(SEQ_PLAYER_BGM_SUB,
                                 ((float)CVarGetInteger(CVAR_SETTING("Volume.SubMusic"), 100) / 100.0f));
         });
-    AddWidget(path, "Fanfare Volume: %d %%", WIDGET_CVAR_SLIDER_INT)
+    AddWidget(path, "Volumen de banda: %d %%", WIDGET_CVAR_SLIDER_INT)
         .CVar(CVAR_SETTING("Volume.Fanfare"))
         .RaceDisable(false)
         .Options(IntSliderOptions().Min(0).Max(100).DefaultValue(100).ShowButtons(true).Format(""))
@@ -311,28 +312,28 @@ void SohMenu::AddMenuSettings() {
             Audio_SetGameVolume(SEQ_PLAYER_FANFARE,
                                 ((float)CVarGetInteger(CVAR_SETTING("Volume.Fanfare"), 100) / 100.0f));
         });
-    AddWidget(path, "Sound Effects Volume: %d %%", WIDGET_CVAR_SLIDER_INT)
+    AddWidget(path, "Volumen de efectos: %d %%", WIDGET_CVAR_SLIDER_INT)
         .CVar(CVAR_SETTING("Volume.SFX"))
         .RaceDisable(false)
         .Options(IntSliderOptions().Min(0).Max(100).DefaultValue(100).ShowButtons(true).Format(""))
         .Callback([](WidgetInfo& info) {
             Audio_SetGameVolume(SEQ_PLAYER_SFX, ((float)CVarGetInteger(CVAR_SETTING("Volume.SFX"), 100) / 100.0f));
         });
-    AddWidget(path, "Audio API (Needs reload)", WIDGET_AUDIO_BACKEND).RaceDisable(false);
+    AddWidget(path, "Interfaz de audio (requiere reinicio)", WIDGET_AUDIO_BACKEND).RaceDisable(false);
 
     // Graphics Settings
     static int32_t maxFps = 360;
     const char* tooltip = "Uses Matrix Interpolation to create extra frames, resulting in smoother graphics. This is "
                           "purely visual and does not impact game logic, execution of glitches etc.\n\nA higher target "
                           "FPS than your monitor's refresh rate will waste resources, and might give a worse result.";
-    path.sidebarName = "Graphics";
-    AddSidebarEntry("Settings", "Graphics", 3);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Settings::Graphics;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Settings, SohGuiStrings::SidebarEntryNames::Settings::Graphics, 3);
     AddWidget(path, "Graphics Options", WIDGET_SEPARATOR_TEXT);
-    AddWidget(path, "Toggle Fullscreen", WIDGET_BUTTON)
+    AddWidget(path, "Alternar pantalla completa", WIDGET_BUTTON)
         .RaceDisable(false)
         .Callback([](WidgetInfo& info) { Ship::Context::GetInstance()->GetWindow()->ToggleFullscreen(); })
         .Options(ButtonOptions().Tooltip("Toggles Fullscreen On/Off."));
-    AddWidget(path, "Internal Resolution", WIDGET_CVAR_SLIDER_FLOAT)
+    AddWidget(path, "Resolución interna", WIDGET_CVAR_SLIDER_FLOAT)
         .CVar(CVAR_INTERNAL_RESOLUTION)
         .RaceDisable(false)
         .Callback([](WidgetInfo& info) {
@@ -395,13 +396,13 @@ void SohMenu::AddMenuSettings() {
         .CVar(CVAR_SETTING("MatchRefreshRate"))
         .RaceDisable(false)
         .Options(CheckboxOptions().Tooltip("Matches interpolation value to the refresh rate of your display."));
-    AddWidget(path, "Renderer API (Needs reload)", WIDGET_VIDEO_BACKEND).RaceDisable(false);
-    AddWidget(path, "Enable Vsync", WIDGET_CVAR_CHECKBOX)
+    AddWidget(path, "Interfaz de renderizado (requiere reinicio)", WIDGET_VIDEO_BACKEND).RaceDisable(false);
+    AddWidget(path, "Activar VSync", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_VSYNC_ENABLED)
         .RaceDisable(false)
         .PreFunc([](WidgetInfo& info) { info.isHidden = mSohMenu->disabledMap.at(DISABLE_FOR_NO_VSYNC).active; })
         .Options(CheckboxOptions()
-                     .Tooltip("Removes tearing, but clamps your max FPS to your displays refresh rate.")
+                     .Tooltip("Activa la sincronización vertical, para prevenir el screen tearing.")
                      .DefaultValue(true));
     AddWidget(path, "Windowed Fullscreen", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_SDL_WINDOWED_FULLSCREEN)
@@ -427,9 +428,9 @@ void SohMenu::AddMenuSettings() {
     AddWidget(path, "Advanced Graphics Options", WIDGET_SEPARATOR_TEXT);
 
     // Controls
-    path.sidebarName = "Controls";
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Settings::Controls;
     path.column = SECTION_COLUMN_1;
-    AddSidebarEntry("Settings", "Controls", 2);
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Settings, SohGuiStrings::SidebarEntryNames::Settings::Controls, 2);
     AddWidget(path, "Clear Devices", WIDGET_BUTTON)
         .Callback([](WidgetInfo& info) {
             SohGui::mModalWindow->RegisterPopup(
@@ -445,36 +446,36 @@ void SohMenu::AddMenuSettings() {
         })
         .Options(ButtonOptions().Size(Sizes::Inline));
     AddWidget(path, "Controller Bindings", WIDGET_SEPARATOR_TEXT);
-    AddWidget(path, "Popout Bindings Window", WIDGET_WINDOW_BUTTON)
+    AddWidget(path, "Abrir en ventana: Mapeo de mando", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("ControllerConfiguration"))
         .RaceDisable(false)
-        .WindowName("Configure Controller")
+        .WindowName(SohGuiStrings::WindowNames::ControllerConfig)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Enables the separate Bindings Window."));
+        .Options(WindowButtonOptions().Tooltip("Abre el Mapeo de mando de forma independiente."));
 
     // Input Viewer
-    path.sidebarName = "Input Viewer";
-    AddSidebarEntry("Settings", path.sidebarName, 3);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Settings::InputViewer;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Settings, path.sidebarName, 3);
     AddWidget(path, "Input Viewer", WIDGET_SEPARATOR_TEXT);
-    AddWidget(path, "Toggle Input Viewer", WIDGET_WINDOW_BUTTON)
+    AddWidget(path, "Activar ventana: Visor de entradas", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("InputViewer"))
         .RaceDisable(false)
-        .WindowName("Input Viewer")
+        .WindowName(SohGuiStrings::WindowNames::InputViewer)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Toggles the Input Viewer.").EmbedWindow(false));
+        .Options(WindowButtonOptions().Tooltip("Activa el Visor de entradas.").EmbedWindow(false));
 
     AddWidget(path, "Input Viewer Settings", WIDGET_SEPARATOR_TEXT);
-    AddWidget(path, "Popout Input Viewer Settings", WIDGET_WINDOW_BUTTON)
+    AddWidget(path, "Abrir en ventana: Ajustes del Visor de entradas", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("InputViewerSettings"))
         .RaceDisable(false)
-        .WindowName("Input Viewer Settings")
+        .WindowName(SohGuiStrings::WindowNames::InputViewerSettings)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Enables the separate Input Viewer Settings Window."));
+        .Options(WindowButtonOptions().Tooltip("Abre los Ajustes del Visor de entradas de forma independiente."));
 
     // Notifications
-    path.sidebarName = "Notifications";
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Settings::Notifications;
     path.column = SECTION_COLUMN_1;
-    AddSidebarEntry("Settings", path.sidebarName, 3);
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Settings, path.sidebarName, 3);
     AddWidget(path, "Position", WIDGET_CVAR_COMBOBOX)
         .CVar(CVAR_SETTING("Notifications.Position"))
         .RaceDisable(false)
@@ -526,13 +527,14 @@ void SohMenu::AddMenuSettings() {
         .Options(CheckboxOptions().Tooltip("Prevent notifications from playing a sound."));
 
     // Mod Menu
-    path.sidebarName = "Mod Menu";
-    AddSidebarEntry("Settings", path.sidebarName, 1);
-    AddWidget(path, "Popout Mod Menu Window", WIDGET_WINDOW_BUTTON)
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Settings::ModMenu;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Settings, path.sidebarName, 1);
+    AddWidget(path, "Abrir en ventana: Menú de mods", WIDGET_WINDOW_BUTTON)
         .CVar(CVAR_WINDOW("ModMenu"))
-        .WindowName("Mod Menu")
+        .WindowName(SohGuiStrings::WindowNames::ModMenu)
         .HideInSearch(true)
-        .Options(WindowButtonOptions().Tooltip("Enables the separate Mod Menu Window."));
+        .Options(WindowButtonOptions().Tooltip("Abre el Menú de mods de forma independiente."));
 }
 
 } // namespace SohGui
+

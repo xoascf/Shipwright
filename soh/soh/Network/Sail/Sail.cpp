@@ -3,6 +3,7 @@
 #include <libultraship/libultraship.h>
 #include <nlohmann/json.hpp>
 #include "soh/OTRGlobals.h"
+#include "soh/SohGui/SohGui.hpp"
 #include "soh/util.h"
 
 template <class DstType, class SrcType> bool IsType(const SrcType* src) {

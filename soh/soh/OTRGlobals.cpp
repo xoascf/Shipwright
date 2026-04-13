@@ -294,7 +294,8 @@ OTRGlobals::OTRGlobals() {
     context->InitConsole();
 
     auto sohInputEditorWindow =
-        std::make_shared<SohInputEditorWindow>(CVAR_WINDOW("ControllerConfiguration"), "Configure Controller");
+        std::make_shared<SohInputEditorWindow>(CVAR_WINDOW("ControllerConfiguration"),
+                                               SohGui::GuiWindowNames::ControllerConfig);
     sohFast3dWindow =
         std::make_shared<Fast::Fast3dWindow>(std::vector<std::shared_ptr<Ship::GuiWindow>>({ sohInputEditorWindow }));
     context->InitWindow(sohFast3dWindow);
@@ -423,13 +424,13 @@ void OTRGlobals::RunExtract(int argc, char* argv[]) {
                           "\x1b[2;2HYou've launched the Ship with an old ROM O2R file."
                           "\x1b[4;2HPlease regenerate a new ROM O2R and relaunch."
                           "\x1b[6;2HPress the Home button to exit...",
-                          "OK", "", [&]() { exit(1); });
+                          "Aceptar", "", [&]() { exit(1); });
 #elif defined(__WIIU__)
     SohGui::RegisterPopup("Outdated ROM Archives",
                           "You've launched the Ship with an old a ROM O2R file.\n\n"
                           "Please generate a ROM O2R and relaunch.\n\n"
                           "Press and hold the Power button to shutdown...",
-                          "OK", "", [&]() { exit(1); });
+                          "Aceptar", "", [&]() { exit(1); });
     OSFatal();
 #endif
 
@@ -437,7 +438,7 @@ void OTRGlobals::RunExtract(int argc, char* argv[]) {
         SohGui::RegisterPopup("No se han encontrado los archivos del extractor",
                               "No se han encontrado archivos O2R. Falta la carpeta 'assets/' necesaria para generar "
                               "el archivo OTR.\nExtraiga la carpeta 'assets/' de la descarga original.\nSaliendo...",
-                              "OK", "", [&]() { exit(1); });
+                              "Aceptar", "", [&]() { exit(1); });
     } else if (shouldRegen) {
         SohGui::RegisterPopup("Outdated ROM Archives",
                               "Your oot.o2r or oot-mq.o2r were created with incompatible versions of SoH.\nYou will "
@@ -479,11 +480,11 @@ void OTRGlobals::RunExtract(int argc, char* argv[]) {
                           "button to shutdown...";
 #else
                     msg =
-                        "Please extract the soh.o2r from the Ship of Harkinian download to your folder.\n\nExiting...";
+                        "Extraiga el archivo soh.o2r de la descarga de Ship of Harkinian a su carpeta.\n\nSaliendo...";
 #endif
                     std::string title =
-                        !std::filesystem::exists(portArchivePath) ? "Missing soh.o2r" : "soh.o2r is outdated";
-                    SohGui::RegisterPopup(title, msg, "OK", "", [&]() { exit(1); });
+                        !std::filesystem::exists(portArchivePath) ? "No se encontró soh.o2r" : "Versión antigua de soh.o2r";
+                    SohGui::RegisterPopup(title, msg, "Aceptar", "", [&]() { exit(1); });
                 }
                 continue;
             }
@@ -507,7 +508,7 @@ void OTRGlobals::RunExtract(int argc, char* argv[]) {
                             SohGui::RegisterPopup("Error de ruta para SoH",
                                                   "SoH se está ejecutando en una carpeta temporal.\nExtraiga el .zip y "
                                                   "ejecútelo de nuevo.",
-                                                  "OK", "", [&]() { exit(0); });
+                                                  "Aceptar", "", [&]() { exit(0); });
                         } else {
                             windowsStep = WS_PERMS;
                         }
@@ -525,7 +526,7 @@ void OTRGlobals::RunExtract(int argc, char* argv[]) {
                             SohGui::RegisterPopup("Error de permisos para SoH",
                                                   "SoH no tiene los permisos de archivo adecuados. Muévalo a una "
                                                   "carpeta que sí los tenga y ejecútelo de nuevo.",
-                                                  "OK", "", [&]() {
+                                                  "Aceptar", "", [&]() {
                                                       fclose(tfile);
                                                       PathTestCleanup(tfile);
                                                       exit(0);
@@ -536,7 +537,7 @@ void OTRGlobals::RunExtract(int argc, char* argv[]) {
                                 SohGui::RegisterPopup("Error de permisos para SoH",
                                                       "SoH no tiene los permisos de archivo adecuados. Muévalo a una "
                                                       "carpeta que sí los tenga y ejecútelo de nuevo.",
-                                                      "OK", "", [&]() { exit(0); });
+                                                      "Aceptar", "", [&]() { exit(0); });
                             }
                             windowsStep = WS_ONEDRIVE;
                         }
@@ -548,7 +549,7 @@ void OTRGlobals::RunExtract(int argc, char* argv[]) {
                                                   "SoH parece estar en una carpeta de OneDrive, lo que causará "
                                                   "problemas.\nMueva SoH a una carpeta fuera de OneDrive, por ejemplo "
                                                   "a la raíz de una unidad (p. ej. \"C:\\Juegos\\SoH\").",
-                                                  "OK", "", [&]() { exit(0); });
+                                                  "Aceptar", "", [&]() { exit(0); });
                         } else {
                             windowsStep = WS_DONE;
                             extractStep = args.empty() ? ES_EXTRACT : ES_EXTRACT_ARGS;
@@ -696,7 +697,7 @@ void OTRGlobals::RunExtract(int argc, char* argv[]) {
                     SohGui::RegisterPopup(POPUP_TITLE_NO_ROM_ARCHIVES,
                                           "No se han detectado archivos O2R de ROM. Genere un O2R de ROM y vuelva a "
                                           "iniciar.",
-                                          "OK", "", [&]() { exit(0); });
+                                          "Aceptar", "", [&]() { exit(0); });
                 }
                 extractDone = true;
                 continue;
@@ -1605,24 +1606,26 @@ extern "C" void Graph_StartFrame() {
     int32_t dwScancode = OTRGlobals::Instance->context->GetWindow()->GetLastScancode();
     OTRGlobals::Instance->context->GetWindow()->SetLastScancode(-1);
 
+    static constexpr const char* POPUP_TITLE_MENU_MOVED = "El menú fue movido";
+
     switch (dwScancode) {
         case KbScancode::LUS_KB_F1: {
             std::shared_ptr<SohModalWindow> modal = static_pointer_cast<SohModalWindow>(
-                Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Modal Window"));
-            if (modal->IsPopupOpen("Menu Moved")) {
+                Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow(SohGui::GuiWindowNames::ModalWindow));
+            if (modal->IsPopupOpen(POPUP_TITLE_MENU_MOVED)) {
                 modal->DismissPopup();
             } else {
-                modal->RegisterPopup("Menu Moved",
-                                     "The menubar, accessed by hitting F1, no longer exists.\nThe new menu can be "
-                                     "accessed by hitting the Esc button instead.",
-                                     "OK");
+                modal->RegisterPopup(POPUP_TITLE_MENU_MOVED,
+                                     "La barra de menú, a la que se solía acceder al pulsar F1, ya no existe.\n"
+                                     "El nuevo menú se puede acceder pulsando el botón Esc.",
+                                     "Aceptar");
             }
             break;
         }
         case KbScancode::LUS_KB_F5: {
             if (CVarGetInteger(CVAR_CHEAT("SaveStatesEnabled"), 0) == 0) {
                 Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGameOverlay()->TextDrawNotification(
-                    6.0f, true, "Save states not enabled. Check Cheats Menu.");
+                    6.0f, true, "Estados de guardado no habilitados. Revise el menú de trucos.");
                 return;
             }
             const unsigned int slot = OTRGlobals::Instance->gSaveStateMgr->GetCurrentSlot();
@@ -2188,7 +2191,8 @@ extern "C" void OTRControllerCallback(uint8_t rumble) {
     static std::shared_ptr<SohInputEditorWindow> controllerConfigWindow = nullptr;
     if (controllerConfigWindow == nullptr) {
         controllerConfigWindow = std::dynamic_pointer_cast<SohInputEditorWindow>(
-            Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Controller Configuration"));
+            Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow(
+                SohGui::GuiWindowNames::ControllerConfig));
     } else if (controllerConfigWindow->TestingRumble()) {
         return;
     }
@@ -2524,14 +2528,14 @@ bool SoH_HandleConfigDrop(char* filePath) {
         }
 
         auto gui = Ship::Context::GetInstance()->GetWindow()->GetGui();
-        gui->GetGuiWindow("Console")->Hide();
-        gui->GetGuiWindow("Actor Viewer")->Hide();
-        gui->GetGuiWindow("Collision Viewer")->Hide();
-        gui->GetGuiWindow("Save Editor")->Hide();
-        gui->GetGuiWindow("Display List Viewer")->Hide();
-        gui->GetGuiWindow("Stats")->Hide();
+        gui->GetGuiWindow(SohGui::GuiWindowNames::Console)->Hide();
+        gui->GetGuiWindow(SohGui::GuiWindowNames::ActorViewer)->Hide();
+        gui->GetGuiWindow(SohGui::GuiWindowNames::CollisionViewer)->Hide();
+        gui->GetGuiWindow(SohGui::GuiWindowNames::SaveEditor)->Hide();
+        gui->GetGuiWindow(SohGui::GuiWindowNames::DisplayListViewer)->Hide();
+        gui->GetGuiWindow(SohGui::GuiWindowNames::Stats)->Hide();
         std::dynamic_pointer_cast<Ship::ConsoleWindow>(
-            Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
+            Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow(SohGui::GuiWindowNames::Console))
             ->ClearBindings();
 
         Rando::Settings::GetInstance()->UpdateAllOptions();

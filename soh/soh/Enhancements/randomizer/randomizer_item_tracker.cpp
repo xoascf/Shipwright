@@ -2220,7 +2220,9 @@ void RegisterItemTrackerWidgets() {
     backgroundColor.CVar(CVAR_TRACKER_ITEM("BgColor"))
         .Options(
             ColorPickerOptions().Color(THEME_COLOR).DefaultValue({ 0, 0, 0, 0 }).UseAlpha().ShowReset().ShowRandom());
-    SohGui::mSohMenu->AddSearchWidget({ backgroundColor, "Randomizer", "Item Tracker", "General Settings" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { backgroundColor, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings" });
 
     windowTypeWidget = { .name = "Window Type##ItemTracker", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     windowTypeWidget.CVar(CVAR_TRACKER_ITEM("WindowType"))
@@ -2231,7 +2233,9 @@ void RegisterItemTrackerWidgets() {
                      .Color(THEME_COLOR)
                      .ComboMap(windowType))
         .Callback([](WidgetInfo& info) { shouldUpdateVectors = true; });
-    SohGui::mSohMenu->AddSearchWidget({ windowTypeWidget, "Randomizer", "Item Tracker", "General Settings" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { windowTypeWidget, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings" });
     enableDraggingWidget;
     onlyPausedWidget;
 
@@ -2245,7 +2249,9 @@ void RegisterItemTrackerWidgets() {
                      .ComboMap(itemTrackerCapacityTrackOptions)
                      .Tooltip("Customize what the numbers under each item are tracking."
                               "\n\nNote: items without capacity upgrades will track ammo even in capacity mode"));
-    SohGui::mSohMenu->AddSearchWidget({ ammoTracking, "Randomizer", "Item Tracker", "General Settings" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { ammoTracking, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings" });
 
     keyTracking = { .name = "Key Count Tracking", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     keyTracking.CVar(CVAR_TRACKER_ITEM("KeyCounts"))
@@ -2256,7 +2262,9 @@ void RegisterItemTrackerWidgets() {
                      .Color(THEME_COLOR)
                      .ComboMap(itemTrackerKeyTrackOptions)
                      .Tooltip("Customize what numbers are shown for key tracking."));
-    SohGui::mSohMenu->AddSearchWidget({ keyTracking, "Randomizer", "Item Tracker", "General Settings" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { keyTracking, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings" });
 
     triforcePieceTracking = { .name = "Triforce Pieces", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     triforcePieceTracking.CVar(CVAR_TRACKER_ITEM("DisplayType.TriforcePieces"))
@@ -2267,7 +2275,9 @@ void RegisterItemTrackerWidgets() {
                      .Color(THEME_COLOR)
                      .ComboMap(displayTypes))
         .Callback([](WidgetInfo& info) { shouldUpdateVectors = true; });
-    SohGui::mSohMenu->AddSearchWidget({ triforcePieceTracking, "Randomizer", "Item Tracker", "General Settings" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { triforcePieceTracking, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings" });
 
     dungeonItemTracking = { .name = "Dungeon Items", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     dungeonItemTracking.CVar(CVAR_TRACKER_ITEM("DisplayType.DungeonItems"))
@@ -2280,7 +2290,9 @@ void RegisterItemTrackerWidgets() {
         .Callback([](WidgetInfo& info) { shouldUpdateVectors = true; });
     ;
     SohGui::mSohMenu->AddSearchWidget(
-        { dungeonItemTracking, "Randomizer", "Item Tracker", "General Settings", "keys maps compasses icon" });
+        { dungeonItemTracking, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+          SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings",
+          "keys maps compasses icon" });
 
     gregTracking = { .name = "Greg", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     gregTracking.CVar(CVAR_TRACKER_ITEM("DisplayType.Greg"))
@@ -2292,7 +2304,9 @@ void RegisterItemTrackerWidgets() {
                      .ComboMap(extendedDisplayTypes))
         .Callback([](WidgetInfo& info) { shouldUpdateVectors = true; });
     ;
-    SohGui::mSohMenu->AddSearchWidget({ gregTracking, "Randomizer", "Item Tracker", "General Settings", "icon" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { gregTracking, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings", "icon" });
 
     beanSoulsTracking = { .name = "Bean Souls", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     beanSoulsTracking.CVar(CVAR_TRACKER_ITEM("DisplayType.BeanSouls"))
@@ -2304,7 +2318,9 @@ void RegisterItemTrackerWidgets() {
                      .ComboMap(displayTypes))
         .Callback([](WidgetInfo& info) { shouldUpdateVectors = true; });
     ;
-    SohGui::mSohMenu->AddSearchWidget({ beanSoulsTracking, "Randomizer", "Item Tracker", "General Settings", "icon" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { beanSoulsTracking, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings", "icon" });
 
     bossSoulsTracking = { .name = "Boss Souls", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     bossSoulsTracking.CVar(CVAR_TRACKER_ITEM("DisplayType.BossSouls"))
@@ -2316,7 +2332,9 @@ void RegisterItemTrackerWidgets() {
                      .ComboMap(displayTypes))
         .Callback([](WidgetInfo& info) { shouldUpdateVectors = true; });
     ;
-    SohGui::mSohMenu->AddSearchWidget({ bossSoulsTracking, "Randomizer", "Item Tracker", "General Settings", "icon" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { bossSoulsTracking, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings", "icon" });
 
     jabberNutsTracking = { .name = "Jabber Nuts", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     jabberNutsTracking.CVar(CVAR_TRACKER_ITEM("DisplayType.JabberNuts"))
@@ -2328,7 +2346,9 @@ void RegisterItemTrackerWidgets() {
                      .ComboMap(displayTypes))
         .Callback([](WidgetInfo& info) { shouldUpdateVectors = true; });
     ;
-    SohGui::mSohMenu->AddSearchWidget({ jabberNutsTracking, "Randomizer", "Item Tracker", "General Settings", "icon" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { jabberNutsTracking, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings", "icon" });
 
     triforcePieceCount = { .name = "Triforce Piece Count Tracking", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     triforcePieceCount.CVar(CVAR_TRACKER_ITEM("TriforcePieceCounts"))
@@ -2339,7 +2359,9 @@ void RegisterItemTrackerWidgets() {
                      .Color(THEME_COLOR)
                      .ComboMap(itemTrackerTriforcePieceTrackOptions)
                      .Tooltip("Customize what numbers are shown for triforce piece tracking."));
-    SohGui::mSohMenu->AddSearchWidget({ triforcePieceCount, "Randomizer", "Item Tracker", "General Settings" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { triforcePieceCount, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings" });
 
     ocarinaButtonTracking = { .name = "Ocarina Buttons", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     ocarinaButtonTracking.CVar(CVAR_TRACKER_ITEM("DisplayType.OcarinaButtons"))
@@ -2352,7 +2374,8 @@ void RegisterItemTrackerWidgets() {
         .Callback([](WidgetInfo& info) { shouldUpdateVectors = true; });
     ;
     SohGui::mSohMenu->AddSearchWidget(
-        { ocarinaButtonTracking, "Randomizer", "Item Tracker", "General Settings", "icon" });
+        { ocarinaButtonTracking, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+          SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings", "icon" });
 
     overworldKeysTracking = { .name = "Overworld Keys", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     overworldKeysTracking.CVar(CVAR_TRACKER_ITEM("DisplayType.OverworldKeys"))
@@ -2365,7 +2388,8 @@ void RegisterItemTrackerWidgets() {
         .Callback([](WidgetInfo& info) { shouldUpdateVectors = true; });
     ;
     SohGui::mSohMenu->AddSearchWidget(
-        { overworldKeysTracking, "Randomizer", "Item Tracker", "General Settings", "icon" });
+        { overworldKeysTracking, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+          SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings", "icon" });
 
     fishingPoleTracking = { .name = "Fishing Pole", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     fishingPoleTracking.CVar(CVAR_TRACKER_ITEM("DisplayType.FishingPole"))
@@ -2378,7 +2402,8 @@ void RegisterItemTrackerWidgets() {
         .Callback([](WidgetInfo& info) { shouldUpdateVectors = true; });
     ;
     SohGui::mSohMenu->AddSearchWidget(
-        { fishingPoleTracking, "Randomizer", "Item Tracker", "General Settings", "icon" });
+        { fishingPoleTracking, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+          SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings", "icon" });
 
     personalNotesWiget = { .name = "Personal notes", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     static const char* notesDisabledTooltip =
@@ -2392,14 +2417,18 @@ void RegisterItemTrackerWidgets() {
                      .ComboMap(displayTypes))
         .Callback([](WidgetInfo& info) { shouldUpdateVectors = true; });
     ;
-    SohGui::mSohMenu->AddSearchWidget({ personalNotesWiget, "Randomizer", "Item Tracker", "General Settings" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { personalNotesWiget, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings" });
 
     hookshotIdentWidget = { .name = "Show Hookshot Identifiers", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     hookshotIdentWidget.CVar(CVAR_TRACKER_ITEM("HookshotIdentifier"))
         .Options(CheckboxOptions()
                      .Color(THEME_COLOR)
                      .Tooltip("Shows an 'H' or an 'L' to more easily distinguish between Hookshot and Longshot."));
-    SohGui::mSohMenu->AddSearchWidget({ hookshotIdentWidget, "Randomizer", "Item Tracker", "General Settings" });
+    SohGui::mSohMenu->AddSearchWidget(
+        { hookshotIdentWidget, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+          SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::ItemTracker, "General Settings" });
 }
 
 void RegisterItemTracker() {

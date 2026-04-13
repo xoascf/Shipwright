@@ -13,12 +13,13 @@ using namespace UIWidgets;
 
 void SohMenu::AddMenuNetwork() {
     // Add Network Menu
-    AddMenuEntry("Network", CVAR_SETTING("Menu.NetworkSidebarSection"));
+    AddMenuEntry(SohGuiStrings::SidebarSections::Network, CVAR_SETTING("Menu.NetworkSidebarSection"));
     WidgetPath path;
 
 #ifndef ENABLE_REMOTE_CONTROL
-    path = { "Network", "Info", SECTION_COLUMN_1 };
-    AddSidebarEntry("Network", path.sidebarName, 2);
+    path = { SohGuiStrings::SidebarSections::Network, SohGuiStrings::SidebarEntryNames::Network::Info,
+             SECTION_COLUMN_1 };
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Network, path.sidebarName, 2);
 
     AddWidget(path,
               ICON_FA_EXCLAMATION_TRIANGLE " The Network features are unavailable because SoH was compiled without "
@@ -29,8 +30,9 @@ void SohMenu::AddMenuNetwork() {
 #endif
 
     // Sail
-    path = { "Network", "Sail", SECTION_COLUMN_1 };
-    AddSidebarEntry("Network", path.sidebarName, 3);
+    path = { SohGuiStrings::SidebarSections::Network, SohGuiStrings::SidebarEntryNames::Network::Sail,
+             SECTION_COLUMN_1 };
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Network, path.sidebarName, 3);
 
     AddWidget(path,
               "Sail is a networking protocol designed to facilitate remote "
@@ -104,8 +106,8 @@ void SohMenu::AddMenuNetwork() {
         }
     });
 
-    path.sidebarName = "Crowd Control";
-    AddSidebarEntry("Network", path.sidebarName, 3);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Network::CrowdControl;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Network, path.sidebarName, 3);
     path.column = SECTION_COLUMN_1;
 
     AddWidget(path, "About Crowd Control", WIDGET_SEPARATOR_TEXT);
@@ -180,8 +182,9 @@ void SohMenu::AddMenuNetwork() {
         .RaceDisable(true)
         .Options(CheckboxOptions().Tooltip("Enemies spawned by CrowdControl won't be considered for \"clear enemy "
                                            "rooms\", so they don't need to be killed to complete these rooms."));
-    path.sidebarName = "Anchor";
-    AddSidebarEntry("Network", path.sidebarName, 2);
+    path.sidebarName = SohGuiStrings::SidebarEntryNames::Network::Anchor;
+    AddSidebarEntry(SohGuiStrings::SidebarSections::Network, path.sidebarName, 2);
 }
 
 } // namespace SohGui
+

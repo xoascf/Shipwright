@@ -1087,7 +1087,8 @@ void RegisterCheckTrackerWidgets() {
         .Options(
             ColorPickerOptions().Color(THEME_COLOR).DefaultValue(Color_Bg_Default).UseAlpha().ShowReset().ShowRandom());
     SohGui::GetSohMenu()->AddSearchWidget(
-        { backgroundColorWidget, "Randomizer", "Entrance Tracker", "General Settings" });
+        { backgroundColorWidget, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+          SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::EntranceTracker, "General Settings" });
 
     windowTypeWidget = { .name = "Window Type##EntranceTracker", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     windowTypeWidget.CVar(CVAR_TRACKER_ENTRANCE("WindowType"))
@@ -1097,7 +1098,9 @@ void RegisterCheckTrackerWidgets() {
                      .LabelPosition(LabelPositions::Far)
                      .Color(THEME_COLOR)
                      .ComboMap(windowType));
-    SohGui::GetSohMenu()->AddSearchWidget({ windowTypeWidget, "Randomizer", "Entrance Tracker", "General Settings" });
+    SohGui::GetSohMenu()->AddSearchWidget(
+        { windowTypeWidget, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+          SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::EntranceTracker, "General Settings" });
 }
 
 static RegisterMenuInitFunc menuInitFunc(RegisterCheckTrackerWidgets);

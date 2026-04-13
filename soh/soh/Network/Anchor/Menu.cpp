@@ -227,7 +227,8 @@ void AnchorInstructionsMenu(WidgetInfo& info) {
 
 #ifdef ENABLE_REMOTE_CONTROL
 void RegisterAnchorMenu() {
-    WidgetPath path = { "Network", "Anchor", SECTION_COLUMN_1 };
+    WidgetPath path = { SohGui::SohGuiStrings::SidebarSections::Network,
+                        SohGui::SohGuiStrings::SidebarEntryNames::Network::Anchor, SECTION_COLUMN_1 };
     SohGui::mSohMenu->AddWidget(path, "AnchorMainMenu", WIDGET_CUSTOM)
         .CustomFunction(AnchorMainMenu)
         .HideInSearch(true);

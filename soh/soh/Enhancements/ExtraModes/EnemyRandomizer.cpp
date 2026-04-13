@@ -9,6 +9,7 @@
 #include "soh/ResourceManagerHelpers.h"
 #include "soh/SohGui/MenuTypes.h"
 #include "soh/SohGui/SohMenu.h"
+#include "soh/SohGui/SohGuiStrings.hpp"
 
 extern "C" {
 #include <z64.h>
@@ -928,7 +929,8 @@ static const std::map<int32_t, const char*> enemyRandomizerModes = {
 };
 
 void RegisterEnemyRandomizerWidgets() {
-    WidgetPath path = { "Enhancements", "Extra Modes", SECTION_COLUMN_2 };
+    WidgetPath path = { SohGui::SohGuiStrings::SidebarSections::Enhancements,
+                        SohGui::SohGuiStrings::SidebarEntryNames::Enhancements::ExtraModes, SECTION_COLUMN_2 };
 
     SohGui::mSohMenu->AddWidget(path, "Enemy Randomizer", WIDGET_CVAR_COMBOBOX)
         .CVar(CVAR_ENHANCEMENT("RandomizedEnemies"))

@@ -870,12 +870,16 @@ void RegisterAudioWidgets() {
     lowHpAlarm = { .name = "Mute Low HP Alarm", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     lowHpAlarm.CVar(CVAR_AUDIO("LowHpAlarm"))
         .Options(CheckboxOptions().Color(THEME_COLOR).Tooltip("Disable the low HP beeping sound."));
-    SohGui::mSohMenu->AddSearchWidget({ lowHpAlarm, "Enhancements", "Audio Editor", "Audio Options" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { lowHpAlarm, SohGui::SohGuiStrings::SidebarSections::Enhancements,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Enhancements::AudioEditor, "Audio Options" });
 
     naviCall = { .name = "Disable Navi Call Audio", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     naviCall.CVar(CVAR_AUDIO("DisableNaviCallAudio"))
         .Options(CheckboxOptions().Color(THEME_COLOR).Tooltip("Disables the voice audio when Navi calls you."));
-    SohGui::mSohMenu->AddSearchWidget({ naviCall, "Enhancements", "Audio Editor", "Audio Options" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { naviCall, SohGui::SohGuiStrings::SidebarSections::Enhancements,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Enhancements::AudioEditor, "Audio Options" });
 
     enemyProx = { .name = "Disable Enemy Proximity Music", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     enemyProx.CVar(CVAR_AUDIO("EnemyBGMDisable"))
@@ -898,7 +902,9 @@ void RegisterAudioWidgets() {
                               "your custom music in the Lost Woods if you don't need the navigation assitance "
                               "the volume changing provides. If toggling this while in the Lost Woods, reload "
                               "the area for the effect to kick in."));
-    SohGui::mSohMenu->AddSearchWidget({ leadingMusic, "Enhancements", "Audio Editor", "Audio Options" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { leadingMusic, SohGui::SohGuiStrings::SidebarSections::Enhancements,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Enhancements::AudioEditor, "Audio Options" });
 
     displaySeqName = { .name = "Display Sequence Name in Notifications", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     displaySeqName.CVar(CVAR_AUDIO("SeqNameNotification"))
@@ -906,12 +912,16 @@ void RegisterAudioWidgets() {
                      .Color(THEME_COLOR)
                      .Tooltip("Emits a notification with the current song name whenever it changes. "
                               "(does not apply to fanfares or enemy BGM)."));
-    SohGui::mSohMenu->AddSearchWidget({ displaySeqName, "Enhancements", "Audio Editor", "Audio Options" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { displaySeqName, SohGui::SohGuiStrings::SidebarSections::Enhancements,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Enhancements::AudioEditor, "Audio Options" });
 
     ovlDuration = { .name = "Sequence Notification Duration: %d seconds", .type = WidgetType::WIDGET_CVAR_SLIDER_INT };
     ovlDuration.CVar(CVAR_AUDIO("SeqNameNotificationDuration"))
         .Options(IntSliderOptions().Color(THEME_COLOR).Min(1).Max(20).DefaultValue(10).Size(ImVec2(300.0f, 0.0f)));
-    SohGui::mSohMenu->AddSearchWidget({ ovlDuration, "Enhancements", "Audio Editor", "Audio Options" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { ovlDuration, SohGui::SohGuiStrings::SidebarSections::Enhancements,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Enhancements::AudioEditor, "Audio Options" });
 
     voicePitch = { .name = "Link's Voice Pitch Multiplier", .type = WidgetType::WIDGET_CVAR_SLIDER_FLOAT };
     voicePitch.CVar(CVAR_AUDIO("LinkVoiceFreqMultiplier"))
@@ -922,7 +932,9 @@ void RegisterAudioWidgets() {
                      .Max(2.5f)
                      .DefaultValue(1.0f)
                      .Size(ImVec2(300.0f, 0.0f)));
-    SohGui::mSohMenu->AddSearchWidget({ voicePitch, "Enhancements", "Audio Editor", "Audio Options" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { voicePitch, SohGui::SohGuiStrings::SidebarSections::Enhancements,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Enhancements::AudioEditor, "Audio Options" });
 
     randomAudioGenModes = { .name = "Automatically Randomize All Music and Sound Effects",
                             .type = WidgetType::WIDGET_CVAR_COMBOBOX };
@@ -939,7 +951,9 @@ void RegisterAudioWidgets() {
                     "- On Rando Gen Only: Randomizes only when you generate a new randomizer.\n"
                     "- On File Load: Randomizes on File Load.\n"
                     "- On File Load (Seeded): Randomizes on file load based on the current randomizer seed/file."));
-    SohGui::mSohMenu->AddSearchWidget({ randomAudioGenModes, "Enhancements", "Audio Editor", "Audio Options" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { randomAudioGenModes, SohGui::SohGuiStrings::SidebarSections::Enhancements,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Enhancements::AudioEditor, "Audio Options" });
 
     lowerOctaves = { .name = "Lower Octaves of Unplayable High Notes", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     lowerOctaves.CVar(CVAR_AUDIO("ExperimentalOctaveDrop"))
@@ -949,7 +963,9 @@ void RegisterAudioWidgets() {
                               "engine to play. Enabling this checkbox will cause these notes to drop a "
                               "couple of octaves so they can still harmonize with the other notes of the "
                               "sequence."));
-    SohGui::mSohMenu->AddSearchWidget({ lowerOctaves, "Enhancements", "Audio Editor", "Audio Options" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { lowerOctaves, SohGui::SohGuiStrings::SidebarSections::Enhancements,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Enhancements::AudioEditor, "Audio Options" });
 }
 
 static RegisterMenuInitFunc menuInitFunc(RegisterAudioWidgets);

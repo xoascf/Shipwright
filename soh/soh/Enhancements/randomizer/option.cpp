@@ -457,7 +457,8 @@ void OptionGroup::AddWidgets(WidgetPath& path) const {
     if (mContainerType == WidgetContainerType::TABLE) {
         path.column = SECTION_COLUMN_1;
         path.sidebarName = mName;
-        SohGui::mSohMenu->AddSidebarEntry("Randomizer", path.sidebarName, mSubGroups.size());
+        SohGui::mSohMenu->AddSidebarEntry(SohGui::SohGuiStrings::SidebarSections::Randomizer, path.sidebarName,
+                                         mSubGroups.size());
     }
     if (mContainerType == WidgetContainerType::SECTION || mContainerType == WidgetContainerType::COLUMN) {
         if (!mName.empty()) {

@@ -1,5 +1,6 @@
 #include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 #include "soh/OTRGlobals.h"
+#include "soh/SohGui/SohGui.hpp"
 #include "soh/SaveManager.h"
 #include "soh/ShipInit.hpp"
 

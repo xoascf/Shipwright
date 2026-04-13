@@ -2274,7 +2274,9 @@ void RegisterCheckTrackerWidgets() {
     backgroundColorWidget.CVar(CVAR_TRACKER_CHECK("BgColor"))
         .Options(
             ColorPickerOptions().Color(THEME_COLOR).DefaultValue(Color_Bg_Default).UseAlpha().ShowReset().ShowRandom());
-    SohGui::GetSohMenu()->AddSearchWidget({ backgroundColorWidget, "Randomizer", "Check Tracker", "General Settings" });
+        SohGui::GetSohMenu()->AddSearchWidget(
+                { backgroundColorWidget, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::CheckTracker, "General Settings" });
 
     windowTypeWidget = { .name = "Window Type##CheckTracker", .type = WidgetType::WIDGET_CVAR_COMBOBOX };
     windowTypeWidget.CVar(CVAR_TRACKER_CHECK("WindowType"))
@@ -2284,7 +2286,9 @@ void RegisterCheckTrackerWidgets() {
                      .LabelPosition(LabelPositions::Far)
                      .Color(THEME_COLOR)
                      .ComboMap(windowType));
-    SohGui::GetSohMenu()->AddSearchWidget({ windowTypeWidget, "Randomizer", "Check Tracker", "General Settings" });
+        SohGui::GetSohMenu()->AddSearchWidget(
+                { windowTypeWidget, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::CheckTracker, "General Settings" });
 
     dungeonSpoilerWidget = { .name = "Vanilla/MQ Dungeon Spoilers", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     dungeonSpoilerWidget.CVar(CVAR_TRACKER_CHECK("MQSpoilers"))
@@ -2292,7 +2296,9 @@ void RegisterCheckTrackerWidgets() {
                      .Color(THEME_COLOR)
                      .Tooltip("If enabled, Vanilla/MQ dungeons will show on the tracker immediately. "
                               "Otherwise, Vanilla/MQ dungeon locations must be unlocked."));
-    SohGui::GetSohMenu()->AddSearchWidget({ dungeonSpoilerWidget, "Randomizer", "Check Tracker", "General Settings" });
+        SohGui::GetSohMenu()->AddSearchWidget(
+                { dungeonSpoilerWidget, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::CheckTracker, "General Settings" });
 
     hideUnshuffledShopWidget = { .name = "Hide Unshuffled Shop Item Checks", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     hideUnshuffledShopWidget.CVar(CVAR_TRACKER_CHECK("HideUnshuffledShopChecks"))
@@ -2305,7 +2311,8 @@ void RegisterCheckTrackerWidgets() {
             UpdateFilters();
         });
     SohGui::GetSohMenu()->AddSearchWidget(
-        { hideUnshuffledShopWidget, "Randomizer", "Check Tracker", "General Settings" });
+        { hideUnshuffledShopWidget, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+          SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::CheckTracker, "General Settings" });
 
     showGSWidget = { .name = "Always Show Gold Skulltulas", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     showGSWidget.CVar(CVAR_TRACKER_CHECK("AlwaysShowGSLocs"))
@@ -2316,14 +2323,18 @@ void RegisterCheckTrackerWidgets() {
             alwaysShowGS = !alwaysShowGS;
             UpdateFilters();
         });
-    SohGui::GetSohMenu()->AddSearchWidget({ showGSWidget, "Randomizer", "Check Tracker", "General Settings" });
+        SohGui::GetSohMenu()->AddSearchWidget(
+                { showGSWidget, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::CheckTracker, "General Settings" });
 
     showLogicWidget = { .name = "Show Logic", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     showLogicWidget.CVar(CVAR_TRACKER_CHECK("ShowLogic"))
         .Options(CheckboxOptions()
                      .Color(THEME_COLOR)
                      .Tooltip("If enabled, will show a check's logic when hovering over it."));
-    SohGui::GetSohMenu()->AddSearchWidget({ showLogicWidget, "Randomizer", "Check Tracker", "General Settings" });
+        SohGui::GetSohMenu()->AddSearchWidget(
+                { showLogicWidget, SohGui::SohGuiStrings::SidebarSections::Randomizer,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Randomizer::CheckTracker, "General Settings" });
 
     checkAvailabilityWidget = { .name = "Enable Available Checks", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     checkAvailabilityWidget.CVar(CVAR_TRACKER_CHECK("EnableAvailableChecks"))

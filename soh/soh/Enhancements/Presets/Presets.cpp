@@ -60,15 +60,15 @@ void PresetCheckboxStyle(const ImVec4& color) {
 static BlockInfo blockInfo[PRESET_SECTION_MAX] = {
     { { CVAR_PREFIX_SETTING, CVAR_PREFIX_WINDOW, CVAR_PREFIX_GAMEPLAY_STATS },
       ICON_FA_COG,
-      { "Settings", "settings" } },
+            { SohGui::SohGuiStrings::SidebarSections::Settings, "settings" } },
     { { CVAR_PREFIX_ENHANCEMENT, CVAR_PREFIX_RANDOMIZER_ENHANCEMENT, CVAR_PREFIX_CHEAT },
       ICON_FA_PLUS_CIRCLE,
-      { "Enhancements", "enhancements" } },
-    { { CVAR_PREFIX_AUDIO }, ICON_FA_MUSIC, { "Audio", "audio" } },
+            { SohGui::SohGuiStrings::SidebarSections::Enhancements, "enhancements" } },
+        { { CVAR_PREFIX_AUDIO }, ICON_FA_MUSIC, { SohGui::SohGuiStrings::SidebarEntryNames::Settings::Audio, "audio" } },
     { { CVAR_PREFIX_COSMETIC }, ICON_FA_PAINT_BRUSH, { "Cosmetics", "cosmetics" } },
     { { CVAR_PREFIX_RANDOMIZER_SETTING }, ICON_FA_RANDOM, { "Rando Settings", "rando" } },
     { { CVAR_PREFIX_TRACKER }, ICON_FA_MAP, { "Trackers", "trackers" } },
-    { { CVAR_PREFIX_REMOTE }, ICON_FA_WIFI, { "Network", "network" } },
+        { { CVAR_PREFIX_REMOTE }, ICON_FA_WIFI, { SohGui::SohGuiStrings::SidebarSections::Network, "network" } },
 };
 
 std::string FormatPresetPath(std::string name) {
@@ -454,8 +454,10 @@ void PresetsCustomWidget(WidgetInfo& info) {
 }
 
 void RegisterPresetsWidgets() {
-    SohGui::mSohMenu->AddSidebarEntry("Settings", "Presets", 1);
-    WidgetPath path = { "Settings", "Presets", SECTION_COLUMN_1 };
+    SohGui::mSohMenu->AddSidebarEntry(SohGui::SohGuiStrings::SidebarSections::Settings,
+                                      SohGui::SohGuiStrings::SidebarEntryNames::Settings::Presets, 1);
+    WidgetPath path = { SohGui::SohGuiStrings::SidebarSections::Settings,
+                        SohGui::SohGuiStrings::SidebarEntryNames::Settings::Presets, SECTION_COLUMN_1 };
     SohGui::mSohMenu->AddWidget(path, "PresetsWidget", WIDGET_CUSTOM)
         .CustomFunction(PresetsCustomWidget)
         .HideInSearch(true);

@@ -1850,7 +1850,9 @@ void SohInputEditorWindow::DrawElement() {
 void RegisterInputEditorWidgets() {
     dpadOcarina = { .name = "Dpad Ocarina Playback", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     dpadOcarina.CVar(CVAR_SETTING("CustomOcarina.Dpad")).Options(CheckboxOptions().Color(THEME_COLOR));
-    SohGui::mSohMenu->AddSearchWidget({ dpadOcarina, "Settings", "Controls", "Ocarina Controls", "" });
+        SohGui::mSohMenu->AddSearchWidget(
+                { dpadOcarina, SohGui::SohGuiStrings::SidebarSections::Settings,
+                    SohGui::SohGuiStrings::SidebarEntryNames::Settings::Controls, "Ocarina Controls", "" });
 
     freeLook = { .name = "Free Look", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     freeLook.CVar(CVAR_SETTING("FreeLook.Enabled"))
@@ -1862,7 +1864,9 @@ void RegisterInputEditorWidgets() {
                     "controller config menu, and map the camera stick to the right stick.\n"
                     "Doesn't work in areas were the game locks the camera.\n"
                     "Scene reload may be necessary to enable."));
-    SohGui::mSohMenu->AddSearchWidget({ freeLook, "Settings", "Controls", "Camera Controls" });
+    SohGui::mSohMenu->AddSearchWidget({ freeLook, SohGui::SohGuiStrings::SidebarSections::Settings,
+                                        SohGui::SohGuiStrings::SidebarEntryNames::Settings::Controls,
+                                        "Camera Controls" });
 
     mouseControl = { .name = "Enable Mouse Controls", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     mouseControl.CVar(CVAR_SETTING("EnableMouse"))
@@ -1878,7 +1882,9 @@ void RegisterInputEditorWidgets() {
                 .Tooltip("Allows for using the mouse to control the camera (must enable Free Look), "
                          "aim with the shield, and perform quickspin attacks (quickly rotate the mouse then press B)\n"
                          "Press F2 to toggle mouse capture manually."));
-    SohGui::mSohMenu->AddSearchWidget({ mouseControl, "Settings", "Controls", "Camera Controls" });
+    SohGui::mSohMenu->AddSearchWidget({ mouseControl, SohGui::SohGuiStrings::SidebarSections::Settings,
+                                        SohGui::SohGuiStrings::SidebarEntryNames::Settings::Controls,
+                                        "Camera Controls" });
 
     mouseAutoCapture = { .name = "Auto Capture Mouse Input", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     mouseAutoCapture.CVar(CVAR_SETTING("AutoCaptureMouse"))
@@ -1893,11 +1899,15 @@ void RegisterInputEditorWidgets() {
                      .Tooltip("When Mouse Controls are enabled, this toggles whether the program will automatically "
                               "hide the cursor "
                               "and capture mouse input when closing the menu."));
-    SohGui::mSohMenu->AddSearchWidget({ mouseAutoCapture, "Settings", "Controls", "Camera Controls" });
+    SohGui::mSohMenu->AddSearchWidget({ mouseAutoCapture, SohGui::SohGuiStrings::SidebarSections::Settings,
+                                        SohGui::SohGuiStrings::SidebarEntryNames::Settings::Controls,
+                                        "Camera Controls" });
 
     rightStickOcarina = { .name = "Right Stick Ocarina Playback", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     rightStickOcarina.CVar(CVAR_SETTING("CustomOcarina.RightStick")).Options(CheckboxOptions().Color(THEME_COLOR));
-    SohGui::mSohMenu->AddSearchWidget({ rightStickOcarina, "Settings", "Controls", "Ocarina Controls" });
+    SohGui::mSohMenu->AddSearchWidget({ rightStickOcarina, SohGui::SohGuiStrings::SidebarSections::Settings,
+                                        SohGui::SohGuiStrings::SidebarEntryNames::Settings::Controls,
+                                        "Ocarina Controls" });
 
     dpadPause = { .name = "D-pad Support on Pause Screen", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     dpadPause.CVar(CVAR_SETTING("DPadOnPause"))
@@ -1905,7 +1915,9 @@ void RegisterInputEditorWidgets() {
                      .Color(THEME_COLOR)
                      .Tooltip("Navigate Pause with the D-pad\nIf used with \"D-pad as Equip Items\", you must hold "
                               "C-Up to equip instead of navigate"));
-    SohGui::mSohMenu->AddSearchWidget({ dpadPause, "Settings", "Controls", "Dpad Controls" });
+    SohGui::mSohMenu->AddSearchWidget({ dpadPause, SohGui::SohGuiStrings::SidebarSections::Settings,
+                                        SohGui::SohGuiStrings::SidebarEntryNames::Settings::Controls,
+                                        "Dpad Controls" });
 
     dpadText = { .name = "D-pad Support in Text Boxes", .type = WidgetType::WIDGET_CVAR_CHECKBOX };
     dpadText.CVar(CVAR_SETTING("DpadInText"))
@@ -1913,7 +1925,9 @@ void RegisterInputEditorWidgets() {
                      .Color(THEME_COLOR)
                      .Tooltip("Navigate choices in text boxes, shop item selection, and the file select / name entry "
                               "screens with the D-pad"));
-    SohGui::mSohMenu->AddSearchWidget({ dpadText, "Settings", "Controls", "Dpad Controls" });
+    SohGui::mSohMenu->AddSearchWidget({ dpadText, SohGui::SohGuiStrings::SidebarSections::Settings,
+                                        SohGui::SohGuiStrings::SidebarEntryNames::Settings::Controls,
+                                        "Dpad Controls" });
 }
 
 static RegisterMenuInitFunc menuInitFunc(RegisterInputEditorWidgets);
