@@ -40,11 +40,11 @@ extern PlayState* gPlayState;
 // TODO: Commands should be using the output passed in.
 #define ERROR_MESSAGE                                                                 \
     std::reinterpret_pointer_cast<Ship::ConsoleWindow>(                               \
-        Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow(SohGui::GuiWindowNames::ConsoleLookup)) \
+        Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")) \
         ->SendErrorMessage
 #define INFO_MESSAGE                                                                  \
     std::reinterpret_pointer_cast<Ship::ConsoleWindow>(                               \
-        Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow(SohGui::GuiWindowNames::ConsoleLookup)) \
+        Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")) \
         ->SendInfoMessage
 
 static bool ActorSpawnHandler(std::shared_ptr<Ship::Console> Console, const std::vector<std::string>& args,
