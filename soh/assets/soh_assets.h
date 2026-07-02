@@ -434,11 +434,10 @@ static const ALIGN_ASSET(2) char gFileSelLanguageGERTex[] = dgFileSelLanguageGER
 #define dgEmptyTexture "__OTR__textures/virtual/gEmptyTexture"
 static const ALIGN_ASSET(2) char gEmptyTexture[] = dgEmptyTexture;
 
-<<<<<<< HEAD
 //SSBJUMP
 #define dgJumpIconTex "__OTR__textures/icon_item_static/gJumpIconTex"
  static const ALIGN_ASSET(2) char gJumpIconTex[] = dgJumpIconTex;
-=======
+
 // Custom Tunic Models
 #define dgLinkChildKokiriTunicSkel "__OTR__objects/object_link_child_kokiri/gLinkChildKokiriTunicSkel"
 static const ALIGN_ASSET(2) char gLinkChildKokiriTunicSkel[] = dgLinkChildKokiriTunicSkel;
@@ -464,4 +463,3 @@ static const ALIGN_ASSET(2) char gShipLogoDL[] = dgShipLogoDL;
 
 #define dnintendo_rogo_static_Tex_LUS_000000 "__OTR__textures/nintendo_rogo_static/nintendo_rogo_static_Tex_LUS_000000"
 static const ALIGN_ASSET(2) char nintendo_rogo_static_Tex_LUS_000000[] = dnintendo_rogo_static_Tex_LUS_000000;
->>>>>>> refs/remotes/origin/develop_branch

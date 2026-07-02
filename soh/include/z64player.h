@@ -159,7 +159,6 @@ typedef enum PlayerItemAction {
     /* 0x40 */ PLAYER_IA_MASK_GERUDO,
     /* 0x41 */ PLAYER_IA_MASK_TRUTH,
     /* 0x42 */ PLAYER_IA_LENS_OF_TRUTH,
-<<<<<<< HEAD
     // Upstream TODO: Document why these entries were added
     /* 0x43 */ PLAYER_IA_SHIELD_DEKU,
     /* 0x44 */ PLAYER_IA_SHIELD_HYLIAN,
@@ -173,9 +172,6 @@ typedef enum PlayerItemAction {
                PLAYER_IA_JUMP,
     /* 0x4C */ PLAYER_IA_MAX,
 
-=======
-    /* 0x43 */ PLAYER_IA_MAX
->>>>>>> refs/remotes/origin/develop_branch
 } PlayerItemAction;
 
 typedef enum PlayerLimb {

@@ -18,12 +18,9 @@ u8 gAmmoItems[] = {
 static s16 sEquipState = 0;
 static s16 sEquipAnimTimer = 0;
 static s16 sEquipMoveTimer = 10;
-<<<<<<< HEAD
 bool gSelectingMask;
 bool gSelectingAdultTrade;
 int itemPage = 0;
-=======
->>>>>>> refs/remotes/origin/develop_branch
 
 static s16 sAmmoVtxOffset[] = {
     0, 2, 4, 6, 99, 99, 8, 99, 10, 99, 99, 99, 99, 99, 12,
@@ -622,16 +619,9 @@ void KaleidoScope_DrawItemSelect(PlayState* play) {
         }
         if (pauseCtx->cursorSpecialPos == 0) {
             if (cursorItem != PAUSE_ITEM_NONE) {
-<<<<<<< HEAD
-
-
-                if ((ABS(pauseCtx->stickRelY) > 30) || (dpad && CHECK_BTN_ANY(input->press.button, BTN_DDOWN | BTN_DUP))) {
-                    moveCursorResult = 0 || gSelectingMask || gSelectingAdultTrade;
-=======
                 if ((ABS(pauseCtx->stickRelY) > 30) ||
                     (dpad && CHECK_BTN_ANY(input->press.button, BTN_DDOWN | BTN_DUP))) {
-                    moveCursorResult = 0 || IsItemCycling();
->>>>>>> refs/remotes/origin/develop_branch
+                    moveCursorResult = 0 || gSelectingMask || gSelectingAdultTrade || IsItemCycling();
 
                     cursorPoint = pauseCtx->cursorPoint[PAUSE_ITEM];
                     cursorY = pauseCtx->cursorY[PAUSE_ITEM];
@@ -708,27 +698,15 @@ void KaleidoScope_DrawItemSelect(PlayState* play) {
                         buttonsToCheck |= BTN_DUP | BTN_DDOWN | BTN_DLEFT | BTN_DRIGHT;
                     }
                     if (CHECK_BTN_ANY(input->press.button, buttonsToCheck)) {
-<<<<<<< HEAD
                         if ((CHECK_AGE_REQ_SLOT(cursorSlot) | (itemPage != 0)) &&
                             (cursorItem != ITEM_SOLD_OUT) && (cursorItem != ITEM_NONE)) {
-=======
-                        if (CHECK_AGE_REQ_SLOT(cursorSlot) && (cursorItem != ITEM_SOLD_OUT) &&
-                            (cursorItem != ITEM_NONE)) {
->>>>>>> refs/remotes/origin/develop_branch
                             KaleidoScope_SetupItemEquip(play, cursorItem, cursorSlot,
                                                         pauseCtx->itemVtx[index].v.ob[0] * 10,
                                                         pauseCtx->itemVtx[index].v.ob[1] * 10);
                         } else {
-<<<<<<< HEAD
                             KaleidoScope_SetupItemEquip(play, ITEM_NONE, cursorSlot,
                                 pauseCtx->itemVtx[index].v.ob[0] * 10,
                                 pauseCtx->itemVtx[index].v.ob[1] * 10);
-                            //Audio_PlaySoundGeneral(NA_SE_SY_ERROR, &D_801333D4, 4, &D_801333E0, &D_801333E0,
-                            //                      &D_801333E8);
-=======
-                            Audio_PlaySoundGeneral(NA_SE_SY_ERROR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                                   &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
->>>>>>> refs/remotes/origin/develop_branch
                         }
                     }
                 }
@@ -807,19 +785,18 @@ void KaleidoScope_DrawItemSelect(PlayState* play) {
                     }
                 }
             }
-<<<<<<< HEAD
             int itemId = 0;
             if (itemPage == 0) {
-                gSPVertex(POLY_KAL_DISP++, &pauseCtx->itemVtx[j + 0], 4, 0);
+                gSPVertex(POLY_OPA_DISP++, &pauseCtx->itemVtx[j + 0], 4, 0);
                 itemId = gSaveContext.inventory.items[i];
                 bool not_acquired = !CHECK_AGE_REQ_ITEM(itemId);
                 if (not_acquired) {
-                    gDPSetGrayscaleColor(POLY_KAL_DISP++, 109, 109, 109, 255);
-                    gSPGrayscale(POLY_KAL_DISP++, true);
+                    gDPSetGrayscaleColor(POLY_OPA_DISP++, 109, 109, 109, 255);
+                    gSPGrayscale(POLY_OPA_DISP++, true);
                 }
             }
             else if (itemPage == 1) {
-                gSPVertex(POLY_KAL_DISP++, &pauseCtx->itemVtx[j + 0], 4, 0);
+                gSPVertex(POLY_OPA_DISP++, &pauseCtx->itemVtx[j + 0], 4, 0);
                 itemId = gSaveContext.inventory.items2[i];
             }
             if (itemPage == 0) {
@@ -832,19 +809,7 @@ void KaleidoScope_DrawItemSelect(PlayState* play) {
                         32, 0);
                 }
             }
-            gSPGrayscale(POLY_KAL_DISP++, false);
-=======
-
-            gSPVertex(POLY_OPA_DISP++, &pauseCtx->itemVtx[j + 0], 4, 0);
-            int itemId = gSaveContext.inventory.items[i];
-            bool not_acquired = !CHECK_AGE_REQ_ITEM(itemId);
-            if (not_acquired) {
-                gDPSetGrayscaleColor(POLY_OPA_DISP++, 109, 109, 109, 255);
-                gSPGrayscale(POLY_OPA_DISP++, true);
-            }
-            KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[itemId], 32, 32, 0);
             gSPGrayscale(POLY_OPA_DISP++, false);
->>>>>>> refs/remotes/origin/develop_branch
         }
     }
 
@@ -856,18 +821,12 @@ void KaleidoScope_DrawItemSelect(PlayState* play) {
     gDPSetCombineLERP(POLY_OPA_DISP++, PRIMITIVE, ENVIRONMENT, TEXEL0, ENVIRONMENT, TEXEL0, 0, PRIMITIVE, 0, PRIMITIVE,
                       ENVIRONMENT, TEXEL0, ENVIRONMENT, TEXEL0, 0, PRIMITIVE, 0);
 
-<<<<<<< HEAD
-    for (i = 0; i < 15; i++) {
-        if ((gAmmoItems[i] != ITEM_NONE) && (gSaveContext.inventory.items[i] != ITEM_NONE)) {
-           if (itemPage == 0) KaleidoScope_DrawAmmoCount(pauseCtx, play->state.gfxCtx, gSaveContext.inventory.items[i], i);
-=======
     u8 gBetterAmmoRendering = CVarGetInteger(CVAR_ENHANCEMENT("BetterAmmoRendering"), 0);
 
     for (i = 0; i < (gBetterAmmoRendering ? 24 : 15); i++) {
         if ((gBetterAmmoRendering ? ItemInSlotUsesAmmo(i) : gAmmoItems[i] != ITEM_NONE) &&
             (gSaveContext.inventory.items[i] != ITEM_NONE)) {
-            KaleidoScope_DrawAmmoCount(pauseCtx, play->state.gfxCtx, gSaveContext.inventory.items[i], i);
->>>>>>> refs/remotes/origin/develop_branch
+            if (itemPage == 0) KaleidoScope_DrawAmmoCount(pauseCtx, play->state.gfxCtx, gSaveContext.inventory.items[i], i);
         }
     }
 

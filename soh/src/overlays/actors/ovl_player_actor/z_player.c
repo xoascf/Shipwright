@@ -158,72 +158,8 @@ s32 func_80835C08(Player* this, PlayState* play);
 void Player_UseItem(PlayState* play, Player* this, s32 item);
 void func_80839F90(Player* this, PlayState* play);
 s32 func_8083C61C(PlayState* play, Player* this);
-<<<<<<< HEAD
+s32 func_8083C61C(PlayState* play, Player* this);
 s32 SSBJump(PlayState* play, Player* this);
-void func_8083CA20(PlayState* play, Player* this);
-void func_8083CA54(PlayState* play, Player* this);
-void func_8083CA9C(PlayState* play, Player* this);
-s32 func_8083E0FC(Player* this, PlayState* play);
-void Player_SetPendingFlag(Player* this, PlayState* play);
-s32 func_8083E5A8(Player* this, PlayState* play);
-s32 func_8083EB44(Player* this, PlayState* play);
-s32 func_8083F7BC(Player* this, PlayState* play);
-void func_80840450(Player* this, PlayState* play);
-void func_808407CC(Player* this, PlayState* play);
-void func_80840BC8(Player* this, PlayState* play);
-void func_80840DE4(Player* this, PlayState* play);
-void func_808414F8(Player* this, PlayState* play);
-void func_8084170C(Player* this, PlayState* play);
-void func_808417FC(Player* this, PlayState* play);
-void func_8084193C(Player* this, PlayState* play);
-void func_80841BA8(Player* this, PlayState* play);
-void func_80842180(Player* this, PlayState* play);
-void func_8084227C(Player* this, PlayState* play);
-void func_8084279C(Player* this, PlayState* play);
-void func_808423EC(Player* this, PlayState* play);
-void func_8084251C(Player* this, PlayState* play);
-void func_80843188(Player* this, PlayState* play);
-void func_808435C4(Player* this, PlayState* play);
-void func_8084370C(Player* this, PlayState* play);
-void func_8084377C(Player* this, PlayState* play);
-void func_80843954(Player* this, PlayState* play);
-void func_80843A38(Player* this, PlayState* play);
-void func_80843CEC(Player* this, PlayState* play);
-void func_8084411C(Player* this, PlayState* play);
-void func_80844708(Player* this, PlayState* play);
-void func_80844A44(Player* this, PlayState* play);
-void func_80844AF4(Player* this, PlayState* play);
-void func_80844E68(Player* this, PlayState* play);
-void func_80845000(Player* this, PlayState* play);
-void func_80845308(Player* this, PlayState* play);
-void func_80845668(Player* this, PlayState* play);
-void func_808458D0(Player* this, PlayState* play);
-void func_80845CA4(Player* this, PlayState* play);
-void func_80845EF8(Player* this, PlayState* play);
-void func_80846050(Player* this, PlayState* play);
-void func_80846120(Player* this, PlayState* play);
-void func_80846260(Player* this, PlayState* play);
-void func_80846358(Player* this, PlayState* play);
-void func_80846408(Player* this, PlayState* play);
-void func_808464B0(Player* this, PlayState* play);
-void func_80846578(Player* this, PlayState* play);
-void func_80846648(PlayState* play, Player* this);
-void func_80846660(PlayState* play, Player* this);
-void func_808467D4(PlayState* play, Player* this);
-void func_808468A8(PlayState* play, Player* this);
-void func_808468E8(PlayState* play, Player* this);
-void func_80846978(PlayState* play, Player* this);
-void func_808469BC(PlayState* play, Player* this);
-void func_80846A68(PlayState* play, Player* this);
-void func_8084B1D8(Player* this, PlayState* play);
-void func_8084B530(Player* this, PlayState* play);
-void func_8084B78C(Player* this, PlayState* play);
-void func_8084B898(Player* this, PlayState* play);
-void func_8084B9E4(Player* this, PlayState* play);
-void func_8084BBE4(Player* this, PlayState* play);
-void func_8084BDFC(Player* this, PlayState* play);
-void func_8084BF1C(Player* this, PlayState* play);
-=======
 void Player_StartMode_Idle(PlayState* play, Player* this);
 void Player_StartMode_MoveForwardSlow(PlayState* play, Player* this);
 void Player_StartMode_MoveForward(PlayState* play, Player* this);
@@ -235,7 +171,6 @@ void Player_StartMode_Grotto(PlayState* play, Player* this);
 void Player_StartMode_KnockedOver(PlayState* play, Player* this);
 void Player_StartMode_WarpSong(PlayState* play, Player* this);
 void Player_StartMode_FaroresWind(PlayState* play, Player* this);
->>>>>>> refs/remotes/origin/develop_branch
 void Player_UpdateCommon(Player* this, PlayState* play, Input* input);
 void func_8084FF7C(Player* this);
 void Player_UpdateBunnyEars(Player* this);
@@ -1245,82 +1180,6 @@ static u8 sFidgetAnimSfxTypes[] = {
     FIDGET_ANIMSFX_NONE,              // unused, doesnt correspond to any animation
 };
 
-<<<<<<< HEAD
-// Used to map item IDs to action params
-static s8 sItemActionParams[] = {
-    PLAYER_IA_DEKU_STICK,
-    PLAYER_IA_DEKU_NUT,
-    PLAYER_IA_BOMB,
-    PLAYER_IA_BOW,
-    PLAYER_IA_BOW_FIRE,
-    PLAYER_IA_DINS_FIRE,
-    PLAYER_IA_SLINGSHOT,
-    PLAYER_IA_OCARINA_FAIRY,
-    PLAYER_IA_OCARINA_OF_TIME,
-    PLAYER_IA_BOMBCHU,
-    PLAYER_IA_HOOKSHOT,
-    PLAYER_IA_LONGSHOT,
-    PLAYER_IA_BOW_ICE,
-    PLAYER_IA_FARORES_WIND,
-    PLAYER_IA_BOOMERANG,
-    PLAYER_IA_LENS_OF_TRUTH,
-    PLAYER_IA_MAGIC_BEAN,
-    PLAYER_IA_HAMMER,
-    PLAYER_IA_BOW_LIGHT,
-    PLAYER_IA_NAYRUS_LOVE,
-    PLAYER_IA_BOTTLE,
-    PLAYER_IA_BOTTLE_POTION_RED,
-    PLAYER_IA_BOTTLE_POTION_GREEN,
-    PLAYER_IA_BOTTLE_POTION_BLUE,
-    PLAYER_IA_BOTTLE_FAIRY,
-    PLAYER_IA_BOTTLE_FISH,
-    PLAYER_IA_BOTTLE_MILK_FULL,
-    PLAYER_IA_BOTTLE_RUTOS_LETTER,
-    PLAYER_IA_BOTTLE_FIRE,
-    PLAYER_IA_BOTTLE_BUG,
-    PLAYER_IA_BOTTLE_BIG_POE,
-    PLAYER_IA_BOTTLE_MILK_HALF,
-    PLAYER_IA_BOTTLE_POE,
-    PLAYER_IA_WEIRD_EGG,
-    PLAYER_IA_CHICKEN,
-    PLAYER_IA_ZELDAS_LETTER,
-    PLAYER_IA_MASK_KEATON,
-    PLAYER_IA_MASK_SKULL,
-    PLAYER_IA_MASK_SPOOKY,
-    PLAYER_IA_MASK_BUNNY_HOOD,
-    PLAYER_IA_MASK_GORON,
-    PLAYER_IA_MASK_ZORA,
-    PLAYER_IA_MASK_GERUDO,
-    PLAYER_IA_MASK_TRUTH,
-    PLAYER_IA_SWORD_MASTER,
-    PLAYER_IA_POCKET_EGG,
-    PLAYER_IA_POCKET_CUCCO,
-    PLAYER_IA_COJIRO,
-    PLAYER_IA_ODD_MUSHROOM,
-    PLAYER_IA_ODD_POTION,
-    PLAYER_IA_POACHERS_SAW,
-    PLAYER_IA_BROKEN_GORONS_SWORD,
-    PLAYER_IA_PRESCRIPTION,
-    PLAYER_IA_FROG,
-    PLAYER_IA_EYEDROPS,
-    PLAYER_IA_CLAIM_CHECK,
-    PLAYER_IA_BOW_FIRE,
-    PLAYER_IA_BOW_ICE,
-    PLAYER_IA_BOW_LIGHT,
-    PLAYER_IA_SWORD_KOKIRI,
-    PLAYER_IA_SWORD_MASTER,
-    PLAYER_IA_SWORD_BIGGORON,
-    PLAYER_IA_SHIELD_DEKU,
-    PLAYER_IA_SHIELD_HYLIAN,
-    PLAYER_IA_SHIELD_MIRROR,
-    PLAYER_IA_TUNIC_KOKIRI,
-    PLAYER_IA_TUNIC_GORON,
-    PLAYER_IA_TUNIC_ZORA,
-    PLAYER_IA_BOOTS_KOKIRI,
-    PLAYER_IA_BOOTS_IRON,
-    PLAYER_IA_BOOTS_HOVER,
-    PLAYER_IA_JUMP
-=======
 // Used to map item IDs to item actions
 static s8 sItemActions[] = {
     PLAYER_IA_DEKU_STICK,          // ITEM_DEKU_STICK
@@ -1385,7 +1244,16 @@ static s8 sItemActions[] = {
     PLAYER_IA_SWORD_KOKIRI,        // ITEM_SWORD_KOKIRI
     PLAYER_IA_SWORD_MASTER,        // ITEM_SWORD_MASTER
     PLAYER_IA_SWORD_BIGGORON,      // ITEM_SWORD_BIGGORON
->>>>>>> refs/remotes/origin/develop_branch
+    PLAYER_IA_SHIELD_DEKU,
+    PLAYER_IA_SHIELD_HYLIAN,
+    PLAYER_IA_SHIELD_MIRROR,
+    PLAYER_IA_TUNIC_KOKIRI,
+    PLAYER_IA_TUNIC_GORON,
+    PLAYER_IA_TUNIC_ZORA,
+    PLAYER_IA_BOOTS_KOKIRI,
+    PLAYER_IA_BOOTS_IRON,
+    PLAYER_IA_BOOTS_HOVER,
+    PLAYER_IA_JUMP
 };
 
 static s32 (*sItemActionUpdateFuncs[])(Player* this, PlayState* play) = {
@@ -3593,32 +3461,18 @@ void Player_UseItem(PlayState* play, Player* this, s32 item) {
                  ((itemAction == PLAYER_IA_MAGIC_BEAN) && (AMMO(ITEM_BEAN) == 0)) ||
                  (temp = Player_ActionToExplosive(this, itemAction),
                   ((temp >= 0) && ((AMMO(sExplosiveInfos[temp].itemId) == 0) ||
-<<<<<<< HEAD
-                                   (play->actorCtx.actorLists[ACTORCAT_EXPLOSIVE].length >= 3 && !CVarGetInteger("gRemoveExplosiveLimit", 0))))))) {
-                func_80078884(NA_SE_SY_ERROR);
-                return;
-            }
-            if (actionParam == PLAYER_IA_JUMP) {
-                SSBJump(play, this);
-                return;
-            }
-
-            if (actionParam >= PLAYER_IA_SHIELD_DEKU) {
-                // Changing shields through action commands is unimplemented
-                // Boots and tunics handled previously
-                return;
-            }
-
-            if (actionParam == PLAYER_IA_LENS_OF_TRUTH) {
-=======
                                    (play->actorCtx.actorLists[ACTORCAT_EXPLOSIVE].length >= 3 &&
                                     !CVarGetInteger(CVAR_ENHANCEMENT("RemoveExplosiveLimit"), 0))))))) {
                 // Prevent some items from being used if player is out of ammo.
                 // Also prevent explosives from being used if there are 3 or more active (outside of bombchu bowling)
                 Sfx_PlaySfxCentered(NA_SE_SY_ERROR);
+            } else if (itemAction == PLAYER_IA_JUMP) {
+                SSBJump(play, this);
+            } else if (itemAction >= PLAYER_IA_SHIELD_DEKU) {
+                // Changing shields through action commands is unimplemented
+                // Boots and tunics handled previously
             } else if (itemAction == PLAYER_IA_LENS_OF_TRUTH) {
                 // Handle Lens of Truth
->>>>>>> refs/remotes/origin/develop_branch
                 if (Magic_RequestChange(play, 0, MAGIC_CONSUME_LENS)) {
                     if (play->actorCtx.lensActive) {
                         Actor_DisableLens(play);
@@ -5069,12 +4923,8 @@ s32 func_808382DC(Player* this, PlayState* play) {
 }
 
 void func_80838940(Player* this, LinkAnimationHeader* anim, f32 arg2, PlayState* play, u16 sfxId) {
-<<<<<<< HEAD
     numJumps++; // Autojump counts as first manual jump
-    func_80835C58(play, this, func_8084411C, 1);
-=======
     Player_SetupAction(play, this, Player_Action_8084411C, 1);
->>>>>>> refs/remotes/origin/develop_branch
 
     if (anim != NULL) {
         Player_AnimPlayOnceAdjusted(play, this, anim);
@@ -6443,14 +6293,9 @@ void func_8083BA90(PlayState* play, Player* this, s32 arg2, f32 xzVelocity, f32 
     this->actor.bgCheckFlags &= ~1;
     this->hoverBootsTimer = 0;
 
-<<<<<<< HEAD
-    func_80832854(this);
-    func_80832698(this, NA_SE_VO_LI_SWORD_L);
-    }
-=======
     Player_PlayJumpingSfx(this);
     Player_PlayVoiceSfx(this, NA_SE_VO_LI_SWORD_L);
->>>>>>> refs/remotes/origin/develop_branch
+    }
 }
 
 s32 func_8083BB20(Player* this) {
@@ -6733,7 +6578,6 @@ s32 func_8083C61C(PlayState* play, Player* this) { //use deku nut
     return 0;
 }
 
-<<<<<<< HEAD
 s32 SSBJump(PlayState* play, Player* this) { //use deku nut
     if (numJumps == 0)func_80838940(this, gPlayerAnim_link_normal_run_jump, 6.7f, play, NA_SE_VO_LI_AUTO_JUMP); //First Jump
     else if (numJumps == 1) {
@@ -6761,8 +6605,6 @@ s32 SSBJump(PlayState* play, Player* this) { //use deku nut
     return 1;
 }
 
-static struct_80854554 D_80854554[] = {
-=======
 typedef struct BottleSwingInfo {
     /* 0x00 */ LinkAnimationHeader* missAnimation;
     /* 0x04 */ LinkAnimationHeader* catchAnimation;
@@ -6771,7 +6613,6 @@ typedef struct BottleSwingInfo {
 } BottleSwingInfo; // size = 0x0C
 
 static BottleSwingInfo sBottleSwingInfo[] = {
->>>>>>> refs/remotes/origin/develop_branch
     { &gPlayerAnim_link_bottle_bug_miss, &gPlayerAnim_link_bottle_bug_in, 2, 3 },
     { &gPlayerAnim_link_bottle_fish_miss, &gPlayerAnim_link_bottle_fish_in, 5, 3 },
 };
@@ -10879,11 +10720,7 @@ static u8 D_808546F0[] = { ITEM_SWORD_MASTER, ITEM_SWORD_KOKIRI };
 
 void func_80846720(PlayState* play, Player* this, s32 arg2) {
     s32 item = D_808546F0[(void)0, gSaveContext.linkAge];
-<<<<<<< HEAD
-    s32 actionParam = sItemActionParams[item]; //nope
-=======
     s32 itemAction = sItemActions[item];
->>>>>>> refs/remotes/origin/develop_branch
 
     Player_DestroyHookshot(this);
     Player_DetachHeldActor(play, this);
