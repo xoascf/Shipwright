@@ -1,10 +1,8 @@
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
 #include <vector>
 #include <memory>
-#include <string>
-#include "Resource.h"
 #include "SceneCommand.h"
 #include <libultraship/libultra/types.h>
 
@@ -35,7 +33,7 @@ typedef struct {
     /* 0x2 */ LightParams params;
 } LightInfo; // size = 0xE
 
-class SetLightList : public SceneCommand<LightInfo> {
+class SetLightList final : public SceneCommand<LightInfo> {
   public:
     using SceneCommand::SceneCommand;
 

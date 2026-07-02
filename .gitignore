@@ -2,6 +2,7 @@
 __pycache__/
 .pyc
 .DS_Store
+.cache/*
 
 # Text editor remnants
 .vscode/*
@@ -412,10 +413,12 @@ ReleaseObj/*
 .tags
 tags
 *.otr
+*.o2r
 *.sav
 shipofharkinian.ini
 shipofharkinian.json
 imgui.ini
+timesplitdata.json
 
 # Switch Stuff
 
@@ -454,5 +457,7 @@ soh/src/boot/build.c
 soh/properties.h
 
 # Tools
+.clangd
 /clang-format
 /clang-format.exe
+*.o2r

@@ -8,6 +8,7 @@
 
 #include "soh/frame_interpolation.h"
 #include "soh/Enhancements/controls/Mouse.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 
 s16 Camera_ChangeSettingFlags(Camera* camera, s16 setting, s16 flags);
 s32 Camera_ChangeModeFlags(Camera* camera, s16 mode, u8 flags);
@@ -1449,6 +1450,20 @@ s32 Camera_Free(Camera* camera) {
     Parallel1* para1 = (Parallel1*)camera->paramData;
     f32 playerHeight;
 
+    // SOH [Enhancement] If free-look is resuming after a scene-forced/fixed camera drove the view
+    // (Camera_Free didn't run last frame while manualCamera stayed set, e.g. exiting a Spirit Temple
+    // alcove), re-seed the free-look angles from the camera's current orientation so the view continues
+    // from where it was left instead of snapping back to the pre-interruption angle.
+    static s32 sFreeLastFrame = 0;
+    s32 curFrame = camera->play->state.frames;
+    if (curFrame - sFreeLastFrame > 1) {
+        VecSph eyeAdjustment;
+        OLib_Vec3fDiffToVecSphGeo(&eyeAdjustment, &camera->at, &camera->eye);
+        camera->play->camX = eyeAdjustment.yaw;
+        camera->play->camY = eyeAdjustment.pitch;
+    }
+    sFreeLastFrame = curFrame;
+
     at->x = Camera_LERPCeilF(camera->player->actor.world.pos.x, camera->at.x, 0.5f, 1.0f);
     at->y = Camera_LERPCeilF(camera->player->actor.world.pos.y + (camera->player->rideActor != NULL
                                                                       ? Player_GetHeight(camera->player) / 2
@@ -1512,7 +1527,11 @@ s32 Camera_Free(Camera* camera) {
         camera->play->camY = -0x228C;
     }
 
-    f32 distTarget = CVarGetInteger(CVAR_SETTING("FreeLook.MaxCameraDistance"), para1->distTarget);
+    // SOH [Enhancement] When set, use the game's per-mode default distance (para1->distTarget)
+    // instead of the fixed free-look distance.
+    f32 distTarget = CVarGetInteger(CVAR_SETTING("FreeLook.UseGameDistance"), 0)
+                         ? para1->distTarget
+                         : CVarGetInteger(CVAR_SETTING("FreeLook.MaxCameraDistance"), para1->distTarget);
     f32 speedScaler = CVarGetInteger(CVAR_SETTING("FreeLook.TransitionSpeed"), 25);
     f32 distDiff = ABS(distTarget - camera->dist);
     if (distDiff > 0)
@@ -4542,9 +4561,9 @@ s32 Camera_Subj4(Camera* camera) {
     }
 
     anim->unk_28 = temp_f16;
-    // camera->player->actor.world.pos = *eyeNext;
-    // camera->player->actor.world.pos.y = camera->playerGroundY;
-    // camera->player->actor.shape.rot.y = sp64.yaw;
+    camera->player->actor.world.pos = *eyeNext;
+    camera->player->actor.world.pos.y = camera->playerGroundY;
+    camera->player->actor.shape.rot.y = sp64.yaw;
     temp_f16 = ((240.0f * temp_f16) * (anim->unk_24 * 0.416667f));
     temp_a0 = temp_f16 + anim->unk_30;
     at->x = eye->x + (Math_SinS(temp_a0) * 10.0f);
@@ -6916,14 +6935,19 @@ s32 Camera_Special9(Camera* camera) {
             camera->unk_14C |= (0x400 | 0x10);
             sCameraInterfaceFlags = 0;
 
-            if (camera->xzSpeed > 0.001f || CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_A) ||
-                CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_B) ||
-                CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_CLEFT) ||
-                CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_CDOWN) ||
-                CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_CUP) ||
-                CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_CRIGHT) ||
-                CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_R) ||
-                CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_Z) || params->interfaceFlags & 0x8) {
+            // SOH [Enhancement] VB_RELEASE_DOORC_CAMERA lets free look hand the door peek camera
+            // back on right-stick input (see soh/Enhancements/camera/FreeLookDoorCamRelease.cpp).
+            if (GameInteractor_Should(
+                    VB_RELEASE_DOORC_CAMERA,
+                    camera->xzSpeed > 0.001f || CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_A) ||
+                        CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_B) ||
+                        CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_CLEFT) ||
+                        CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_CDOWN) ||
+                        CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_CUP) ||
+                        CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_CRIGHT) ||
+                        CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_R) ||
+                        CHECK_BTN_ALL(D_8015BD7C->state.input[0].press.button, BTN_Z) || params->interfaceFlags & 0x8,
+                    camera)) {
 
                 Camera_ChangeSettingFlags(camera, camera->prevSetting, 2);
                 camera->unk_14C |= (0x4 | 0x2);
@@ -7363,7 +7387,8 @@ s32 Camera_UpdateWater(Camera* camera) {
 
 s32 Camera_UpdateHotRoom(Camera* camera) {
     camera->distortionFlags &= ~DISTORTION_HOT_ROOM;
-    if (camera->play->roomCtx.curRoom.behaviorType2 == ROOM_BEHAVIOR_TYPE2_3) {
+    if (GameInteractor_Should(VB_HOT_ROOM_DISTORTION,
+                              camera->play->roomCtx.curRoom.behaviorType2 == ROOM_BEHAVIOR_TYPE2_3)) {
         camera->distortionFlags |= DISTORTION_HOT_ROOM;
     }
 

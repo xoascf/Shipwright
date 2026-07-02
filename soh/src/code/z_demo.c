@@ -728,7 +728,7 @@ void Cutscene_Command_Terminator(PlayState* play, CutsceneContext* csCtx, CsCmdB
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
             case 22:
-                if (GameInteractor_Should(VB_GIVE_ITEM_REQUIEM_OF_SPIRIT, true)) {
+                if (GameInteractor_Should(VB_GIVE_ITEM_SONG, true, ITEM_SONG_REQUIEM)) {
                     Item_Give(play, ITEM_SONG_REQUIEM);
                 }
                 play->nextEntranceIndex = ENTR_DESERT_COLOSSUS_EAST_EXIT;
@@ -868,7 +868,7 @@ void Cutscene_Command_Terminator(PlayState* play, CutsceneContext* csCtx, CsCmdB
                 play->transitionType = TRANS_TYPE_FADE_BLACK_FAST;
                 break;
             case 47:
-                if (GameInteractor_Should(VB_GIVE_ITEM_NOCTURNE_OF_SHADOW, true)) {
+                if (GameInteractor_Should(VB_GIVE_ITEM_SONG, true, ITEM_SONG_NOCTURNE)) {
                     Item_Give(play, ITEM_SONG_NOCTURNE);
                 }
                 Flags_SetEventChkInf(EVENTCHKINF_LEARNED_NOCTURNE_OF_SHADOW);
@@ -1229,31 +1229,43 @@ void Cutscene_Command_Terminator(PlayState* play, CutsceneContext* csCtx, CsCmdB
                 play->nextEntranceIndex = ENTR_INSIDE_GANONS_CASTLE_2;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
+                Flags_SetEventChkInf(EVENTCHKINF_COMPLETED_FOREST_TRIAL);
+                gSaveContext.eventChkInf[11] &= ~0x800;
                 break;
             case 108:
                 play->nextEntranceIndex = ENTR_INSIDE_GANONS_CASTLE_3;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
+                Flags_SetEventChkInf(EVENTCHKINF_COMPLETED_WATER_TRIAL);
+                gSaveContext.eventChkInf[11] &= ~0x1000;
                 break;
             case 109:
                 play->nextEntranceIndex = ENTR_INSIDE_GANONS_CASTLE_4;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
+                Flags_SetEventChkInf(EVENTCHKINF_COMPLETED_SHADOW_TRIAL);
+                gSaveContext.eventChkInf[11] &= ~0x2000;
                 break;
             case 110:
                 play->nextEntranceIndex = ENTR_INSIDE_GANONS_CASTLE_5;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
+                Flags_SetEventChkInf(EVENTCHKINF_COMPLETED_FIRE_TRIAL);
+                gSaveContext.eventChkInf[11] &= ~0x4000;
                 break;
             case 111:
                 play->nextEntranceIndex = ENTR_INSIDE_GANONS_CASTLE_6;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
+                Flags_SetEventChkInf(EVENTCHKINF_COMPLETED_LIGHT_TRIAL);
+                gSaveContext.eventChkInf[11] &= ~0x8000;
                 break;
             case 112:
                 play->nextEntranceIndex = ENTR_INSIDE_GANONS_CASTLE_7;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
+                Flags_SetEventChkInf(EVENTCHKINF_COMPLETED_SPIRIT_TRIAL);
+                gSaveContext.eventChkInf[10] &= ~0x2000;
                 break;
             case 113:
                 if (Flags_GetEventChkInf(EVENTCHKINF_COMPLETED_FOREST_TRIAL) &&

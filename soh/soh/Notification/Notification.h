@@ -3,7 +3,7 @@
 #ifdef __cplusplus
 
 #include <string>
-#include <libultraship/libultraship.h>
+#include <ship/window/gui/GuiWindow.h>
 
 namespace Notification {
 
@@ -17,6 +17,7 @@ struct Options {
     std::string suffix = "";
     ImVec4 suffixColor = ImVec4(1.0f, 0.5f, 0.5f, 1.0f);
     float remainingTime = 0.0f; // Seconds
+    bool mute = false;          // whether notification should make a noise
 };
 
 class Window final : public Ship::GuiWindow {

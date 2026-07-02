@@ -1339,9 +1339,9 @@ typedef struct {
     /*      */ char* frenchAge;
 } BetterSceneSelectAgeLabels;
 
-// NTSC TODO: japanese bettersceneselect
+
 typedef struct {
-//   /*      */ char* japaneseName;
+  /*      */ char* japaneseName;
   /*      */ char* englishName;
   /*      */ char* germanName;
   /*      */ char* frenchName;
@@ -1350,7 +1350,7 @@ typedef struct {
 } BetterSceneSelectEntrancePair;
 
 typedef struct {
-    // /*      */ char* japaneseName;
+    /*      */ char* japaneseName;
     /*      */ char* englishName;
     /*      */ char* germanName;
     /*      */ char* frenchName;
@@ -1522,7 +1522,7 @@ typedef struct {
     /* 0x34 */ s32 isEnabled;
 } StickDirectionPrompt;
 
-typedef struct {
+typedef struct FileChooseContext {
     /* 0x00000 */ GameState state;
     /* 0x000A4 */ Vtx* windowVtx;
     /* 0x000A8 */ u8* staticSegment;

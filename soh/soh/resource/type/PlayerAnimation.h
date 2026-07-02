@@ -1,8 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <string>
-#include "Resource.h"
+#include <ship/resource/Resource.h>
 
 namespace SOH {
 class PlayerAnimation : public Ship::Resource<int16_t> {

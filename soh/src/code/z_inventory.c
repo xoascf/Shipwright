@@ -1,8 +1,9 @@
 #include "global.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 #include "textures/icon_item_static/icon_item_static.h"
 #include "textures/icon_item_24_static/icon_item_24_static.h"
 #include "textures/parameter_static/parameter_static.h"
-#include "soh_assets.h"
+#include <soh_assets.h>
 
 // Bit Flag array in which gBitFlags[n] is literally (1 << n)
 u32 gBitFlags[] = {
@@ -168,37 +169,39 @@ void* gItemIcons[] = {
     gOcarinaBtnIconCLeftTex,
     gOcarinaBtnIconCRightTex,
     gOcarinaBtnIconATex,
-        131,
-        132,
-        133,
-        134,
-        135,
-        136,
-        137,
-        138,
-        139,
-        140,
-        141,
-        142,
-        143,
-        144,
-        145,
-        146,
-        147,
-        148,
-        149,
-        150,
-        151,
-        152,
-        153,
-        154,
-        155,
-        156,
-        157,
-        158,
-        159,
-        gJumpIconTex, //SSBJUMP
-        gJumpIconTex, //SSBJUMP
+    // Push down array to reach newly added item IDs
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "", // ITEM_CUSTOM
+    // Start custom items
+    gRocsFeatherTex,
+    "",
+    gJumpIconTex, //SSBJUMP
+    gJumpIconTex, //SSBJUMP
 };
 
 // Used to map item IDs to inventory slots
@@ -218,6 +221,8 @@ u8 gItemSlots[] = {
 void Inventory_ChangeEquipment(s16 equipment, u16 value) {
     gSaveContext.equips.equipment &= gEquipNegMasks[equipment];
     gSaveContext.equips.equipment |= value << gEquipShifts[equipment];
+
+    GameInteractor_ExecuteOnLinkEquipmentChange();
 }
 
 u8 Inventory_DeleteEquipment(PlayState* play, s16 equipment) {
@@ -236,19 +241,9 @@ u8 Inventory_DeleteEquipment(PlayState* play, s16 equipment) {
 
         if (equipment == EQUIP_TYPE_TUNIC) {
             gSaveContext.equips.equipment |= EQUIP_VALUE_TUNIC_KOKIRI << (EQUIP_TYPE_TUNIC * 4);
-            // non-vanilla: remove goron and zora tunics from item buttons if assignable tunics is on
-            if (CVarGetInteger(CVAR_ENHANCEMENT("AssignableTunicsAndBoots"), 0) &&
-                equipValue != EQUIP_VALUE_TUNIC_KOKIRI) {
-                ItemID item = (equipValue == EQUIP_VALUE_TUNIC_GORON ? ITEM_TUNIC_GORON : ITEM_TUNIC_ZORA);
-                for (int i = 1; i < ARRAY_COUNT(gSaveContext.equips.buttonItems); i++) {
-                    if (gSaveContext.equips.buttonItems[i] == item) {
-                        gSaveContext.equips.buttonItems[i] = ITEM_NONE;
-                        gSaveContext.equips.cButtonSlots[i - 1] = SLOT_NONE;
-                    }
-                }
-            }
-            // end non-vanilla
         }
+
+        GameInteractor_ExecuteOnEquipmentDelete(equipment, equipValue);
 
         if (equipment == EQUIP_TYPE_SWORD) {
             gSaveContext.equips.buttonItems[0] = ITEM_NONE;

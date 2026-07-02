@@ -1,4 +1,4 @@
-#include <libultraship/bridge.h>
+#include "soh/ResourceManagerHelpers.h"
 #include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 #include "soh/ShipInit.hpp"
 #include "global.h"
@@ -77,9 +77,9 @@ void CrawlSpeed_Register() {
     COND_VB_SHOULD(VB_CRAWL_SPEED_EXIT_CS, shouldRegister, {
         Player* player = GET_PLAYER(gPlayState);
         Camera* csCam = va_arg(args, Camera*);
-        s16 csId = va_arg(args, s16);
-        s16 actionParameters = va_arg(args, s16);
-        s16 initTimer = va_arg(args, s16);
+        s16 csId = static_cast<s16>(va_arg(args, int));
+        s16 actionParameters = static_cast<s16>(va_arg(args, int));
+        s16 initTimer = static_cast<s16>(va_arg(args, int));
         CutsceneCameraPoint* atPoints = va_arg(args, CutsceneCameraPoint*);
         CutsceneCameraPoint* eyePoints = va_arg(args, CutsceneCameraPoint*);
         bool excludeWellBackroom = (player->actor.world.pos.x > 950.0f) && (player->actor.world.pos.x < 1025.0f) &&
@@ -102,9 +102,18 @@ void CrawlSpeed_Register() {
 
     COND_VB_SHOULD(VB_CRAWL_SPEED_INCREASE, shouldRegister, {
         Player* player = GET_PLAYER(gPlayState);
-        IncreaseCrawlSpeed(player, gPlayState);
-        *should = false;
+        bool isMQ = ResourceMgr_IsGameMasterQuest();
+        bool boulderExists = !Flags_GetSwitch(gPlayState, 5);
+        bool excludeSpiritMQBoulder =
+            (gPlayState->sceneNum == SCENE_SPIRIT_TEMPLE && player->actor.world.pos.z < -545.0f &&
+             player->actor.world.pos.z > -630.0f && isMQ && boulderExists);
+        if (excludeSpiritMQBoulder) {
+            *should = true;
+        } else {
+            IncreaseCrawlSpeed(player, gPlayState);
+            *should = false;
+        }
     });
 }
 
-static RegisterShipInitFunc initSpeed(CrawlSpeed_Register, { CVAR_CRAWL_SPEED_NAME });
+static RegisterShipInitFunc initFunc(CrawlSpeed_Register, { CVAR_CRAWL_SPEED_NAME });

@@ -1,10 +1,9 @@
 #pragma once
 
 #include <memory>
-#include "Resource.h"
-#include "ResourceFactory.h"
+#include <ship/resource/Resource.h>
 #include "soh/resource/type/scenecommand/SceneCommand.h"
-#include "public/bridge/consolevariablebridge.h"
+#include <libultraship/bridge/consolevariablebridge.h>
 
 namespace SOH {
 class SceneCommandFactoryBinaryV0 {

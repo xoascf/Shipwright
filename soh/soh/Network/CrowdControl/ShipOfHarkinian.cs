@@ -74,7 +74,7 @@ public class ShipOfHarkinian : SimpleTCPPack<SimpleTCPServerConnector>
         new("Refill Deku Nuts", "refill_nuts") { Category = "Give Items/Consumables", Quantity = 30, Price = 3, Description = "Only works when the player already had Deku Nuts before." },
         new("Refill Bombs", "refill_bombs") { Category = "Give Items/Consumables", Quantity = 30, Price = 5, Description = "Only works when the player already has a bomb bag." },
         new("Refill Slingshot Seeds", "refill_seeds") { Category = "Give Items/Consumables", Quantity = 30, Price = 1, Description = "Only works when the player already has a Slingshot." },
-        new("Refill Arrows", "refill_arrows") { Category = "Give Items/Consumables", Price = 1, Description = "Only works when the player already has a bow." },
+        new("Refill Arrows", "refill_arrows") { Category = "Give Items/Consumables", Quantity = 30, Price = 1, Description = "Only works when the player already has a bow." },
         new("Refill Bombchus", "refill_bombchus") { Category = "Give Items/Consumables", Quantity = 30, Price = 5, Description = "Only works when the player already had Bombchus before." },
 
         // Take Items and Consumables
@@ -124,50 +124,5 @@ public class ShipOfHarkinian : SimpleTCPPack<SimpleTCPServerConnector>
         new("Requiem Destination", "tp_requiem") { Category = "Teleport Player", Price = 100, Description = "Teleport the player to Desert Colossus." },
         new("Nocturne Destination", "tp_nocturne") { Category = "Teleport Player", Price = 100, Description = "Teleport the player to the Raveyard." },
         new("Prelude Destination", "tp_prelude") { Category = "Teleport Player", Price = 100, Description = "Teleport the player to the Temple of Time." },
-
-        // Tunic Color (Bidding War)
-        new("Tunic Color", "tunic", ItemKind.BidWar)
-        {
-            Parameters = new ParameterDef("Color", "color_tunic_param",
-                new Parameter("Red", "red"),
-                new Parameter("Green", "green"),
-                new Parameter("Blue", "blue"),
-                new Parameter("Orange", "orange"),
-                new Parameter("Yellow", "yellow"),
-                new Parameter("Purple", "purple"),
-                new Parameter("Pink", "pink"),
-                new Parameter("Brown", "brown"),
-                new Parameter("Black", "black"))
-        },
-
-        // Navi Color (Bidding War)
-        new("Navi Color", "navi", ItemKind.BidWar)
-        {
-            Parameters = new ParameterDef("Color", "color_navi_param",
-                new Parameter("Red", "red"),
-                new Parameter("Green", "green"),
-                new Parameter("Blue", "blue"),
-                new Parameter("Orange", "orange"),
-                new Parameter("Yellow", "yellow"),
-                new Parameter("Purple", "purple"),
-                new Parameter("Pink", "pink"),
-                new Parameter("Brown", "brown"),
-                new Parameter("Black", "black"))
-        },
-
-        // Link's Hair Color (Bidding War)
-        new("Link's Hair Color", "hair", ItemKind.BidWar)
-        {
-            Parameters = new ParameterDef("Color", "color_hair_param",
-                new Parameter("Red", "red"),
-                new Parameter("Green", "green"),
-                new Parameter("Blue", "blue"),
-                new Parameter("Orange", "orange"),
-                new Parameter("Yellow", "yellow"),
-                new Parameter("Purple", "purple"),
-                new Parameter("Pink", "pink"),
-                new Parameter("Brown", "brown"),
-                new Parameter("Black", "black"))
-        }
     };
 }

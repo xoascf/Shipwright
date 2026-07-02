@@ -1,4 +1,3 @@
-#ifdef ENABLE_REMOTE_CONTROL
 #ifndef NETWORK_H
 #define NETWORK_H
 #ifdef __cplusplus
@@ -41,10 +40,10 @@ class Network {
     virtual void OnIncomingJson(nlohmann::json payload);
     virtual void OnConnected();
     virtual void OnDisconnected();
+    virtual void ProcessOutgoingPackets();
     void SendDataToRemote(const char* payload);
     virtual void SendJsonToRemote(nlohmann::json packet);
 };
 
 #endif // __cplusplus
 #endif // NETWORK_H
-#endif // ENABLE_REMOTE_CONTROL

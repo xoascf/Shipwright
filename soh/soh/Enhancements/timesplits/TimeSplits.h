@@ -2,19 +2,7 @@
 #ifndef TIMESPLITS_H
 #define TIMESPLITS_H
 
-#include <stdint.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // TIMESPLITS_H
-
-#include <libultraship/libultraship.h>
+#include <ship/window/gui/GuiWindow.h>
 
 #ifdef __cplusplus
 class TimeSplitWindow final : public Ship::GuiWindow {
@@ -66,3 +54,5 @@ typedef struct {
 } SplitObject;
 
 #endif
+
+#endif // TIMESPLITS_H

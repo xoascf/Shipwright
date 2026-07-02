@@ -2,12 +2,15 @@
 
 #include <array>
 #include <map>
+#include <set>
 #include <unordered_map>
 #include "randomizerTypes.h"
 #include "item.h"
+#include "item_location.h"
 #include "location.h"
 
 namespace Rando {
+
 /**
  * @brief Singleton for storing and accessing static Randomizer-related data
  *
@@ -48,7 +51,12 @@ class StaticData {
     static std::vector<RandomizerCheck> GetStaticHintLocations();
     static std::vector<RandomizerCheck> GetPondFishLocations();
     static std::vector<RandomizerCheck> GetOverworldFishLocations();
-    static std::vector<RandomizerCheck> GetOverworldFairyLocations();
+    static std::vector<RandomizerCheck> GetFountainFairyLocations();
+    static std::vector<RandomizerCheck> GetStoneFairyLocations();
+    static std::vector<RandomizerCheck> GetBeanFairyLocations();
+    static std::vector<RandomizerCheck> GetSongFairyLocations();
+    static void RegisterSongLocations();
+    static void RegisterBeehiveLocations();
     static void RegisterCowLocations();
     static void RegisterFishLocations();
     static void RegisterFairyLocations();
@@ -56,6 +64,13 @@ class StaticData {
     static void RegisterFreestandingLocations();
     static void RegisterGrassLocations();
     static void RegisterCrateLocations();
+    static void RegisterRockLocations();
+    static void RegisterTreeLocations();
+    static void RegisterSignLocations();
+    static void RegisterWonderItemLocations();
+    static void RegisterBeggarLocations();
+    static void RegisterIcicleLocations();
+    static void RegisterRedIceLocations();
     static void InitHashMaps();
     static std::array<std::pair<RandomizerCheck, RandomizerCheck>, 17> randomizerFishingPondFish;
     static std::unordered_map<int8_t, RandomizerCheck> randomizerGrottoFishMap;
@@ -76,7 +91,18 @@ class StaticData {
     static std::unordered_map<RandomizerHint, StaticHintInfo> staticHintInfoMap;
     static std::unordered_map<u32, RandomizerHint> stoneParamsToHint;
     static std::unordered_map<u32, RandomizerHint> grottoChestParamsToHint;
+    static std::unordered_map<std::string, RandomizerTrick> trickToEnum;
     static std::array<HintText, RHT_MAX> hintTextTable;
+    static std::vector<RandomizerGet> normalBottles;
+    static std::vector<RandomizerGet> beanSouls;
+    static std::vector<RandomizerGet> overworldKeys;
+    static std::map<RandomizerGet, uint32_t> RandoGetToRandInf;
+    static std::unordered_map<SceneID, std::set<RandomizerGet>> itemRestrictions;
+    static std::set<RandomizerGet> restrictFW;
+    static std::set<RandomizerGet> restrictSpells;
+    static std::set<RandomizerGet> restrictTrade;
+    static std::set<RandomizerGet> allowMasks;
+    static std::set<RandomizerGet> allowBottleMaskTrade;
 
     StaticData();
     ~StaticData();

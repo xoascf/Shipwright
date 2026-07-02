@@ -3,7 +3,7 @@
 #include <map>
 #include <string>
 #include <set>
-#include <cstdint>
+#include <stdint.h>
 
 enum SeqType {
     SEQ_NOSHUFFLE = 0,
@@ -16,6 +16,7 @@ enum SeqType {
     SEQ_SFX = 1 << 6,
     SEQ_INSTRUMENT = 1 << 7,
     SEQ_VOICE = 1 << 8,
+    SEQ_ENDING = 1 << 9,
     SEQ_BGM_CUSTOM = SEQ_BGM_WORLD | SEQ_BGM_EVENT | SEQ_BGM_BATTLE,
 };
 
@@ -73,4 +74,5 @@ void AudioCollection_AddToCollection(char* otrPath, uint16_t seqNum);
 const char* AudioCollection_GetSequenceName(uint16_t seqId);
 bool AudioCollection_HasSequenceNum(uint16_t seqId);
 size_t AudioCollection_SequenceMapSize();
+void AudioCollection_EmitSongNameNotification(s32 seqId);
 #endif

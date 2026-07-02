@@ -6,6 +6,8 @@
 
 #include "z_bg_po_event.h"
 #include "objects/object_po_sisters/object_po_sisters.h"
+#include "soh/Enhancements/game-interactor/GameInteractor.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 
 #define FLAGS 0
 
@@ -228,7 +230,7 @@ void BgPoEvent_Destroy(Actor* thisx, PlayState* play) {
     } else {
         DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
         if ((this->type == 1) && (gSaveContext.timerSeconds > 0)) {
-            gSaveContext.timerState = 0xA;
+            gSaveContext.timerState = TIMER_STATE_STOP;
         }
     }
 }
@@ -317,7 +319,7 @@ void BgPoEvent_BlockFall(BgPoEvent* this, PlayState* play) {
         } else {
             Audio_PlayActorSound2(&this->dyna.actor, NA_SE_EV_STONE_BOUND);
             func_80033E88(&this->dyna.actor, play, 5, 5);
-            func_80088B34(this->timer);
+            Interface_SetTimer(this->timer);
             if (firstFall == 0) {
                 firstFall = 1;
             } else {
@@ -333,17 +335,17 @@ void BgPoEvent_BlockIdle(BgPoEvent* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     Actor* amy;
 
-    if (sBgPoEventPuzzleState == 0xF) {
+    if (GameInteractor_Should(VB_AMY_SOLVE, sBgPoEventPuzzleState == 0xF)) {
         this->actionFunc = BgPoEvent_BlockSolved;
         if ((this->type == 0) && (this->index == 0)) {
             amy = Actor_Spawn(&play->actorCtx, play, ACTOR_EN_PO_SISTERS, this->dyna.actor.world.pos.x + 30.0f,
                               this->dyna.actor.world.pos.y - 30.0f, this->dyna.actor.world.pos.z + 30.0f, 0,
-                              this->dyna.actor.shape.rot.y, 0, this->dyna.actor.params + 0x300, true);
+                              this->dyna.actor.shape.rot.y, 0, this->dyna.actor.params + 0x300);
             if (amy != NULL) {
                 OnePointCutscene_Init(play, 3170, 30, amy, MAIN_CAM);
             }
             Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
-            gSaveContext.timerState = 0xA;
+            gSaveContext.timerState = TIMER_STATE_STOP;
         }
     } else {
         if ((gSaveContext.timerSeconds == 0) && (sBgPoEventBlocksAtRest == 5)) {
@@ -536,7 +538,7 @@ void BgPoEvent_PaintingPresent(BgPoEvent* this, PlayState* play) {
     } else if (this->collider.base.acFlags & AC_HIT) {
         if (!BgPoEvent_NextPainting(this)) {
             Actor_Spawn(&play->actorCtx, play, ACTOR_EN_PO_SISTERS, thisx->world.pos.x, thisx->world.pos.y - 40.0f,
-                        thisx->world.pos.z, 0, thisx->shape.rot.y, 0, thisx->params + ((this->type - 1) << 8), true);
+                        thisx->world.pos.z, 0, thisx->shape.rot.y, 0, thisx->params + ((this->type - 1) << 8));
             OnePointCutscene_Init(play, 3160, 80, thisx, MAIN_CAM);
             Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
 

@@ -9,6 +9,7 @@
 #include "objects/object_horse/object_horse.h"
 #include "objects/object_hni/object_hni.h"
 #include "scenes/overworld/spot09/spot09_scene.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 #include <assert.h>
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
@@ -532,7 +533,7 @@ void EnHorse_RaceWaypointPos(RaceWaypoint* waypoints, s32 idx, Vec3f* pos) {
 }
 
 void EnHorse_RotateToPoint(EnHorse* this, PlayState* play, Vec3f* pos, s16 turnAmount) {
-    func_8006DD9C(&this->actor, pos, turnAmount);
+    Horse_RotateToPoint(&this->actor, pos, turnAmount);
 }
 
 void EnHorse_UpdateIngoRaceInfo(EnHorse* this, PlayState* play, RaceInfo* raceInfo) {
@@ -869,9 +870,8 @@ void EnHorse_Init(Actor* thisx, PlayState* play2) {
         EnHorse_InitInactive(this);
     } else if (this->actor.params == 3) {
         EnHorse_InitIngoHorse(this);
-        this->rider =
-            Actor_Spawn(&play->actorCtx, play, ACTOR_EN_IN, this->actor.world.pos.x, this->actor.world.pos.y,
-                        this->actor.world.pos.z, this->actor.shape.rot.x, this->actor.shape.rot.y, 1, 1, true);
+        this->rider = Actor_Spawn(&play->actorCtx, play, ACTOR_EN_IN, this->actor.world.pos.x, this->actor.world.pos.y,
+                                  this->actor.world.pos.z, this->actor.shape.rot.x, this->actor.shape.rot.y, 1, 1);
         if (this->rider == NULL) {
             assert(this->rider == NULL);
         }
@@ -3333,7 +3333,7 @@ void EnHorse_CheckBoost(EnHorse* thisx, PlayState* play2) {
                     this->stateFlags |= ENHORSE_BOOST;
                     this->stateFlags |= ENHORSE_FIRST_BOOST_REGEN;
                     this->stateFlags |= ENHORSE_FLAG_8;
-                    if (!CVarGetInteger(CVAR_CHEAT("InfiniteEponaBoost"), 0)) {
+                    if (GameInteractor_Should(VB_CONSUME_EPONA_BOOST, true, this)) {
                         this->numBoosts--;
                     }
                     this->boostTimer = 0;

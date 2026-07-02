@@ -5,8 +5,10 @@
 #include "textures/map_i_static/map_i_static.h"
 #include "textures/map_grand_static/map_grand_static.h"
 #include <assert.h>
+#include <libultraship/bridge/resourcebridge.h>
 #include "soh/OTRGlobals.h"
 #include "soh/Enhancements/cosmetics/cosmeticsTypes.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 
 MapData* gMapData;
 
@@ -761,6 +763,10 @@ void Minimap_DrawCompassIcons(PlayState* play) {
     }
 
     CLOSE_DISPS(play->state.gfxCtx);
+
+    if (play->interfaceCtx.minimapAlpha >= 0xAA) {
+        GameInteractor_ExecuteOnMinimapDrawCompassIcons();
+    }
 }
 
 void Minimap_Draw(PlayState* play) {

@@ -1,8 +1,8 @@
 #include "z_en_skj.h"
 #include "overlays/actors/ovl_En_Skjneedle/z_en_skjneedle.h"
 #include "objects/object_skj/object_skj.h"
+#include "soh/Enhancements/enhancementTypes.h"
 #include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
-#include "soh/OTRGlobals.h"
 #include "soh/ResourceManagerHelpers.h"
 
 #define FLAGS                                                                                 \
@@ -404,7 +404,9 @@ void EnSkj_Init(Actor* thisx, PlayState* play2) {
         default:
             this->actor.params = type;
             if (((this->actor.params != 0) && (this->actor.params != 1)) && (this->actor.params != 2)) {
-                if (INV_CONTENT(ITEM_TRADE_ADULT) < ITEM_SAW) {
+                if (INV_CONTENT(ITEM_TRADE_ADULT) < ITEM_SAW &&
+                    CVarGetInteger(CVAR_ENHANCEMENT("RandomizedEnemies"), ENEMY_RANDOMIZER_OFF) ==
+                        ENEMY_RANDOMIZER_OFF) {
                     Actor_Kill(&this->actor);
                     return;
                 }
@@ -513,9 +515,8 @@ s32 EnSkj_ShootNeedle(EnSkj* this, PlayState* play) {
     pos2.z += this->actor.world.pos.z;
     pos2.y = this->actor.world.pos.y + 27.0f;
 
-    needle =
-        (EnSkjneedle*)Actor_Spawn(&play->actorCtx, play, ACTOR_EN_SKJNEEDLE, pos2.x, pos2.y, pos2.z,
-                                  this->actor.shape.rot.x, this->actor.shape.rot.y, this->actor.shape.rot.z, 0, true);
+    needle = (EnSkjneedle*)Actor_Spawn(&play->actorCtx, play, ACTOR_EN_SKJNEEDLE, pos2.x, pos2.y, pos2.z,
+                                       this->actor.shape.rot.x, this->actor.shape.rot.y, this->actor.shape.rot.z, 0);
     if (needle != NULL) {
         needle->killTimer = 100;
         needle->actor.speedXZ = 24.0f;

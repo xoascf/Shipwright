@@ -507,7 +507,7 @@ void EnRr_CollisionCheck(EnRr* this, PlayState* play) {
             this->collider2.base.ocFlags1 &= ~OC1_HIT;
             // "catch"
             osSyncPrintf(VT_FGCOL(GREEN) "キャッチ(%d)！！" VT_RST "\n", this->frameCount);
-            if (play->grabPlayer(play, player)) {
+            if (GameInteractor_Should(VB_LIKE_LIKE_GRAB_PLAYER, true, this) && play->grabPlayer(play, player)) {
                 player->actor.parent = &this->actor;
                 this->stopScroll = false;
                 EnRr_SetupGrabPlayer(this, player);
@@ -854,8 +854,9 @@ void EnRr_Draw(Actor* thisx, PlayState* play) {
     Gfx_SetupDL_25Xlu(play->state.gfxCtx);
     gSPSegment(POLY_XLU_DISP++, 0x0C, segMtx);
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, 0, (this->scrollTimer * 0) & 0x7F, (this->scrollTimer * 0) & 0x3F,
-                                32, 16, 1, (this->scrollTimer * 0) & 0x3F, (this->scrollTimer * -6) & 0x7F, 32, 16));
+               Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, (this->scrollTimer * 0) & 0x7F, (this->scrollTimer * 0) & 0x3F,
+                                  32, 16, 1, (this->scrollTimer * 0) & 0x3F, (this->scrollTimer * -6) & 0x7F, 32, 16, 0,
+                                  0, 0, this->stopScroll ? 0 : -6));
     Matrix_Push();
 
     Matrix_Scale((1.0f + this->bodySegs[RR_BASE].scaleMod.x) * this->bodySegs[RR_BASE].scale.x,

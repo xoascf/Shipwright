@@ -1,5 +1,7 @@
 #include <soh/OTRGlobals.h>
 #include "static_data.h"
+#include "soh/Enhancements/randomizer/randomizer.h"
+#include "soh/Enhancements/randomizer/RCToRandInf.h"
 
 extern "C" {
 #include "src/overlays/actors/ovl_En_Cow/z_en_cow.h"
@@ -29,18 +31,40 @@ void EnCow_MoveForRandomizer(EnCow* enCow, PlayState* play) {
 
     if (moved) {
         // Reposition collider
-        func_809DEE9C(enCow);
+        EnCow_SetColliderPos(enCow);
     }
 }
 
+static CheckIdentity IdentifyCow(s32 sceneNum, s32 posX, s32 posZ) {
+    CheckIdentity cowIdentity;
+
+    cowIdentity.randomizerInf = RAND_INF_MAX;
+    cowIdentity.randomizerCheck = RC_UNKNOWN_CHECK;
+
+    s32 actorParams = 0x00;
+    // Only need to pass params if in a scene with two cows
+    if (sceneNum == SCENE_GROTTOS || sceneNum == SCENE_STABLE || sceneNum == SCENE_LON_LON_BUILDINGS) {
+        actorParams = TWO_ACTOR_PARAMS(posX, posZ);
+    }
+
+    Rando::Location* location =
+        OTRGlobals::Instance->gRandomizer->GetCheckObjectFromActor(ACTOR_EN_COW, sceneNum, actorParams);
+
+    if (location->GetRandomizerCheck() != RC_UNKNOWN_CHECK) {
+        cowIdentity.randomizerInf = rcToRandomizerInf[location->GetRandomizerCheck()];
+        cowIdentity.randomizerCheck = location->GetRandomizerCheck();
+    }
+
+    return cowIdentity;
+}
+
 void RegisterShuffleCows() {
-    bool shouldRegister = IS_RANDO && Rando::Context::GetInstance()->GetOption(RSK_SHUFFLE_COWS).Get();
+    bool shouldRegister = IS_RANDO && RAND_GET_OPTION(RSK_SHUFFLE_COWS);
 
     COND_VB_SHOULD(VB_GIVE_ITEM_FROM_COW, shouldRegister, {
         EnCow* enCow = va_arg(args, EnCow*);
-        CowIdentity cowIdentity = OTRGlobals::Instance->gRandomizer->IdentifyCow(
-            gPlayState->sceneNum, static_cast<int32_t>(enCow->actor.world.pos.x),
-            static_cast<int32_t>(enCow->actor.world.pos.z));
+        CheckIdentity cowIdentity = IdentifyCow(gPlayState->sceneNum, static_cast<int32_t>(enCow->actor.world.pos.x),
+                                                static_cast<int32_t>(enCow->actor.world.pos.z));
         // Has this cow already rewarded an item?
         if (!Flags_GetRandomizerInf(cowIdentity.randomizerInf)) {
             Flags_SetRandomizerInf(cowIdentity.randomizerInf);
@@ -58,7 +82,7 @@ void RegisterShuffleCows() {
     });
 }
 
-static RegisterShipInitFunc initFunc(RegisterShuffleCows, { "IS_RANDO" });
+static RegisterShipInitFunc registerShuffleCows(RegisterShuffleCows, { "IS_RANDO" });
 
 void Rando::StaticData::RegisterCowLocations() {
     static bool registered = false;
@@ -76,8 +100,7 @@ void Rando::StaticData::RegisterCowLocations() {
     locationTable[RC_DMT_COW_GROTTO_COW] =      Location::Base(RC_DMT_COW_GROTTO_COW,      RCQUEST_BOTH, RCTYPE_COW, RCAREA_DEATH_MOUNTAIN_TRAIL, ACTOR_EN_COW, SCENE_GROTTOS,           TWO_ACTOR_PARAMS(2444, -471),       "Cow Grotto Cow",    RHT_DMT_COW_GROTTO_COW,      RG_MILK, SpoilerCollectionCheck::RandomizerInf(RAND_INF_COWS_MILKED_DMT_COW_GROTTO_COW));
     locationTable[RC_GV_COW] =                  Location::Base(RC_GV_COW,                  RCQUEST_BOTH, RCTYPE_COW,                              ACTOR_EN_COW, SCENE_GERUDO_VALLEY,     0x00,                               "Cow",               RHT_GV_COW,                  RG_MILK, SpoilerCollectionCheck::RandomizerInf(RAND_INF_COWS_MILKED_GV_COW));
     locationTable[RC_JABU_JABUS_BELLY_MQ_COW] = Location::Base(RC_JABU_JABUS_BELLY_MQ_COW, RCQUEST_MQ,   RCTYPE_COW,                              ACTOR_EN_COW, SCENE_JABU_JABU,         0x00,                               "MQ Cow",            RHT_JABU_JABUS_BELLY_MQ_COW, RG_MILK, SpoilerCollectionCheck::RandomizerInf(RAND_INF_COWS_MILKED_JABU_JABUS_BELLY_MQ_COW));
-
     // clang-format-on
 }
 
-static RegisterShipInitFunc registerFunc(Rando::StaticData::RegisterCowLocations);
+static RegisterShipInitFunc registerCowLocations(Rando::StaticData::RegisterCowLocations);

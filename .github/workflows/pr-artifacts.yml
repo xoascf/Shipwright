@@ -12,7 +12,7 @@ jobs:
     if: ${{ github.event.workflow_run.event == 'pull_request' }}
     steps:
       - id: 'pr-number'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           result-encoding: string
           script: |
@@ -37,7 +37,7 @@ jobs:
 
             return prNumber;
       - id: 'artifacts-text'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           result-encoding: string
           script: |
@@ -48,7 +48,7 @@ jobs:
             });
 
             return allArtifacts.data.artifacts.reduce((acc, item) => {
-              if (item.name === "soh.otr") return acc;
+              if (item.name === "soh.o2r") return acc;
               acc += `
               - [${item.name}.zip](https://nightly.link/${context.repo.owner}/${context.repo.repo}/actions/artifacts/${item.id}.zip)`;
               return acc;

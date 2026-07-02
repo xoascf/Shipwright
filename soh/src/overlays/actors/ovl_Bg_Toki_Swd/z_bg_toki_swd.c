@@ -131,8 +131,14 @@ void func_808BAF40(BgTokiSwd* this, PlayState* play) {
                     Item_Give(play, ITEM_SWORD_MASTER);
                 }
                 play->csCtx.segment = D_808BB2F0;
+
+                // Discover adult spawn
+                Entrance_SetEntranceDiscovered(ENTR_HYRULE_FIELD_10, false);
             } else {
                 play->csCtx.segment = D_808BB7A0;
+
+                // Discover child spawn
+                Entrance_SetEntranceDiscovered(ENTR_LINKS_HOUSE_CHILD_SPAWN, false);
             }
             Audio_QueueSeqCmd(SEQ_PLAYER_BGM_MAIN << 24 | NA_BGM_STOP);
             Audio_QueueSeqCmd(SEQ_PLAYER_BGM_MAIN << 24 | NA_BGM_MASTER_SWORD);
@@ -203,7 +209,8 @@ void BgTokiSwd_Draw(Actor* thisx, PlayState* play2) {
 
     func_8002EBCC(&this->actor, play, 0);
 
-    gSPSegment(POLY_OPA_DISP++, 0x08, Gfx_TexScroll(play->state.gfxCtx, 0, -(play->gameplayFrames % 0x80), 32, 32));
+    gSPSegment(POLY_OPA_DISP++, 0x08,
+               Gfx_TexScrollEx(play->state.gfxCtx, 0, -(play->gameplayFrames % 0x80), 32, 32, 0, -1));
     gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
     gSPDisplayList(POLY_OPA_DISP++, object_toki_objects_DL_001BD0);
 

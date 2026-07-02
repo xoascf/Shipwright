@@ -3,10 +3,11 @@
 #include "objects/gameplay_field_keep/gameplay_field_keep.h"
 #include "objects/object_link_boy/object_link_boy.h"
 #include "objects/object_link_child/object_link_child.h"
-#include "objects/object_triforce_spot/object_triforce_spot.h"
 #include "overlays/actors/ovl_Demo_Effect/z_demo_effect.h"
 
+#include <libultraship/bridge/resourcebridge.h>
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 #include "soh/Enhancements/randomizer/draw.h"
 #include "soh/ResourceManagerHelpers.h"
 
@@ -649,6 +650,7 @@ void Player_SetModels(Player* this, s32 modelGroup) {
     this->waistDLists = &sPlayerDListGroups[gPlayerModelTypes[modelGroup][4]][gSaveContext.linkAge];
 
     Player_SetModelsForHoldingShield(this);
+    GameInteractor_ExecuteOnPlayerSetModels(this, modelGroup);
 }
 
 void Player_SetModelGroup(Player* this, s32 modelGroup) {
@@ -692,7 +694,9 @@ void Player_UpdateBottleHeld(PlayState* play, Player* this, s32 item, s32 action
         this->heldItemAction = actionParam;
     }
 
-    this->itemAction = actionParam;
+    if (GameInteractor_Should(VB_PLAYER_UPDATE_BOTTLE_HELD, true, this)) {
+        this->itemAction = actionParam;
+    }
 }
 
 void Player_ReleaseLockOn(Player* this) {
@@ -843,16 +847,6 @@ s32 Player_HoldsSlingshot(Player* this) {
     return this->heldItemAction == PLAYER_IA_SLINGSHOT;
 }
 
-// #region SOH [Enhancement]
-s32 Player_HoldsBoomerang(Player* this) {
-    return this->heldItemAction == PLAYER_IA_BOOMERANG;
-}
-
-s32 Player_AimsBoomerang(Player* this) {
-    return Player_HoldsBoomerang(this) && (this->unk_834 != 0);
-}
-// #endregion
-
 s32 func_8008F128(Player* this) {
     return Player_HoldsHookshot(this) && (this->heldActor == NULL);
 }
@@ -930,28 +924,32 @@ return_neg:
 s32 Player_GetEnvironmentalHazard(PlayState* play) {
     Player* this = GET_PLAYER(play);
     TextTriggerEntry* triggerEntry;
-    s32 var;
+    s32 envHazard;
 
     if (play->roomCtx.curRoom.behaviorType2 == ROOM_BEHAVIOR_TYPE2_3) { // Room is hot
-        var = 0;
+        envHazard = PLAYER_ENV_HAZARD_HOTROOM - 1;
     } else if ((this->underwaterTimer > 80) &&
                ((this->currentBoots == PLAYER_BOOTS_IRON) || (this->underwaterTimer >= 300))) { // Deep underwater
-        var = ((this->currentBoots == PLAYER_BOOTS_IRON) && (this->actor.bgCheckFlags & 1)) ? 1 : 3;
+        envHazard = ((this->currentBoots == PLAYER_BOOTS_IRON) && (this->actor.bgCheckFlags & 1))
+                        ? (PLAYER_ENV_HAZARD_UNDERWATER_FLOOR - 1)
+                        : (PLAYER_ENV_HAZARD_UNDERWATER_FREE - 1);
     } else if (this->stateFlags1 & PLAYER_STATE1_IN_WATER) { // Swimming
-        var = 2;
+        envHazard = PLAYER_ENV_HAZARD_SWIMMING - 1;
     } else {
-        return 0;
+        return PLAYER_ENV_HAZARD_NONE;
     }
 
     // Trigger general textboxes under certain conditions, like "It's so hot in here!"
     if (!Player_InCsMode(play)) {
-        triggerEntry = &sTextTriggers[var];
+        triggerEntry = &sTextTriggers[envHazard];
 
         if ((triggerEntry->flag != 0) && !(gSaveContext.textTriggerFlags & triggerEntry->flag) &&
-            (((var == 0) &&
+            (((envHazard == (PLAYER_ENV_HAZARD_HOTROOM - 1)) &&
               (this->currentTunic != PLAYER_TUNIC_GORON && CVarGetInteger(CVAR_CHEAT("SuperTunic"), 0) == 0 &&
                CVarGetInteger(CVAR_ENHANCEMENT("DisableTunicWarningText"), 0) == 0)) ||
-             (((var == 1) || (var == 3)) && (this->currentBoots == PLAYER_BOOTS_IRON) &&
+             (((envHazard == (PLAYER_ENV_HAZARD_UNDERWATER_FLOOR - 1)) ||
+               (envHazard == (PLAYER_ENV_HAZARD_UNDERWATER_FREE - 1))) &&
+              (this->currentBoots == PLAYER_BOOTS_IRON) &&
               (this->currentTunic != PLAYER_TUNIC_ZORA && CVarGetInteger(CVAR_CHEAT("SuperTunic"), 0) == 0 &&
                CVarGetInteger(CVAR_ENHANCEMENT("DisableTunicWarningText"), 0) == 0)))) {
             Message_StartTextbox(play, triggerEntry->textId, NULL);
@@ -959,7 +957,7 @@ s32 Player_GetEnvironmentalHazard(PlayState* play) {
         }
     }
 
-    return var + 1;
+    return envHazard + 1;
 }
 
 u8 sEyeMouthIndexes[][2] = {
@@ -1023,6 +1021,11 @@ Color_RGB8 sTunicColors[] = {
 Color_RGB8 sGauntletColors[] = {
     { 255, 255, 255 },
     { 254, 207, 15 },
+    // #region SOH [RBA] values matching OOB reads on N64
+    { 0, 0, 6 },
+    { 2, 89, 24 },
+    { 6, 2, 90 },
+    { 96, 6, 2 },
 };
 
 Gfx* sBootDListGroups[][2] = {
@@ -1076,7 +1079,9 @@ void Player_DrawImpl(PlayState* play, void** skeleton, Vec3s* jointTable, s32 dL
         color = &sTemp;
     }
 
-    gDPSetEnvColor(POLY_OPA_DISP++, color->r, color->g, color->b, 0);
+    if (GameInteractor_Should(VB_APPLY_TUNIC_COLOR, true, data, color)) {
+        gDPSetEnvColor(POLY_OPA_DISP++, color->r, color->g, color->b, 0);
+    }
 
     // If we have a custom link model, always use the most detailed LOD
     if (Player_IsCustomLinkModel()) {
@@ -1100,13 +1105,11 @@ void Player_DrawImpl(PlayState* play, void** skeleton, Vec3s* jointTable, s32 dL
                 color = &sGauntletColors[strengthUpgrade - 2];
                 if (strengthUpgrade == PLAYER_STR_SILVER_G &&
                     CVarGetInteger(CVAR_COSMETIC("Gloves.SilverGauntlets.Changed"), 0)) {
-                    sTemp = CVarGetColor24(CVAR_COSMETIC("Gloves.SilverGauntlets.Value"),
-                                           sGauntletColors[PLAYER_STR_SILVER_G - 2]);
+                    sTemp = CVarGetColor24(CVAR_COSMETIC("Gloves.SilverGauntlets.Value"), *color);
                     color = &sTemp;
                 } else if (strengthUpgrade == PLAYER_STR_GOLD_G &&
                            CVarGetInteger(CVAR_COSMETIC("Gloves.GoldenGauntlets.Changed"), 0)) {
-                    sTemp = CVarGetColor24(CVAR_COSMETIC("Gloves.GoldenGauntlets.Value"),
-                                           sGauntletColors[PLAYER_STR_GOLD_G - 2]);
+                    sTemp = CVarGetColor24(CVAR_COSMETIC("Gloves.GoldenGauntlets.Value"), *color);
                     color = &sTemp;
                 }
                 gDPSetEnvColor(POLY_OPA_DISP++, color->r, color->g, color->b, 0);
@@ -1316,12 +1319,14 @@ s32 Player_OverrideLimbDrawGameplayCommon(PlayState* play, s32 limbIndex, Gfx** 
         if (limbIndex == PLAYER_LIMB_HEAD) {
             if (CVarGetInteger(CVAR_COSMETIC("Link.HeadScale.Changed"), 0)) {
                 f32 scale = CVarGetFloat(CVAR_COSMETIC("Link.HeadScale.Value"), 1.0f);
-                Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
-                if (scale > 1.2f) {
-                    Matrix_Translate(-((LINK_IS_ADULT ? 320.0f : 200.0f) * scale), 0.0f, 0.0f, MTXMODE_APPLY);
-                } else if (scale < 1.0f) {
-                    Matrix_Translate((LINK_IS_ADULT ? 3600.0f : 2900.0f) * ABS(scale - 1.0f), 0.0f, 0.0f,
-                                     MTXMODE_APPLY);
+                if (scale != 1.0f) {
+                    Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+                    if (scale > 1.2f) {
+                        Matrix_Translate(-((LINK_IS_ADULT ? 320.0f : 200.0f) * scale), 0.0f, 0.0f, MTXMODE_APPLY);
+                    } else if (scale < 1.0f) {
+                        Matrix_Translate((LINK_IS_ADULT ? 3600.0f : 2900.0f) * ABS(scale - 1.0f), 0.0f, 0.0f,
+                                         MTXMODE_APPLY);
+                    }
                 }
             }
             rot->x += this->headLimbRot.z;
@@ -1330,8 +1335,10 @@ s32 Player_OverrideLimbDrawGameplayCommon(PlayState* play, s32 limbIndex, Gfx** 
         } else if (limbIndex == PLAYER_LIMB_L_HAND) {
             if (CVarGetInteger(CVAR_COSMETIC("Link.SwordScale.Changed"), 0)) {
                 f32 scale = CVarGetFloat(CVAR_COSMETIC("Link.SwordScale.Value"), 1.0f);
-                Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
-                Matrix_Translate(-((LINK_IS_ADULT ? 320.0f : 200.0f) * scale), 0.0f, 0.0f, MTXMODE_APPLY);
+                if (scale != 1.0f) {
+                    Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+                    Matrix_Translate(-((LINK_IS_ADULT ? 320.0f : 200.0f) * (scale - 1.0f)), 0.0f, 0.0f, MTXMODE_APPLY);
+                }
             }
         } else if (limbIndex == PLAYER_LIMB_UPPER) {
             if (this->upperLimbYawSecondary != 0) {
@@ -1433,6 +1440,8 @@ s32 Player_OverrideLimbDrawGameplayDefault(PlayState* play, s32 limbIndex, Gfx**
         }
     }
 
+    GameInteractor_Should(VB_PLAYER_OVERRIDE_LIMB_DRAW, true, limbIndex, dList, thisx, play);
+
     if (GameInteractor_InvisibleLinkActive()) {
         this->actor.shape.shadowDraw = NULL;
         *dList = NULL;
@@ -1478,6 +1487,8 @@ s32 Player_OverrideLimbDrawGameplayFirstPerson(PlayState* play, s32 limbIndex, G
             *dList = NULL;
         }
     }
+
+    GameInteractor_Should(VB_PLAYER_OVERRIDE_LIMB_DRAW, true, limbIndex, dList, thisx, play);
 
     return false;
 }
@@ -1561,7 +1572,8 @@ void func_800906D4(PlayState* play, Player* this, Vec3f* newTipPos) {
     Matrix_MultVec3f(&D_801260A4[2], &newBasePos[2]);
 
     if (func_80090480(play, NULL, &this->meleeWeaponInfo[0], &newTipPos[0], &newBasePos[0]) &&
-        !(this->stateFlags1 & PLAYER_STATE1_SHIELDING)) {
+        !(this->stateFlags1 & PLAYER_STATE1_SHIELDING) &&
+        !CVarGetInteger(CVAR_ENHANCEMENT("DisableLinkSwordTrail"), 0)) {
         EffectBlure_AddVertex(Effect_GetByIndex(this->meleeWeaponEffectIndex), &this->meleeWeaponInfo[0].tip,
                               &this->meleeWeaponInfo[0].base);
     }
@@ -1594,21 +1606,28 @@ void Player_DrawGetItemIceTrap(PlayState* play, Player* this, Vec3f* refPos, s32
         } else if (iceTrapScale < 0.8f) {
             iceTrapScale += 0.2f;
         }
-        gSPSegment(POLY_XLU_DISP++, 0x08,
-                   Gfx_TwoTexScroll(play->state.gfxCtx, 0, 0, (0 - play->gameplayFrames) % 128, 32, 32, 1, 0,
-                                    (play->gameplayFrames * -2) % 128, 32, 32));
 
-        Matrix_Translate(0.0f, -40.0f, 0.0f, MTXMODE_APPLY);
-        Matrix_Scale(iceTrapScale, iceTrapScale, iceTrapScale, MTXMODE_APPLY);
-        gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-        gDPSetEnvColor(POLY_XLU_DISP++, 0, 50, 100, 255);
-        gSPDisplayList(POLY_XLU_DISP++, gEffIceFragment3DL);
+        // Draw the ice only after a bit so it doesn't spoil the fact that it's a trap
+        if (iceTrapScale >= 0.01) {
+            gSPSegment(POLY_XLU_DISP++, 0x08,
+                       Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, 0, (0 - play->gameplayFrames) % 128, 32, 32, 1, 0,
+                                          (play->gameplayFrames * -2) % 128, 32, 32, 0, -1, 0, -2));
 
-        // Reset matrix for the fake item model because we're animating the size of the ice block around it before this.
-        Matrix_Translate(refPos->x + (3.3f * Math_SinS(this->actor.shape.rot.y)), refPos->y + height,
-                         refPos->z + ((3.3f + (IREG(90) / 10.0f)) * Math_CosS(this->actor.shape.rot.y)), MTXMODE_NEW);
-        Matrix_RotateZYX(0, play->gameplayFrames * 1000, 0, MTXMODE_APPLY);
-        Matrix_Scale(0.2f, 0.2f, 0.2f, MTXMODE_APPLY);
+            Matrix_Translate(0.0f, -40.0f, 0.0f, MTXMODE_APPLY);
+            Matrix_Scale(iceTrapScale, iceTrapScale, iceTrapScale, MTXMODE_APPLY);
+            gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+            gDPSetEnvColor(POLY_XLU_DISP++, 0, 50, 100, 255);
+            gSPDisplayList(POLY_XLU_DISP++, gEffIceFragment3DL);
+
+            // Reset matrix for the fake item model because we're animating the size of the ice block around it before
+            // this.
+            Matrix_Translate(refPos->x + (3.3f * Math_SinS(this->actor.shape.rot.y)), refPos->y + height,
+                             refPos->z + ((3.3f + (IREG(90) / 10.0f)) * Math_CosS(this->actor.shape.rot.y)),
+                             MTXMODE_NEW);
+            Matrix_RotateZYX(0, play->gameplayFrames * 1000, 0, MTXMODE_APPLY);
+            Matrix_Scale(0.2f, 0.2f, 0.2f, MTXMODE_APPLY);
+        }
+
         // Draw fake item model.
         if (this->getItemEntry.drawFunc != NULL) {
             this->getItemEntry.drawFunc(play, &this->getItemEntry);
@@ -1701,22 +1720,10 @@ void Player_DrawHookshotReticle(PlayState* play, Player* this, f32 hookshotRange
         Matrix_Scale(sp60, sp60, sp60, MTXMODE_APPLY);
 
         gSPMatrix(OVERLAY_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-        gSPMatrix(OVERLAY_DISP++, SEG_ADDR(1, 0), G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
-        gSPTexture(OVERLAY_DISP++, 0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_ON);
-        gDPLoadTextureBlock(OVERLAY_DISP++, gLinkAdultHookshotReticleTex, G_IM_FMT_I, G_IM_SIZ_8b, 64, 64, 0,
-                            G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMIRROR | G_TX_CLAMP, 6, 6, G_TX_NOLOD, G_TX_NOLOD);
-        if (SurfaceType_IsHookshotSurface(&play->colCtx, colPoly, bgId) &&
-            CVarGetInteger(CVAR_ENHANCEMENT("HookshotableReticle"), false)) {
-            const Color_RGBA8 defaultColor = { .r = 0, .g = 255, .b = 0, .a = 255 };
-            const Color_RGBA8 color = CVarGetColor(CVAR_COSMETIC("HookshotReticle.Target.Value"), defaultColor);
-            gDPSetPrimColor(OVERLAY_DISP++, 0, 0, color.r, color.g, color.b, color.a);
-        } else {
-            const Color_RGBA8 defaultColor = { .r = 255, .g = 0, .b = 0, .a = 255 };
-            const Color_RGBA8 color = CVarGetColor(CVAR_COSMETIC("HookshotReticle.NonTarget.Value"), defaultColor);
-            gDPSetPrimColor(OVERLAY_DISP++, 0, 0, color.r, color.g, color.b, color.a);
+        if (GameInteractor_Should(VB_TARGETABLE_HOOKSHOT_RETICLE, true, colPoly, bgId)) {
+            gSPSegment(OVERLAY_DISP++, 0x06, play->objectCtx.status[this->actor.objBankIndex].segment);
+            gSPDisplayList(OVERLAY_DISP++, gLinkAdultHookshotReticleDL);
         }
-        gSPVertex(OVERLAY_DISP++, (uintptr_t)gLinkAdultHookshotReticleVtx, 3, 0);
-        gSP1Triangle(OVERLAY_DISP++, 0, 1, 2, 0);
 
         CLOSE_DISPS(play->state.gfxCtx);
     }
@@ -1773,16 +1780,8 @@ Vec3f sLeftRightFootLimbModelFootPos[] = {
     { 200.0f, 200.0f, 0.0f },
 };
 
-// OTRTODO: Figure out why this value works/what this value should be
-// This was originally obtained by working down from FLT_MAX until the math
-// started working out properly
-#define RETICLE_MAX 3.402823466e+12f
-
 void Player_PostLimbDrawGameplay(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
     Player* this = (Player*)thisx;
-
-    const Vec3s BoomerangViewAdult = { -31200, -9200, 17000 };
-    const Vec3s BoomerangViewChild = { -31200, -8700, 17000 };
 
     if (*dList != NULL) {
         Matrix_MultVec3f(&sZeroVec, D_80160000);
@@ -1837,8 +1836,10 @@ void Player_PostLimbDrawGameplay(PlayState* play, s32 limbIndex, Gfx** dList, Ve
             OPEN_DISPS(play->state.gfxCtx);
 
             gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-            gDPSetEnvColor(POLY_XLU_DISP++, bottleColor->r, bottleColor->g, bottleColor->b, 0);
-            gSPDisplayList(POLY_XLU_DISP++, sBottleDLists[(gSaveContext.linkAge)]);
+            if (GameInteractor_Should(VB_PLAYER_DRAW_BOTTLE, true, this, play)) {
+                gDPSetEnvColor(POLY_XLU_DISP++, bottleColor->r, bottleColor->g, bottleColor->b, 0);
+                gSPDisplayList(POLY_XLU_DISP++, sBottleDLists[gSaveContext.linkAge]);
+            }
 
             CLOSE_DISPS(play->state.gfxCtx);
         }
@@ -1925,7 +1926,10 @@ void Player_PostLimbDrawGameplay(PlayState* play, s32 limbIndex, Gfx** dList, Ve
         }
 
         if (this->actor.scale.y >= 0.0f) {
-            if ((this->heldItemAction == PLAYER_IA_HOOKSHOT) || (this->heldItemAction == PLAYER_IA_LONGSHOT)) {
+            if (GameInteractor_Should(VB_DRAW_ADDITIONAL_RETICLES,
+                                      (this->heldItemAction == PLAYER_IA_HOOKSHOT) ||
+                                          (this->heldItemAction == PLAYER_IA_LONGSHOT),
+                                      this)) {
                 Matrix_MultVec3f(&D_80126184, &this->unk_3C8);
 
                 if (heldActor != NULL) {
@@ -1946,41 +1950,6 @@ void Player_PostLimbDrawGameplay(PlayState* play, s32 limbIndex, Gfx** dList, Ve
                                 CVarGetFloat(CVAR_CHEAT("HookshotReachMultiplier"), 1.0f));
                     }
                 }
-
-                // #region SOH [Enhancement]
-            } else if (CVarGetInteger(CVAR_ENHANCEMENT("BowReticle"), 0) &&
-                       ((this->heldItemAction == PLAYER_IA_BOW_FIRE) || (this->heldItemAction == PLAYER_IA_BOW_ICE) ||
-                        (this->heldItemAction == PLAYER_IA_BOW_LIGHT) || (this->heldItemAction == PLAYER_IA_BOW) ||
-                        (this->heldItemAction == PLAYER_IA_SLINGSHOT))) {
-                if (heldActor != NULL) {
-                    MtxF sp44;
-                    s32 pad;
-
-                    Matrix_RotateZYX(0, -15216, -17496, MTXMODE_APPLY);
-                    Matrix_Get(&sp44);
-
-                    if (func_8002DD78(this) != 0) {
-                        Matrix_Translate(500.0f, 300.0f, 0.0f, MTXMODE_APPLY);
-                        Player_DrawHookshotReticle(play, this, RETICLE_MAX);
-                    }
-                }
-            } else if (CVarGetInteger(CVAR_ENHANCEMENT("BoomerangReticle"), 0) &&
-                       (this->heldItemAction == PLAYER_IA_BOOMERANG)) {
-                if (Player_HoldsBoomerang(this)) {
-                    if (LINK_IS_ADULT) {
-                        Matrix_RotateZYX(BoomerangViewAdult.x, BoomerangViewAdult.y, BoomerangViewAdult.z,
-                                         MTXMODE_APPLY);
-                    } else {
-                        Matrix_RotateZYX(BoomerangViewChild.x, BoomerangViewChild.y, BoomerangViewChild.z,
-                                         MTXMODE_APPLY);
-                    }
-
-                    if (Player_AimsBoomerang(this)) {
-                        Matrix_Translate(500.0f, 300.0f, 0.0f, MTXMODE_APPLY);
-                        Player_DrawHookshotReticle(play, this, RETICLE_MAX);
-                    }
-                }
-                // #endregion
             }
 
             if ((this->unk_862 != 0) || ((func_8002DD6C(this) == 0) && (heldActor != NULL))) {
@@ -2101,6 +2070,8 @@ s32 Player_OverrideLimbDrawPause(PlayState* play, s32 limbIndex, Gfx** dList, Ve
 
     dLists = &sPlayerDListGroups[type][gSaveContext.linkAge];
     *dList = dLists[dListOffset];
+
+    GameInteractor_Should(VB_PLAYER_OVERRIDE_LIMB_DRAW_PAUSE, true, limbIndex, dList, GET_PLAYER(play), play);
 
     return 0;
 }

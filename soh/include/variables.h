@@ -50,7 +50,7 @@ extern "C"
 	extern u16 gBuildVersionMinor;
 	extern u16 gBuildVersionPatch;
 	extern const char gGitBranch[];
-    extern const char gGitCommitHash[];
+	extern const char gGitCommitHash[];
 	extern u8 gGitCommitTag[];
 	extern u8 gBuildTeam[];
 	extern u8 gBuildDate[];
@@ -172,8 +172,7 @@ extern "C"
 	extern s32 gSystemArenaLogSeverity;
 	extern u8 __osPfsInodeCacheBank;
 	extern s32 __osPfsLastChannel;
-	extern u8 gWalkSpeedToggle1;
-	extern u8 gWalkSpeedToggle2;
+	extern u8 gWalkSpeedToggle;
 	extern f32 iceTrapScale;
 	extern f32 triforcePieceScale;
 	extern f32 mysteryItemScale;

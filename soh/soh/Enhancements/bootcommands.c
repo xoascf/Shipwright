@@ -1,15 +1,6 @@
+#include <stdbool.h>
+#include <libultraship/bridge/consolevariablebridge.h>
 #include "bootcommands.h"
-#include "gameconsole.h"
-#include <macros.h>
-#include <z64.h>
-#include <libultraship/libultra.h>
-#include <libultraship/bridge.h>
-#include <functions.h>
-#include <variables.h>
-#include <string.h>
-#include <stdarg.h>
-#include <z64.h>
-#include "soh/OTRGlobals.h"
 #include "soh/cvar_prefixes.h"
 
 void BootCommands_Init() {

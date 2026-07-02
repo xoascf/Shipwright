@@ -1,14 +1,10 @@
 #include "colViewer.h"
-#include "../../frame_interpolation.h"
 #include "soh/SohGui/UIWidgets.hpp"
 #include "soh/SohGui/SohGui.hpp"
 
 #include <vector>
 #include <string>
 #include <cmath>
-#include <libultraship/bridge.h>
-#include <libultraship/libultraship.h>
-#include "soh/OTRGlobals.h"
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 
 extern "C" {
@@ -16,13 +12,13 @@ extern "C" {
 #include "variables.h"
 #include "functions.h"
 #include "macros.h"
-#include "soh/cvar_prefixes.h"
+#include "overlays/actors/ovl_En_Kakasi2/z_en_kakasi2.h"
 extern PlayState* gPlayState;
 }
 
 enum ColRenderSetting { ColRenderDisabled, ColRenderSolid, ColRenderTransparent };
 
-static std::unordered_map<int32_t, const char*> ColRenderSettingNames = {
+static std::map<int32_t, const char*> ColRenderSettingNames = {
     { ColRenderDisabled, "Disabled" },
     { ColRenderSolid, "Solid" },
     { ColRenderTransparent, "Transparent" },
@@ -41,6 +37,7 @@ ImVec4 ac_col;
 ImVec4 at_col;
 
 ImVec4 waterbox_col;
+ImVec4 scarecrow_col;
 
 static std::vector<Gfx> opaDl;
 static std::vector<Gfx> xluDl;
@@ -67,6 +64,7 @@ void ColViewerWindow::DrawElement() {
     CVarCombobox("Bg Actors", CVAR_DEVELOPER_TOOLS("ColViewer.BGActors"), ColRenderSettingNames, comboOpt);
     CVarCombobox("Col Check", CVAR_DEVELOPER_TOOLS("ColViewer.ColCheck"), ColRenderSettingNames, comboOpt);
     CVarCombobox("Waterbox", CVAR_DEVELOPER_TOOLS("ColViewer.Waterbox"), ColRenderSettingNames, comboOpt);
+    CVarCombobox("Scarecrow Spawn", CVAR_DEVELOPER_TOOLS("ColViewer.ScarecrowSpawn"), ColRenderSettingNames, comboOpt);
 
     CVarCheckbox("Apply as decal", CVAR_DEVELOPER_TOOLS("ColViewer.Decal"),
                  checkOpt.DefaultValue(true).Tooltip(
@@ -134,6 +132,11 @@ void ColViewerWindow::DrawElement() {
             waterbox_col =
                 VecFromRGBA8(CVarGetColor(CVAR_DEVELOPER_TOOLS("ColViewer.ColorWaterbox"), { 0, 0, 255, 255 }));
         }
+        if (CVarColorPicker("Scarecrow Spawn", CVAR_DEVELOPER_TOOLS("ColViewer.ColorScarecrow"), { 255, 128, 0, 200 },
+                            false, ColorPickerResetButton | ColorPickerRandomButton, THEME_COLOR)) {
+            scarecrow_col =
+                VecFromRGBA8(CVarGetColor(CVAR_DEVELOPER_TOOLS("ColViewer.ColorScarecrow"), { 255, 128, 0, 200 }));
+        }
 
         ImGui::TreePop();
     } else {
@@ -174,10 +177,10 @@ void CreateCylinderData() {
     cylinderVtx.push_back(gdSPDefVtxN(0, 128, 0, 0, 0, 0, 127, 0, 0xFF)); // Top center vertex
     // Create two rings of vertices
     for (int i = 0; i < CYL_DIVS; ++i) {
-        short vtx_x = floorf(0.5f + cosf(2.f * M_PI * i / CYL_DIVS) * 128.f);
-        short vtx_z = floorf(0.5f - sinf(2.f * M_PI * i / CYL_DIVS) * 128.f);
-        signed char norm_x = cosf(2.f * M_PI * i / CYL_DIVS) * 127.f;
-        signed char norm_z = -sinf(2.f * M_PI * i / CYL_DIVS) * 127.f;
+        short vtx_x = static_cast<short>(floorf(0.5f + cosf(static_cast<f32>(2.f * M_PI * i / CYL_DIVS)) * 128.f));
+        short vtx_z = static_cast<short>(floorf(0.5f - sinf(static_cast<f32>(2.f * M_PI * i / CYL_DIVS)) * 128.f));
+        signed char norm_x = static_cast<signed char>(cosf(static_cast<f32>(2.f * M_PI * i / CYL_DIVS)) * 127.f);
+        signed char norm_z = static_cast<signed char>(-sinf(static_cast<f32>(2.f * M_PI * i / CYL_DIVS)) * 127.f);
         cylinderVtx.push_back(gdSPDefVtxN(vtx_x, 0, vtx_z, 0, 0, norm_x, 0, norm_z, 0xFF));
         cylinderVtx.push_back(gdSPDefVtxN(vtx_x, 128, vtx_z, 0, 0, norm_x, 0, norm_z, 0xFF));
     }
@@ -316,7 +319,7 @@ void CreateSphereData() {
 
     size_t vtxStartIndex = sphereVtx.size();
     sphereVtx.reserve(sphereVtx.size() + faces.size() * 3);
-    for (int32_t faceIndex = 0; faceIndex < faces.size(); faceIndex++) {
+    for (size_t faceIndex = 0; faceIndex < faces.size(); faceIndex++) {
         sphereVtx.push_back(sphereVtx[std::get<0>(faces[faceIndex])]);
         sphereVtx.push_back(sphereVtx[std::get<1>(faces[faceIndex])]);
         sphereVtx.push_back(sphereVtx[std::get<2>(faces[faceIndex])]);
@@ -333,8 +336,6 @@ void InitGfx(std::vector<Gfx>& gfx, ColRenderSetting setting) {
     uint32_t blc1;
     uint32_t blc2;
     uint8_t alpha;
-    uint64_t cm;
-    uint32_t gm;
 
     if (setting == ColRenderTransparent) {
         rm = Z_CMP | IM_RD | CVG_DST_FULL | FORCE_BL;
@@ -497,6 +498,63 @@ void DrawBgActorCollision() {
     }
 }
 
+void DrawScarecrowSpawn(std::vector<Gfx>& dl, EnKakasi2* scarecrow) {
+    if (scarecrow == nullptr) {
+        return;
+    }
+
+    f32 radius = scarecrow->maxSpawnDistance.x;
+    f32 height = scarecrow->maxSpawnDistance.y * 2.0f;
+
+    if (radius <= 0.0f || height <= 0.0f) {
+        return;
+    }
+
+    Mtx m;
+    MtxF mt;
+    MtxF ms;
+    MtxF dest;
+
+    f32 halfHeight = height * 0.5f;
+    Vec3f* pos = &scarecrow->actor.world.pos;
+
+    SkinMatrix_SetTranslate(&mt, pos->x, pos->y - halfHeight, pos->z);
+    SkinMatrix_SetScale(&ms, radius / 128.0f, height / 128.0f, radius / 128.0f);
+    SkinMatrix_MtxFMtxFMult(&mt, &ms, &dest);
+    guMtxF2L(dest.mf, &m);
+    mtxDl.push_back(m);
+
+    dl.push_back(gsSPMatrix(&mtxDl.back(), G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_PUSH));
+    dl.push_back(gsSPDisplayList(cylinderGfx.data()));
+    dl.push_back(gsSPPopMatrix(G_MTX_MODELVIEW));
+}
+
+void DrawScarecrowSpawns() {
+    ColRenderSetting showScarecrowSetting =
+        (ColRenderSetting)CVarGetInteger(CVAR_DEVELOPER_TOOLS("ColViewer.ScarecrowSpawn"), COLVIEW_DISABLED);
+
+    if (showScarecrowSetting == ColRenderDisabled || !CVarGetInteger(CVAR_DEVELOPER_TOOLS("ColViewer.Enabled"), 0) ||
+        gPlayState == nullptr) {
+        return;
+    }
+
+    std::vector<Gfx>& dl = (showScarecrowSetting == ColRenderTransparent) ? xluDl : opaDl;
+    InitGfx(dl, showScarecrowSetting);
+    dl.push_back(gsSPMatrix(&gMtxClear, G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH));
+
+    Color_RGBA8 color = CVarGetColor(CVAR_DEVELOPER_TOOLS("ColViewer.ColorScarecrow.Value"), { 255, 128, 0, 200 });
+    dl.push_back(gsDPSetPrimColor(0, 0, color.r, color.g, color.b, color.a));
+
+    ActorContext* actorCtx = &gPlayState->actorCtx;
+    for (int32_t listIndex = 0; listIndex < ARRAY_COUNT(actorCtx->actorLists); listIndex++) {
+        for (Actor* actor = actorCtx->actorLists[listIndex].head; actor != nullptr; actor = actor->next) {
+            if (actor->id == ACTOR_EN_KAKASI2) {
+                DrawScarecrowSpawn(dl, reinterpret_cast<EnKakasi2*>(actor));
+            }
+        }
+    }
+}
+
 // Draws a quad
 void DrawQuad(std::vector<Gfx>& dl, Vec3f& v0, Vec3f& v1, Vec3f& v2, Vec3f& v3) {
     Vec3f norm;
@@ -547,7 +605,9 @@ void DrawColCheckList(std::vector<Gfx>& dl, Collider** objects, int32_t count) {
 
                 Mtx m;
                 MtxF mt;
-                SkinMatrix_SetTranslate(&mt, cyl->dim.pos.x, cyl->dim.pos.y + cyl->dim.yShift, cyl->dim.pos.z);
+                SkinMatrix_SetTranslate(&mt, static_cast<f32>(cyl->dim.pos.x),
+                                        static_cast<f32>(cyl->dim.pos.y + cyl->dim.yShift),
+                                        static_cast<f32>(cyl->dim.pos.z));
                 MtxF ms;
                 int32_t radius = cyl->dim.radius == 0 ? 1 : cyl->dim.radius;
                 SkinMatrix_SetScale(&ms, radius / 128.0f, cyl->dim.height / 128.0f, radius / 128.0f);
@@ -625,14 +685,20 @@ void DrawWaterbox(std::vector<Gfx>& dl, WaterBox* water, float water_max_depth =
     }
 
     Vec3f vtx[] = {
-        { water->xMin, water->ySurface, water->zMin + water->zLength },
-        { water->xMin + water->xLength, water->ySurface, water->zMin + water->zLength },
-        { water->xMin + water->xLength, water->ySurface, water->zMin },
-        { water->xMin, water->ySurface, water->zMin },
-        { water->xMin, water_max_depth, water->zMin + water->zLength },
-        { water->xMin + water->xLength, water_max_depth, water->zMin + water->zLength },
-        { water->xMin + water->xLength, water_max_depth, water->zMin },
-        { water->xMin, water_max_depth, water->zMin },
+        { static_cast<f32>(water->xMin), static_cast<f32>(water->ySurface),
+          static_cast<f32>(water->zMin + water->zLength) },
+        { static_cast<f32>(water->xMin + water->xLength), static_cast<f32>(water->ySurface),
+          static_cast<f32>(water->zMin + water->zLength) },
+        { static_cast<f32>(water->xMin + water->xLength), static_cast<f32>(water->ySurface),
+          static_cast<f32>(water->zMin) },
+        { static_cast<f32>(water->xMin), static_cast<f32>(water->ySurface), static_cast<f32>(water->zMin) },
+        { static_cast<f32>(water->xMin), static_cast<f32>(water_max_depth),
+          static_cast<f32>(water->zMin + water->zLength) },
+        { static_cast<f32>(water->xMin + water->xLength), static_cast<f32>(water_max_depth),
+          static_cast<f32>(water->zMin + water->zLength) },
+        { static_cast<f32>(water->xMin + water->xLength), static_cast<f32>(water_max_depth),
+          static_cast<f32>(water->zMin) },
+        { static_cast<f32>(water->xMin), static_cast<f32>(water_max_depth), static_cast<f32>(water->zMin) },
     };
     DrawQuad(dl, vtx[0], vtx[1], vtx[2], vtx[3]);
     DrawQuad(dl, vtx[0], vtx[3], vtx[7], vtx[4]);
@@ -677,7 +743,7 @@ template <typename T> size_t ResetVector(T& vec) {
     size_t oldSize = vec.size();
     vec.clear();
     // Reserve slightly more space than last frame to account for variance (such as different amounts of bg actors)
-    vec.reserve(oldSize * 1.2);
+    vec.reserve(static_cast<size_t>(oldSize * 1.2f));
     return vec.capacity();
 }
 
@@ -693,6 +759,7 @@ extern "C" void DrawColViewer() {
 
     DrawSceneCollision();
     DrawBgActorCollision();
+    DrawScarecrowSpawns();
     DrawColCheckCollision();
     DrawWaterboxList();
 
@@ -713,7 +780,7 @@ extern "C" void DrawColViewer() {
 
     if ((vtxDl.size() > vtxDlCapacity) || (mtxDl.size() > mtxDlCapacity)) {
         // If the sizes somehow changed between the two draws, we can't continue because we may be using invalid data
-        printf("Error drawing collision, vertex/matrix sizes didn't settle.\n");
+        SPDLOG_WARN("Error drawing collision, vertex/matrix sizes didn't settle.");
         return;
     }
 

@@ -1,31 +1,34 @@
 #include "debugSaveEditor.h"
+#include "soh/Enhancements/randomizer/randomizerTypes.h"
+#include "soh/Enhancements/randomizer/randomizer.h"
 #include "soh/util.h"
 #include "soh/SohGui/ImGuiUtils.h"
 #include "soh/OTRGlobals.h"
 #include "soh/SohGui/UIWidgets.hpp"
 #include "soh/SohGui/SohGui.hpp"
+#include "soh/SaveManager.h"
 
 #include <spdlog/fmt/fmt.h>
 #include <array>
 #include <bit>
 #include <map>
 #include <string>
-#include <libultraship/bridge.h>
-#include <libultraship/libultraship.h>
-#include "soh_assets.h"
+#include <soh_assets.h>
+
+#include <fast/Fast3dGui.h>
 
 extern "C" {
 #include <z64.h>
 #include "variables.h"
 #include "functions.h"
 #include "macros.h"
-#include "soh/cvar_prefixes.h"
 extern PlayState* gPlayState;
-
-#include "textures/icon_item_static/icon_item_static.h"
-#include "textures/icon_item_24_static/icon_item_24_static.h"
-#include "textures/parameter_static/parameter_static.h"
 }
+
+#include "message_data_static.h"
+extern "C" MessageTableEntry* sGerMessageEntryTablePtr;
+extern "C" MessageTableEntry* sFraMessageEntryTablePtr;
+extern "C" MessageTableEntry* sJpnMessageEntryTablePtr;
 
 // Maps entries in the GS flag array to the area name it represents
 std::vector<const char*> gsMapping = {
@@ -65,6 +68,7 @@ IntSliderOptions intSliderOptionsBase;
 ButtonOptions buttonOptionsBase;
 CheckboxOptions checkboxOptionsBase;
 ComboboxOptions comboboxOptionsBase;
+static std::map<std::string, ImGuiTextFilter> flagTableFilters;
 
 // Modification of gAmmoItems that replaces ITEM_NONE with the item in inventory slot it represents
 u8 gAllAmmoItems[] = {
@@ -106,9 +110,51 @@ char z2ASCII(int code) {
     return char(ret);
 }
 
+std::string decodeNTSCPlayerNameChar(int code) {
+    const std::string charmap[] = {
+        "0",  "1",  "2",  "3",  "4",  "5",  "6",  "7",  "8",  "9",  // 10
+        "あ", "い", "う", "え", "お", "か", "き", "く", "け", "こ", // 20
+        "さ", "し", "す", "せ", "そ", "た", "ち", "つ", "て", "と", // 30
+        "な", "に", "ぬ", "ね", "の", "は", "ひ", "ふ", "へ", "ほ", // 40
+        "ま", "み", "む", "め", "も", "や", "ゆ", "よ", "ら", "り", // 50
+        "る", "れ", "ろ", "わ", "を", "ん", "ぁ", "ぃ", "ぅ", "ぇ", // 60
+        "ぉ", "っ", "ゃ", "ゅ", "ょ", "が", "ぎ", "ぐ", "げ", "ご", // 70
+        "ざ", "じ", "ず", "ぜ", "ぞ", "だ", "ぢ", "づ", "で", "ど", // 80
+        "ば", "び", "ぶ", "べ", "ぼ", "ぱ", "ぴ", "ぷ", "ぺ", "ぽ", // 90
+        "ア", "イ", "ウ", "エ", "オ", "カ", "キ", "ク", "ケ", "コ", // 100
+        "サ", "シ", "ス", "セ", "ソ", "タ", "チ", "ツ", "テ", "ト", // 110
+        "ナ", "ニ", "ヌ", "ネ", "ノ", "ハ", "ヒ", "フ", "ヘ", "ホ", // 120
+        "マ", "ミ", "ム", "メ", "モ", "ヤ", "ユ", "ヨ", "ラ", "リ", // 130
+        "ル", "レ", "ロ", "ワ", "ヲ", "ン", "ァ", "ィ", "ゥ", "ェ", // 140
+        "ォ", "ッ", "ャ", "ュ", "ョ", "ガ", "ギ", "グ", "ゲ", "ゴ", // 150
+        "ザ", "ジ", "ズ", "ゼ", "ゾ", "ダ", "ヂ", "ヅ", "デ", "ド", // 160
+        "バ", "ビ", "ブ", "ベ", "ボ", "パ", "ピ", "プ", "ペ", "ポ", // 170
+        "ヴ",
+    };
+    std::string ret;
+
+    if (code < 171) { // Digits and Japanese
+        ret = charmap[code];
+    } else if (code >= 171 && code < 197) { // Uppercase letters
+        ret.assign(1, (char)(code - 171 + 65));
+    } else if (code >= 197 && code < 223) { // Lowercase letters
+        ret.assign(1, (char)(code - 197 + 97));
+    } else if (code == 223) { // Space
+        ret = " ";
+    } else if (code == 228) { // -
+        ret = "-";
+    } else if (code == 234) { // .
+        ret = ".";
+    } else {
+        ret = "?";
+    }
+
+    return ret;
+}
+
 enum MagicLevel { MAGIC_LEVEL_NONE, MAGIC_LEVEL_SINGLE, MAGIC_LEVEL_DOUBLE };
 
-std::unordered_map<int8_t, const char*> magicLevelMap = {
+std::map<int8_t, const char*> magicLevelMap = {
     { MAGIC_LEVEL_NONE, "None" },
     { MAGIC_LEVEL_SINGLE, "Single" },
     { MAGIC_LEVEL_DOUBLE, "Double" },
@@ -121,7 +167,7 @@ enum AudioOutput {
     AUDIO_SURROUND,
 };
 
-std::unordered_map<uint8_t, const char*> audioMap = {
+std::map<uint8_t, const char*> audioMap = {
     { AUDIO_STEREO, "Stereo" },
     { AUDIO_MONO, "Mono" },
     { AUDIO_HEADSET, "Headset" },
@@ -133,24 +179,68 @@ enum ZTarget {
     Z_TARGET_HOLD,
 };
 
-std::unordered_map<uint8_t, const char*> zTargetMap = {
+std::map<uint8_t, const char*> zTargetMap = {
     { Z_TARGET_SWITCH, "Switch" },
     { Z_TARGET_HOLD, "Hold" },
 };
 
+std::map<int32_t, const char*> fileNumMap = {
+    { 0, "File 1" },
+    { 1, "File 2" },
+    { 2, "File 3" },
+};
+
+std::map<uint8_t, const char*> filenameLanguageMap = {
+    { NAME_LANGUAGE_PAL, "PAL" },
+    { NAME_LANGUAGE_NTSC_JPN, "NTSC JPN" },
+    { NAME_LANGUAGE_NTSC_ENG, "NTSC ENG" },
+};
+
+std::map<uint8_t, const char*> filenameLanguageMapNTSCOnly = {
+    { NAME_LANGUAGE_NTSC_JPN, "NTSC JPN" },
+    { NAME_LANGUAGE_NTSC_ENG, "NTSC ENG" },
+};
+
 void DrawInfoTab() {
+    if (gSaveContext.gameMode == GAMEMODE_TITLE_SCREEN) {
+        ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Title Screen");
+    } else if (gSaveContext.gameMode == GAMEMODE_FILE_SELECT) {
+        ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "File Select");
+    } else if (gPlayState == nullptr) {
+        ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Game Inactive");
+    } else if (gSaveContext.fileNum >= 0 && gSaveContext.fileNum <= 2) {
+        Combobox("File Number", &gSaveContext.fileNum, fileNumMap, comboboxOptionsBase.Tooltip("Current File Number"));
+    } else {
+        ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Debug File");
+    }
+
     // TODO Needs a better method for name changing but for now this will work.
     std::string name;
     ImU16 one = 1;
-    for (int i = 0; i < 8; i++) {
-        char letter = z2ASCII(gSaveContext.playerName[i]);
-        name += letter;
+
+    if (gSaveContext.ship.filenameLanguage == NAME_LANGUAGE_PAL) {
+        for (int i = 0; i < 8; i++) {
+            char letter = z2ASCII(gSaveContext.playerName[i]);
+            name += letter;
+        }
+        name += '\0';
+    } else {
+        for (int i = 0; i < 8; i++) {
+            name += decodeNTSCPlayerNameChar(gSaveContext.playerName[i]);
+        }
+        name += '\0';
     }
-    name += '\0';
 
     ImGui::PushItemWidth(ImGui::GetFontSize() * 6);
 
-    ImGui::Text("Name: %s", name.c_str());
+    if (gSaveContext.ship.filenameLanguage == NAME_LANGUAGE_PAL) {
+        ImGui::Text("Name: %s", name.c_str());
+    } else {
+        ImGui::PushFont(OTRGlobals::Instance->fontJapanese);
+        ImGui::Text("Name: %s", name.c_str());
+        ImGui::PopFont();
+    }
+
     Tooltip("Player Name");
     std::string nameID;
     for (int i = 0; i < 8; i++) {
@@ -161,6 +251,25 @@ void DrawInfoTab() {
         PushStyleInput(THEME_COLOR);
         ImGui::InputScalar(nameID.c_str(), ImGuiDataType_U8, &gSaveContext.playerName[i], &one, NULL);
         PopStyleInput();
+    }
+
+    // Filename encoding
+    const bool hasPAL = (sGerMessageEntryTablePtr != nullptr) && (sFraMessageEntryTablePtr != nullptr);
+    const bool hasNTSC = (sJpnMessageEntryTablePtr != nullptr);
+    if (hasPAL && hasNTSC) {
+        // Full
+        Combobox("Player Name Language", &gSaveContext.ship.filenameLanguage, filenameLanguageMap,
+                 comboboxOptionsBase.Tooltip("Encoding used for Player Name"));
+    } else if (hasNTSC && (gSaveContext.ship.filenameLanguage != NAME_LANGUAGE_PAL)) {
+        // NTSC only
+        Combobox("Player Name Language", &gSaveContext.ship.filenameLanguage, filenameLanguageMapNTSCOnly,
+                 comboboxOptionsBase.Tooltip("Encoding used for Player Name"));
+    } else {
+        // PAL only (read only)
+        ImGui::BeginDisabled();
+        Combobox("Player Name Language", &gSaveContext.ship.filenameLanguage, filenameLanguageMap,
+                 comboboxOptionsBase.Tooltip("Encoding used for Player Name"));
+        ImGui::EndDisabled();
     }
 
     // Use an intermediary to keep the health from updating (and potentially killing the player)
@@ -198,7 +307,7 @@ void DrawInfoTab() {
     }
     gSaveContext.magicCapacity = gSaveContext.magicLevel * 0x30; // Set to get the bar drawn in the UI
     if (gSaveContext.magic > gSaveContext.magicCapacity) {
-        gSaveContext.magic = gSaveContext.magicCapacity; // Clamp magic to new max
+        gSaveContext.magic = static_cast<s8>(gSaveContext.magicCapacity); // Clamp magic to new max
     }
 
     int32_t magic = (int32_t)gSaveContext.magic;
@@ -251,7 +360,7 @@ void DrawInfoTab() {
 
     PushStyleInput(THEME_COLOR);
     ImGui::InputScalar("Bgs Day Count", ImGuiDataType_S32, &gSaveContext.bgsDayCount);
-    Tooltip("Total number of days elapsed since giving Biggoron the claim check");
+    Tooltip("Total number of days elapsed since receiving claim check from Biggoron");
     PopStyleInput();
 
     PushStyleInput(THEME_COLOR);
@@ -297,7 +406,8 @@ void DrawInfoTab() {
     Combobox("Z Target Mode", &gSaveContext.zTargetSetting, zTargetMap,
              comboboxOptionsBase.Tooltip("Z-Targeting behavior"));
 
-    if (IS_RANDO && OTRGlobals::Instance->gRandomizer->GetRandoSettingValue(RSK_TRIFORCE_HUNT)) {
+    if (IS_RANDO &&
+        (OTRGlobals::Instance->gRandomizer->GetRandoSettingValue(RSK_TRIFORCE_HUNT) != RO_TRIFORCE_HUNT_OFF)) {
         PushStyleInput(THEME_COLOR);
         ImGui::InputScalar("Triforce Pieces", ImGuiDataType_U8,
                            &gSaveContext.ship.quest.data.randomizer.triforcePiecesCollected);
@@ -321,7 +431,7 @@ void DrawInfoTab() {
                     gSaveContext.highScores[i] |= fishSize & 0x7F;
                 }
                 char fishMsg[64];
-                std::sprintf(fishMsg, "Weight: %2.0f lbs", ((SQ(fishSize) * .0036) + .5));
+                std::snprintf(fishMsg, 64, "Weight: %2.0f lbs", ((SQ(fishSize) * .0036) + .5));
                 Tooltip(fishMsg);
                 PopStyleInput();
                 bool FishBool = gSaveContext.highScores[i] & 0x80;
@@ -336,7 +446,7 @@ void DrawInfoTab() {
                     gSaveContext.highScores[i] &= ~0x7F000000;
                     gSaveContext.highScores[i] |= (fishSize & 0x7F) << 0x18;
                 }
-                std::sprintf(fishMsg, "Weight: %2.0f lbs", ((SQ(fishSize) * .0036) + .5));
+                std::snprintf(fishMsg, 64, "Weight: %2.0f lbs", ((SQ(fishSize) * .0036) + .5));
                 Tooltip(fishMsg);
                 PopStyleInput();
                 FishBool = gSaveContext.highScores[i] & 0x80000000;
@@ -408,7 +518,8 @@ void DrawInfoTab() {
 
 void DrawBGSItemFlag(uint8_t itemID) {
     const ItemMapEntry& slotEntry = itemMapping[itemID];
-    ImGui::Image(Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(slotEntry.name),
+    ImGui::Image(std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                     ->GetTextureByName(slotEntry.name),
                  ImVec2(32.0f, 32.0f), ImVec2(0, 0), ImVec2(1, 1));
 }
 
@@ -433,11 +544,22 @@ void DrawInventoryTab() {
 
             uint8_t item = gSaveContext.inventory.items[index];
             PushStyleButton(Colors::DarkGray);
-            if (item != ITEM_NONE) {
+            if (item == ITEM_ROCS_FEATHER) {
+                auto ret = ImGui::ImageButton(
+                    "ROCS_FEATHER",
+                    std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                        ->GetTextureByName("ROCS_FEATHER"),
+                    ImVec2(48.0f, 48.0f), ImVec2(0, 0), ImVec2(1, 1));
+                if (ret) {
+                    selectedIndex = index;
+                    ImGui::OpenPopup(itemPopupPicker);
+                }
+            } else if (item != ITEM_NONE) {
                 const ItemMapEntry& slotEntry = itemMapping.find(item)->second;
                 auto ret = ImGui::ImageButton(
                     slotEntry.name.c_str(),
-                    Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(slotEntry.name),
+                    std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                        ->GetTextureByName(slotEntry.name),
                     ImVec2(48.0f, 48.0f), ImVec2(0, 0), ImVec2(1, 1));
                 if (ret) {
                     selectedIndex = index;
@@ -480,16 +602,17 @@ void DrawInventoryTab() {
                     }
                 }
 
-                for (int32_t pickerIndex = 0; pickerIndex < possibleItems.size(); pickerIndex++) {
+                for (size_t pickerIndex = 0; pickerIndex < possibleItems.size(); pickerIndex++) {
                     if (((pickerIndex + 1) % 8) != 0) {
                         ImGui::SameLine();
                     }
                     const ItemMapEntry& slotEntry = possibleItems[pickerIndex];
                     PushStyleButton(Colors::DarkGray);
-                    auto ret = ImGui::ImageButton(
-                        slotEntry.name.c_str(),
-                        Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(slotEntry.name),
-                        ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1));
+                    auto ret = ImGui::ImageButton(slotEntry.name.c_str(),
+                                                  std::dynamic_pointer_cast<Fast::Fast3dGui>(
+                                                      Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                                                      ->GetTextureByName(slotEntry.name),
+                                                  ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1));
                     PopStyleButton();
                     if (ret) {
                         gSaveContext.inventory.items[selectedIndex] = slotEntry.id;
@@ -521,8 +644,10 @@ void DrawInventoryTab() {
             ImGui::PushItemWidth(IMAGE_SIZE);
             ImGui::BeginGroup();
 
-            ImGui::Image(Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(itemMapping[item].name),
-                         ImVec2(IMAGE_SIZE, IMAGE_SIZE));
+            ImGui::Image(
+                std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                    ->GetTextureByName(itemMapping[item].name),
+                ImVec2(IMAGE_SIZE, IMAGE_SIZE));
             PushStyleInput(THEME_COLOR);
             ImGui::InputScalar("##ammoInput", ImGuiDataType_S8, &AMMO(item));
             PopStyleInput();
@@ -554,6 +679,10 @@ void DrawFlagTableArray16(const FlagTable& flagTable, uint16_t row, uint16_t& fl
         uint32_t bitMask = 1 << flagIndex;
         ImVec4 themeColor = ColorValues.at(THEME_COLOR);
         ImVec4 colorDark = { themeColor.x * 0.4f, themeColor.y * 0.4f, themeColor.z * 0.4f, themeColor.z };
+        ImVec4& color = themeColor;
+        if (!hasDescription) {
+            color = colorDark;
+        }
         PushStyleCheckbox(hasDescription ? themeColor : colorDark);
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, 3.0f));
         bool flag = (flags & bitMask) != 0;
@@ -568,12 +697,84 @@ void DrawFlagTableArray16(const FlagTable& flagTable, uint16_t row, uint16_t& fl
         PopStyleCheckbox();
         if (ImGui::IsItemHovered() && hasDescription) {
             ImGui::BeginTooltip();
-            ImGui::Text("%s", UIWidgets::WrappedText(flagTable.flagDescriptions.at(row * 16 + flagIndex), 60).c_str());
+            uint16_t index = row * 16 + flagIndex;
+            const char* desc = flagTable.flagDescriptions.at(index);
+            ImGui::Text("0x%02X: %s", index, UIWidgets::WrappedText(desc, 60).c_str());
             ImGui::EndTooltip();
         }
         ImGui::PopID();
     }
+
     ImGui::PopID();
+}
+
+static uint16_t& GetFlagTableEntry(const FlagTable& flagTable, size_t row) {
+    switch (flagTable.flagTableType) {
+        case EVENT_CHECK_INF:
+            return gSaveContext.eventChkInf[row];
+        case ITEM_GET_INF:
+            return gSaveContext.itemGetInf[row];
+        case INF_TABLE:
+            return gSaveContext.infTable[row];
+        case EVENT_INF:
+            return gSaveContext.eventInf[row];
+        case RANDOMIZER_INF:
+            return gSaveContext.ship.randomizerInf[row];
+        default: // Shouldn't be hit
+            assert(false);
+            return gSaveContext.eventChkInf[row];
+    }
+}
+
+static void DrawFlagTableSearchResults(const FlagTable& flagTable, ImGuiTextFilter& filter) {
+    bool hasMatches = false;
+
+    for (size_t row = 0; row < flagTable.size + 1; row++) {
+        uint16_t& flags = GetFlagTableEntry(flagTable, row);
+
+        for (int32_t flagIndex = 15; flagIndex >= 0; flagIndex--) {
+            uint16_t index = static_cast<uint16_t>(row * 16 + flagIndex);
+            auto descIt = flagTable.flagDescriptions.find(index);
+            const char* desc = descIt != flagTable.flagDescriptions.end() ? descIt->second : "";
+            std::string searchable = fmt::format("0x{:02X} {}", index, desc);
+            if (!filter.PassFilter(searchable.c_str())) {
+                continue;
+            }
+
+            hasMatches = true;
+
+            ImGui::PushID(index);
+            bool hasDescription = descIt != flagTable.flagDescriptions.end();
+            uint32_t bitMask = 1 << flagIndex;
+            ImVec4 themeColor = ColorValues.at(THEME_COLOR);
+            ImVec4 colorDark = { themeColor.x * 0.4f, themeColor.y * 0.4f, themeColor.z * 0.4f, themeColor.z };
+            PushStyleCheckbox(hasDescription ? themeColor : colorDark);
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, 3.0f));
+            bool flag = (flags & bitMask) != 0;
+            if (ImGui::Checkbox("##check", &flag)) {
+                if (flag) {
+                    flags |= bitMask;
+                } else {
+                    flags &= ~bitMask;
+                }
+            }
+            ImGui::PopStyleVar();
+            PopStyleCheckbox();
+
+            ImGui::SameLine();
+            if (hasDescription) {
+                ImGui::TextWrapped("0x%02X: %s", index, desc);
+            } else {
+                ImGui::Text("0x%02X", index);
+            }
+
+            ImGui::PopID();
+        }
+    }
+
+    if (!hasMatches) {
+        ImGui::Text("No flags match the current search.");
+    }
 }
 
 void DrawFlagsTab() {
@@ -916,36 +1117,59 @@ void DrawFlagsTab() {
         },
         "Gold Skulltulas");
 
-    for (int i = 0; i < flagTables.size(); i++) {
+    for (size_t i = 0; i < flagTables.size(); i++) {
         const FlagTable& flagTable = flagTables[i];
         if (flagTable.flagTableType == RANDOMIZER_INF && !IS_RANDO && !IS_BOSS_RUSH) {
             continue;
         }
 
         if (ImGui::TreeNode(flagTable.name)) {
-            for (int j = 0; j < flagTable.size + 1; j++) {
-                DrawGroupWithBorder(
-                    [&]() {
-                        ImGui::Text("%s", fmt::format("{:<2x}", j).c_str());
-                        switch (flagTable.flagTableType) {
-                            case EVENT_CHECK_INF:
-                                DrawFlagTableArray16(flagTable, j, gSaveContext.eventChkInf[j]);
-                                break;
-                            case ITEM_GET_INF:
-                                DrawFlagTableArray16(flagTable, j, gSaveContext.itemGetInf[j]);
-                                break;
-                            case INF_TABLE:
-                                DrawFlagTableArray16(flagTable, j, gSaveContext.infTable[j]);
-                                break;
-                            case EVENT_INF:
-                                DrawFlagTableArray16(flagTable, j, gSaveContext.eventInf[j]);
-                                break;
-                            case RANDOMIZER_INF:
-                                DrawFlagTableArray16(flagTable, j, gSaveContext.ship.randomizerInf[j]);
-                                break;
-                        }
-                    },
-                    flagTable.name);
+            ImGui::PushID(flagTable.name);
+            ImGuiTextFilter& flagFilter = flagTableFilters[flagTable.name];
+            ImGui::SetNextItemWidth(ImGui::GetFontSize() * 16);
+            PushStyleInput(THEME_COLOR);
+            flagFilter.Draw();
+            PopStyleInput();
+            ImGui::Spacing();
+
+            if (!flagFilter.IsActive()) {
+                for (size_t j = 0; j < flagTable.size + 1; j++) {
+                    DrawGroupWithBorder(
+                        [&]() {
+                            if (j == 0) {
+                                for (int k = 0xF; k >= 0; k--) {
+                                    ImGui::SameLine(static_cast<f32>(37.5 + ((0xF - k) * 33.8)));
+                                    ImGui::Text("%X", k);
+                                }
+                            }
+
+                            ImGui::Text("%s", fmt::format("{:<2X}", j).c_str());
+
+                            switch (flagTable.flagTableType) {
+                                case EVENT_CHECK_INF:
+                                    DrawFlagTableArray16(flagTable, static_cast<uint16_t>(j),
+                                                         gSaveContext.eventChkInf[j]);
+                                    break;
+                                case ITEM_GET_INF:
+                                    DrawFlagTableArray16(flagTable, static_cast<uint16_t>(j),
+                                                         gSaveContext.itemGetInf[j]);
+                                    break;
+                                case INF_TABLE:
+                                    DrawFlagTableArray16(flagTable, static_cast<uint16_t>(j), gSaveContext.infTable[j]);
+                                    break;
+                                case EVENT_INF:
+                                    DrawFlagTableArray16(flagTable, static_cast<uint16_t>(j), gSaveContext.eventInf[j]);
+                                    break;
+                                case RANDOMIZER_INF:
+                                    DrawFlagTableArray16(flagTable, static_cast<uint16_t>(j),
+                                                         gSaveContext.ship.randomizerInf[j]);
+                                    break;
+                            }
+                        },
+                        flagTable.name);
+                }
+            } else {
+                DrawFlagTableSearchResults(flagTable, flagFilter);
             }
 
             // make some buttons to help with fishsanity debugging
@@ -977,6 +1201,7 @@ void DrawFlagsTab() {
                 }
             }
 
+            ImGui::PopID();
             ImGui::TreePop();
         }
     }
@@ -989,10 +1214,12 @@ void DrawUpgrade(const std::string& categoryName, int32_t categoryId, const std:
     ImGui::PushID(categoryName.c_str());
     PushStyleCombobox(THEME_COLOR);
     ImGui::AlignTextToFramePadding();
-    if (ImGui::BeginCombo("##upgrade", names[CUR_UPG_VALUE(categoryId)].c_str())) {
-        for (int32_t i = 0; i < names.size(); i++) {
+    auto value = (size_t)CUR_UPG_VALUE(categoryId);
+    auto name = value < names.size() ? names[value].c_str() : "Glitched";
+    if (ImGui::BeginCombo("##upgrade", name)) {
+        for (size_t i = 0; i < names.size(); i++) {
             if (ImGui::Selectable(names[i].c_str())) {
-                Inventory_ChangeUpgrade(categoryId, i);
+                Inventory_ChangeUpgrade(categoryId, static_cast<s16>(i));
             }
         }
 
@@ -1010,24 +1237,21 @@ void DrawUpgradeIcon(const std::string& categoryName, int32_t categoryId, const 
     ImGui::PushID(categoryName.c_str());
 
     PushStyleButton(Colors::DarkGray);
-    uint8_t item = items[CUR_UPG_VALUE(categoryId)];
-    if (item != ITEM_NONE) {
-        const ItemMapEntry& slotEntry = itemMapping[item];
-        if (ImGui::ImageButton(slotEntry.name.c_str(),
-                               Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(slotEntry.name),
-                               ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1))) {
-            ImGui::OpenPopup(upgradePopupPicker);
-        }
-    } else {
-        if (ImGui::Button("##itemNone", ImVec2(IMAGE_SIZE, IMAGE_SIZE) + ImGui::GetStyle().FramePadding * 2)) {
-            ImGui::OpenPopup(upgradePopupPicker);
-        }
+    auto value = (size_t)CUR_UPG_VALUE(categoryId);
+    uint8_t item = value < items.size() ? items[value] : ITEM_NONE;
+    const ItemMapEntry& slotEntry = itemMapping[item];
+    if (ImGui::ImageButton(
+            slotEntry.name.c_str(),
+            std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                ->GetTextureByName(item != ITEM_NONE ? slotEntry.name : itemMapping[items[1]].nameFaded),
+            ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1))) {
+        ImGui::OpenPopup(upgradePopupPicker);
     }
     PopStyleButton();
     Tooltip(categoryName.c_str());
 
     if (ImGui::BeginPopup(upgradePopupPicker)) {
-        for (int32_t pickerIndex = 0; pickerIndex < items.size(); pickerIndex++) {
+        for (size_t pickerIndex = 0; pickerIndex < items.size(); pickerIndex++) {
             if ((pickerIndex % 8) != 0) {
                 ImGui::SameLine();
             }
@@ -1036,7 +1260,7 @@ void DrawUpgradeIcon(const std::string& categoryName, int32_t categoryId, const 
             if (items[pickerIndex] == ITEM_NONE) {
                 if (ImGui::Button("##upgradePopupPicker",
                                   ImVec2(IMAGE_SIZE, IMAGE_SIZE) + ImGui::GetStyle().FramePadding * 2)) {
-                    Inventory_ChangeUpgrade(categoryId, pickerIndex);
+                    Inventory_ChangeUpgrade(categoryId, static_cast<s16>(pickerIndex));
                     ImGui::CloseCurrentPopup();
                 }
                 Tooltip("None");
@@ -1044,10 +1268,11 @@ void DrawUpgradeIcon(const std::string& categoryName, int32_t categoryId, const 
                 const ItemMapEntry& slotEntry = itemMapping[items[pickerIndex]];
                 auto ret = ImGui::ImageButton(
                     slotEntry.name.c_str(),
-                    Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(slotEntry.name),
+                    std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                        ->GetTextureByName(slotEntry.name),
                     ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1));
                 if (ret) {
-                    Inventory_ChangeUpgrade(categoryId, pickerIndex);
+                    Inventory_ChangeUpgrade(categoryId, static_cast<s16>(pickerIndex));
                     ImGui::CloseCurrentPopup();
                 }
                 Tooltip(SohUtils::GetItemName(slotEntry.id).c_str());
@@ -1066,7 +1291,7 @@ void DrawEquipmentTab() {
         ITEM_TUNIC_KOKIRI, ITEM_TUNIC_GORON,   ITEM_TUNIC_ZORA,    ITEM_NONE,
         ITEM_BOOTS_KOKIRI, ITEM_BOOTS_IRON,    ITEM_BOOTS_HOVER,   ITEM_NONE,
     };
-    for (int32_t i = 0; i < equipmentValues.size(); i++) {
+    for (size_t i = 0; i < equipmentValues.size(); i++) {
         // Skip over unused 4th slots for shields, boots, and tunics
         if (equipmentValues[i] == ITEM_NONE) {
             continue;
@@ -1075,15 +1300,16 @@ void DrawEquipmentTab() {
             ImGui::SameLine();
         }
 
-        ImGui::PushID(i);
+        ImGui::PushID(static_cast<int>(i));
         uint32_t bitMask = 1 << i;
         bool hasEquip = (bitMask & gSaveContext.inventory.equipment) != 0;
         const ItemMapEntry& entry = itemMapping[equipmentValues[i]];
         PushStyleButton(Colors::DarkGray);
-        auto ret = ImGui::ImageButton(entry.name.c_str(),
-                                      Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(
-                                          hasEquip ? entry.name : entry.nameFaded),
-                                      ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1));
+        auto ret = ImGui::ImageButton(
+            entry.name.c_str(),
+            std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                ->GetTextureByName(hasEquip ? entry.name : entry.nameFaded),
+            ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1));
         if (ret) {
             if (hasEquip) {
                 gSaveContext.inventory.equipment &= ~bitMask;
@@ -1174,6 +1400,39 @@ void DrawEquipmentTab() {
         "40",
     };
     DrawUpgrade("Deku Nut Capacity", UPG_NUTS, nutNames);
+
+    if (IS_RANDO &&
+        OTRGlobals::Instance->gRandomizer->GetRandoSettingValue(RSK_BOMBCHU_BAG) == RO_BOMBCHU_BAG_PROGRESSIVE) {
+        const std::vector<std::string> bombchuNames = {
+            "None",
+            "20",
+            "30",
+            "50",
+        };
+        ImGui::Text("%s", "Bombchu Bag Capacity");
+        ImGui::SameLine();
+        ImGui::PushID("Bombchu Bag Capacity");
+        PushStyleCombobox(THEME_COLOR);
+        ImGui::AlignTextToFramePadding();
+        auto value = gSaveContext.ship.quest.data.randomizer.bombchuUpgradeLevel;
+        auto name = value < bombchuNames.size() ? bombchuNames[value].c_str() : "Glitched";
+        if (ImGui::BeginCombo("##upgrade", name)) {
+            for (size_t i = 0; i < bombchuNames.size(); i++) {
+                if (ImGui::Selectable(bombchuNames[i].c_str())) {
+                    gSaveContext.ship.quest.data.randomizer.bombchuUpgradeLevel = static_cast<u8>(i);
+                    if (i > 0) {
+                        INV_CONTENT(ITEM_BOMBCHU) = ITEM_BOMBCHU;
+                    } else {
+                        INV_CONTENT(ITEM_BOMBCHU) = ITEM_NONE;
+                    }
+                }
+            }
+            ImGui::EndCombo();
+        }
+        PopStyleCombobox();
+        ImGui::PopID();
+        UIWidgets::Tooltip("Bombchu Bag Capapcity");
+    }
 }
 
 // Draws a toggleable icon for a quest item that is faded when disabled
@@ -1182,10 +1441,11 @@ void DrawQuestItemButton(uint32_t item) {
     uint32_t bitMask = 1 << entry.id;
     bool hasQuestItem = (bitMask & gSaveContext.inventory.questItems) != 0;
     PushStyleButton(Colors::DarkGray);
-    auto ret = ImGui::ImageButton(entry.name.c_str(),
-                                  Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(
-                                      hasQuestItem ? entry.name : entry.nameFaded),
-                                  ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1));
+    auto ret = ImGui::ImageButton(
+        entry.name.c_str(),
+        std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+            ->GetTextureByName(hasQuestItem ? entry.name : entry.nameFaded),
+        ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1));
     if (ret) {
         if (hasQuestItem) {
             gSaveContext.inventory.questItems &= ~bitMask;
@@ -1205,7 +1465,8 @@ void DrawDungeonItemButton(uint32_t item, uint32_t scene) {
     PushStyleButton(Colors::DarkGray);
     auto ret = ImGui::ImageButton(
         entry.name.c_str(),
-        Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(hasItem ? entry.name : entry.nameFaded),
+        std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+            ->GetTextureByName(hasItem ? entry.name : entry.nameFaded),
         ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1));
     if (ret) {
         if (hasItem) {
@@ -1251,10 +1512,11 @@ void DrawQuestStatusTab() {
         uint32_t bitMask = 1 << entry.id;
         bool hasQuestItem = (bitMask & gSaveContext.inventory.questItems) != 0;
         PushStyleButton(Colors::DarkGray);
-        auto ret = ImGui::ImageButton(entry.name.c_str(),
-                                      Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(
-                                          hasQuestItem ? entry.name : entry.nameFaded),
-                                      ImVec2(32.0f, 48.0f), ImVec2(0, 0), ImVec2(1, 1));
+        auto ret = ImGui::ImageButton(
+            entry.name.c_str(),
+            std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                ->GetTextureByName(hasQuestItem ? entry.name : entry.nameFaded),
+            ImVec2(32.0f, 48.0f), ImVec2(0, 0), ImVec2(1, 1));
         if (ret) {
             if (hasQuestItem) {
                 gSaveContext.inventory.questItems &= ~bitMask;
@@ -1301,6 +1563,15 @@ void DrawQuestStatusTab() {
             ImGui::Text("Dungeon Items");
 
             static int32_t dungeonItemsScene = SCENE_DEKU_TREE;
+            static int32_t lastDungeonScene = -1;
+            if (gPlayState != nullptr) {
+                int32_t sceneNum = gPlayState->sceneNum;
+                if (sceneNum >= SCENE_DEKU_TREE && sceneNum <= SCENE_JABU_JABU_BOSS && lastDungeonScene != sceneNum) {
+                    dungeonItemsScene = sceneNum;
+                    lastDungeonScene = sceneNum;
+                }
+            }
+
             PushStyleCombobox(THEME_COLOR);
             if (ImGui::BeginCombo("##DungeonSelect", SohUtils::GetSceneName(dungeonItemsScene).c_str())) {
                 for (int32_t dungeonIndex = SCENE_DEKU_TREE; dungeonIndex < SCENE_JABU_JABU_BOSS + 1; dungeonIndex++) {
@@ -1322,9 +1593,10 @@ void DrawQuestStatusTab() {
 
             if (dungeonItemsScene != SCENE_JABU_JABU_BOSS) {
                 float lineHeight = ImGui::GetTextLineHeightWithSpacing();
-                ImGui::Image(Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(
-                                 itemMapping[ITEM_KEY_SMALL].name),
-                             ImVec2(lineHeight, lineHeight));
+                ImGui::Image(
+                    std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                        ->GetTextureByName(itemMapping[ITEM_KEY_SMALL].name),
+                    ImVec2(lineHeight, lineHeight));
                 ImGui::SameLine();
                 PushStyleInput(THEME_COLOR);
                 if (ImGui::InputScalar("##Keys", ImGuiDataType_S8,
@@ -1490,18 +1762,18 @@ void DrawPlayerTab() {
                 ImGui::PushItemWidth(ImGui::GetFontSize() * 12);
                 if (ImGui::BeginCombo("Sword", curSword)) {
                     if (ImGui::Selectable("None")) {
-                        player->currentSwordItemId = ITEM_NONE;
-                        gSaveContext.equips.buttonItems[0] = ITEM_NONE;
+                        player->currentSwordItemId = static_cast<s8>(ITEM_NONE);
+                        gSaveContext.equips.buttonItems[0] = static_cast<u8>(ITEM_NONE);
                         Inventory_ChangeEquipment(EQUIP_TYPE_SWORD, EQUIP_VALUE_SWORD_NONE);
                     }
                     if (ImGui::Selectable("Kokiri Sword")) {
-                        player->currentSwordItemId = ITEM_SWORD_KOKIRI;
-                        gSaveContext.equips.buttonItems[0] = ITEM_SWORD_KOKIRI;
+                        player->currentSwordItemId = static_cast<s8>(ITEM_SWORD_KOKIRI);
+                        gSaveContext.equips.buttonItems[0] = static_cast<u8>(ITEM_SWORD_KOKIRI);
                         Inventory_ChangeEquipment(EQUIP_TYPE_SWORD, EQUIP_VALUE_SWORD_KOKIRI);
                     }
                     if (ImGui::Selectable("Master Sword")) {
-                        player->currentSwordItemId = ITEM_SWORD_MASTER;
-                        gSaveContext.equips.buttonItems[0] = ITEM_SWORD_MASTER;
+                        player->currentSwordItemId = static_cast<s8>(ITEM_SWORD_MASTER);
+                        gSaveContext.equips.buttonItems[0] = static_cast<u8>(ITEM_SWORD_MASTER);
                         Inventory_ChangeEquipment(EQUIP_TYPE_SWORD, EQUIP_VALUE_SWORD_MASTER);
                     }
                     if (ImGui::Selectable("Biggoron's Sword")) {
@@ -1509,21 +1781,21 @@ void DrawPlayerTab() {
                             if (gSaveContext.swordHealth < 8) {
                                 gSaveContext.swordHealth = 8;
                             }
-                            player->currentSwordItemId = ITEM_SWORD_BGS;
-                            gSaveContext.equips.buttonItems[0] = ITEM_SWORD_BGS;
+                            player->currentSwordItemId = static_cast<s8>(ITEM_SWORD_BGS);
+                            gSaveContext.equips.buttonItems[0] = static_cast<u8>(ITEM_SWORD_BGS);
                         } else {
                             if (gSaveContext.swordHealth < 8) {
                                 gSaveContext.swordHealth = 8;
                             }
-                            player->currentSwordItemId = ITEM_SWORD_BGS;
-                            gSaveContext.equips.buttonItems[0] = ITEM_SWORD_KNIFE;
+                            player->currentSwordItemId = static_cast<s8>(ITEM_SWORD_BGS);
+                            gSaveContext.equips.buttonItems[0] = static_cast<u8>(ITEM_SWORD_KNIFE);
                         }
 
                         Inventory_ChangeEquipment(EQUIP_TYPE_SWORD, EQUIP_VALUE_SWORD_BIGGORON);
                     }
                     if (ImGui::Selectable("Fishing Pole")) {
-                        player->currentSwordItemId = ITEM_FISHING_POLE;
-                        gSaveContext.equips.buttonItems[0] = ITEM_FISHING_POLE;
+                        player->currentSwordItemId = static_cast<s8>(ITEM_FISHING_POLE);
+                        gSaveContext.equips.buttonItems[0] = static_cast<u8>(ITEM_FISHING_POLE);
                         Inventory_ChangeEquipment(EQUIP_TYPE_SWORD, EQUIP_VALUE_SWORD_MASTER);
                     }
                     ImGui::EndCombo();
@@ -1713,4 +1985,6 @@ void SaveEditorWindow::DrawElement() {
 }
 
 void SaveEditorWindow::InitElement() {
+    std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+        ->LoadGuiTexture("ROCS_FEATHER", gRocsFeatherTex, ImVec4(1, 1, 1, 1));
 }

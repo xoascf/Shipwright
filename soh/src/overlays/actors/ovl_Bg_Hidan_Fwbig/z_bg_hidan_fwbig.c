@@ -8,6 +8,7 @@
 #include "z_bg_hidan_fwbig.h"
 #include "objects/gameplay_keep/gameplay_keep.h"
 #include "objects/object_hidan_objects/object_hidan_objects.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
@@ -165,9 +166,10 @@ void BgHidanFwbig_Lower(BgHidanFwbig* this, PlayState* play) {
 }
 
 void BgHidanFwbig_WaitForTimer(BgHidanFwbig* this, PlayState* play) {
-    if (this->timer != 0) {
+    if (GameInteractor_Should(VB_SWITCH_TIMER_TICK, this->timer != 0, this, &this->timer)) {
         this->timer--;
     }
+
     if (this->timer == 0) {
         this->actionFunc = BgHidanFwbig_Rise;
     }
@@ -266,8 +268,8 @@ void BgHidanFwbig_Draw(Actor* thisx, PlayState* play) {
     gDPSetEnvColor(POLY_XLU_DISP++, 255, 0, 0, 0);
 
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, 0, play->gameplayFrames % 0x80, 0, 0x20, 0x40, 1, 0,
-                                (u8)(play->gameplayFrames * -15), 0x20, 0x40));
+               Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, play->gameplayFrames % 0x80, 0, 0x20, 0x40, 1, 0,
+                                  (u8)(play->gameplayFrames * -15), 0x20, 0x40, 1, 0, 0, -15));
 
     gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 

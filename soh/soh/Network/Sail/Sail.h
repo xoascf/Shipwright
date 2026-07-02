@@ -1,14 +1,15 @@
-#ifdef ENABLE_REMOTE_CONTROL
 #ifndef NETWORK_SAIL_H
 #define NETWORK_SAIL_H
 #ifdef __cplusplus
+
+#include <memory>
 
 #include "soh/Network/Network.h"
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 
 class Sail : public Network {
   private:
-    GameInteractionEffectBase* EffectFromJson(nlohmann::json payload);
+    std::unique_ptr<GameInteractionEffectBase> EffectFromJson(nlohmann::json payload);
     void RegisterHooks();
 
   public:
@@ -22,4 +23,3 @@ class Sail : public Network {
 
 #endif // __cplusplus
 #endif // NETWORK_SAIL_H
-#endif // ENABLE_REMOTE_CONTROL

@@ -6,6 +6,7 @@
 
 #include "z_bg_hidan_curtain.h"
 #include "objects/gameplay_keep/gameplay_keep.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
@@ -191,7 +192,10 @@ void BgHidanCurtain_TurnOff(BgHidanCurtain* this, PlayState* play) {
 }
 
 void BgHidanCurtain_WaitForTimer(BgHidanCurtain* this, PlayState* play) {
-    DECR(this->timer);
+    if (GameInteractor_Should(VB_SWITCH_TIMER_TICK, true, this, &this->timer)) {
+        DECR(this->timer);
+    }
+
     if (this->timer == 0) {
         this->actionFunc = BgHidanCurtain_TurnOn;
     }
@@ -250,8 +254,8 @@ void BgHidanCurtain_Draw(Actor* thisx, PlayState* play) {
     gDPSetEnvColor(POLY_XLU_DISP++, 255, 0, 0, 0);
 
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, 0, this->texScroll & 0x7F, 0, 0x20, 0x40, 1, 0,
-                                (this->texScroll * -0xF) & 0xFF, 0x20, 0x40));
+               Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, this->texScroll & 0x7F, 0, 0x20, 0x40, 1, 0,
+                                  (this->texScroll * -0xF) & 0xFF, 0x20, 0x40, 1, 0, 0, -0xF));
 
     gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 

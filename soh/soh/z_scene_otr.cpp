@@ -1,16 +1,11 @@
-#include "OTRGlobals.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 #include "ResourceManagerHelpers.h"
-#include <libultraship/libultraship.h>
 #include "soh/resource/type/Scene.h"
-#include <utils/StringHelper.h>
 #include "global.h"
 #include "vt.h"
 #include "soh/resource/type/CollisionHeader.h"
-#include <DisplayList.h>
 #include "soh/resource/type/Cutscene.h"
-#include "soh/resource/type/Path.h"
-#include "soh/resource/type/Text.h"
-#include <Blob.h>
+#include <ship/resource/type/Blob.h>
 #include <memory>
 #include <cassert>
 #include "soh/resource/type/scenecommand/SetCameraSettings.h"
@@ -34,6 +29,7 @@
 #include "soh/resource/type/scenecommand/SetSoundSettings.h"
 #include "soh/resource/type/scenecommand/SetEchoSettings.h"
 #include "soh/resource/type/scenecommand/SetAlternateHeaders.h"
+#include <spdlog/spdlog.h>
 
 extern Ship::IResource* OTRPlay_LoadFile(PlayState* play, const char* fileName);
 extern "C" s32 Object_Spawn(ObjectContext* objectCtx, s16 objectId);
@@ -150,10 +146,8 @@ bool Scene_CommandObjectList(PlayState* play, SOH::ISceneCommand* cmd) {
     s32 i;
     s32 j;
     s32 k;
-    ObjectStatus* status2;
     // s16* objectEntry = SEGMENTED_TO_VIRTUAL(cmd->objectList.segment);
     s16* objectEntry = (s16*)cmdObj->GetRawPointer();
-    void* nextPtr;
 
     k = 0;
     i = play->objectCtx.unk_09;
@@ -208,6 +202,12 @@ bool Scene_CommandTransitionActorList(PlayState* play, SOH::ISceneCommand* cmd) 
     play->transiActorCtx.numActors = cmdActor->numTransitionActors;
     play->transiActorCtx.list = (TransitionActorEntry*)cmdActor->GetRawPointer();
 
+    // Loops transition actors and sets them to default values (not spawned yet)
+    // used as fix for doors / crawlspaces not loading after they've already been loaded once.
+    for (s32 i = 0; i < play->transiActorCtx.numActors; i++) {
+        play->transiActorCtx.list[i].id = ABS(play->transiActorCtx.list[i].id);
+    }
+
     return false;
 }
 
@@ -248,8 +248,8 @@ bool Scene_CommandTimeSettings(PlayState* play, SOH::ISceneCommand* cmd) {
     SOH::SetTimeSettings* cmdTime = (SOH::SetTimeSettings*)cmd;
 
     if ((cmdTime->settings.hour != 0xFF) && (cmdTime->settings.minute != 0xFF)) {
-        gSaveContext.skyboxTime = gSaveContext.dayTime =
-            ((cmdTime->settings.hour + (cmdTime->settings.minute / 60.0f)) * 60.0f) / ((f32)(24 * 60) / 0x10000);
+        gSaveContext.skyboxTime = gSaveContext.dayTime = static_cast<u16>(
+            ((cmdTime->settings.hour + (cmdTime->settings.minute / 60.0f)) * 60.0f) / ((f32)(24 * 60) / 0x10000));
     }
 
     if (cmdTime->settings.timeIncrement != 0xFF) {
@@ -472,8 +472,11 @@ extern "C" s32 OTRfunc_800973FC(PlayState* play, RoomContext* roomCtx) {
             gSegments[3] = VIRTUAL_TO_PHYSICAL(roomCtx->unk_34);
 
             OTRScene_ExecuteCommands(play, (SOH::Scene*)roomCtx->roomToLoad);
+
             Player_SetBootData(play, GET_PLAYER(play));
             Actor_SpawnTransitionActors(play, &play->actorCtx);
+
+            GameInteractor_ExecuteAfterSceneCommands(play->sceneNum);
 
             return 1;
         }
@@ -498,7 +501,7 @@ extern "C" s32 OTRfunc_8009728C(PlayState* play, RoomContext* roomCtx, s32 roomN
         if (roomNum >= play->numRooms)
             return 0; // UH OH
 
-        size = play->roomList[roomNum].vromEnd - play->roomList[roomNum].vromStart;
+        size = static_cast<u32>(play->roomList[roomNum].vromEnd - play->roomList[roomNum].vromStart);
         roomCtx->unk_34 =
             (void*)ALIGN16((uintptr_t)roomCtx->bufPtrs[roomCtx->unk_30] - ((size + 8) * roomCtx->unk_30 + 7));
 

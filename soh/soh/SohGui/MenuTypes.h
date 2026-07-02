@@ -1,8 +1,9 @@
 #ifndef MENUTYPES_H
 #define MENUTYPES_H
 
-#include <libultraship/libultraship.h>
-#include "UIWidgets.hpp"
+#include <variant>
+
+#include "UIWidgetOptions.hpp"
 
 typedef enum {
     DISABLE_FOR_NO_VSYNC,
@@ -23,10 +24,10 @@ typedef enum {
 
 struct WidgetInfo;
 struct disabledInfo;
-using VoidFunc = void (*)();
-using DisableInfoFunc = bool (*)(disabledInfo&);
+using VoidFunc = std::function<void()>;
+using DisableInfoFunc = std::function<bool(disabledInfo&)>;
 using DisableVec = std::vector<DisableOption>;
-using WidgetFunc = void (*)(WidgetInfo&);
+using WidgetFunc = std::function<void(WidgetInfo&)>;
 
 typedef enum {
     WIDGET_CHECKBOX,
@@ -37,11 +38,12 @@ typedef enum {
     WIDGET_CVAR_COMBOBOX,
     WIDGET_CVAR_SLIDER_INT,
     WIDGET_CVAR_SLIDER_FLOAT,
+    WIDGET_CVAR_BTN_SELECTOR,
     WIDGET_BUTTON,
     WIDGET_INPUT,
     WIDGET_CVAR_INPUT,
-    WIDGET_COLOR_24, // color picker without alpha
-    WIDGET_COLOR_32, // color picker with alpha
+    WIDGET_CVAR_COLOR_PICKER,
+    WIDGET_COLOR_PICKER,
     WIDGET_SEARCH,
     WIDGET_SEPARATOR,
     WIDGET_SEPARATOR_TEXT,
@@ -73,7 +75,8 @@ typedef enum {
 using CVarVariant = std::variant<int32_t, const char*, float, Color_RGBA8, Color_RGB8>;
 using OptionsVariant = std::variant<UIWidgets::ButtonOptions, UIWidgets::CheckboxOptions, UIWidgets::ComboboxOptions,
                                     UIWidgets::FloatSliderOptions, UIWidgets::IntSliderOptions, UIWidgets::TextOptions,
-                                    UIWidgets::WidgetOptions, UIWidgets::WindowButtonOptions>;
+                                    UIWidgets::WidgetOptions, UIWidgets::WindowButtonOptions,
+                                    UIWidgets::ColorPickerOptions, UIWidgets::BtnSelectorOptions>;
 
 // All the info needed for display and search of all widgets in the menu.
 // `name` is the label displayed,
@@ -110,11 +113,13 @@ struct WidgetInfo {
     bool isHidden = false;
     bool sameLine = false;
     bool raceDisable = true;
+    bool hideInSearch = false;
 
     WidgetInfo& CVar(const char* cVar_) {
         cVar = cVar_;
         return *this;
     }
+
     WidgetInfo& Options(OptionsVariant options_) {
         switch (type) {
             case WIDGET_AUDIO_BACKEND:
@@ -132,10 +137,19 @@ struct WidgetInfo {
                 options =
                     std::make_shared<UIWidgets::FloatSliderOptions>(std::get<UIWidgets::FloatSliderOptions>(options_));
                 break;
+            case WIDGET_CVAR_BTN_SELECTOR:
+                options =
+                    std::make_shared<UIWidgets::BtnSelectorOptions>(std::get<UIWidgets::BtnSelectorOptions>(options_));
+                break;
             case WIDGET_SLIDER_INT:
             case WIDGET_CVAR_SLIDER_INT:
                 options =
                     std::make_shared<UIWidgets::IntSliderOptions>(std::get<UIWidgets::IntSliderOptions>(options_));
+                break;
+            case WIDGET_COLOR_PICKER:
+            case WIDGET_CVAR_COLOR_PICKER:
+                options =
+                    std::make_shared<UIWidgets::ColorPickerOptions>(std::get<UIWidgets::ColorPickerOptions>(options_));
                 break;
             case WIDGET_BUTTON:
                 options = std::make_shared<UIWidgets::ButtonOptions>(std::get<UIWidgets::ButtonOptions>(options_));
@@ -154,47 +168,62 @@ struct WidgetInfo {
         }
         return *this;
     }
+
+    WidgetInfo& Options(std::shared_ptr<UIWidgets::WidgetOptions> options_) {
+        options = options_;
+        return *this;
+    }
+
+    WidgetInfo& Callback(WidgetFunc callback_) {
+        callback = callback_;
+        return *this;
+    }
+
+    WidgetInfo& PreFunc(WidgetFunc preFunc_) {
+        preFunc = preFunc_;
+        return *this;
+    }
+
+    WidgetInfo& PostFunc(WidgetFunc postFunc_) {
+        postFunc = postFunc_;
+        return *this;
+    }
+
+    WidgetInfo& WindowName(const char* windowName_) {
+        windowName = windowName_;
+        return *this;
+    }
+
+    WidgetInfo& ValuePointer(std::variant<bool*, int32_t*, float*> valuePointer_) {
+        valuePointer = valuePointer_;
+        return *this;
+    }
+
+    WidgetInfo& SameLine(bool sameLine_) {
+        sameLine = sameLine_;
+        return *this;
+    }
+
+    WidgetInfo& CustomFunction(WidgetFunc customFunction_) {
+        customFunction = customFunction_;
+        return *this;
+    }
+
+    WidgetInfo& RaceDisable(bool disable) {
+        raceDisable = disable;
+        return *this;
+    }
+
+    WidgetInfo& HideInSearch(bool hide) {
+        hideInSearch = hide;
+        return *this;
+    }
+
     void ResetDisables() {
         isHidden = false;
         options->disabled = false;
         options->disabledTooltip = "";
         activeDisables.clear();
-    }
-    WidgetInfo& Options(std::shared_ptr<UIWidgets::WidgetOptions> options_) {
-        options = options_;
-        return *this;
-    }
-    WidgetInfo& Callback(WidgetFunc callback_) {
-        callback = callback_;
-        return *this;
-    }
-    WidgetInfo& PreFunc(WidgetFunc preFunc_) {
-        preFunc = preFunc_;
-        return *this;
-    }
-    WidgetInfo& PostFunc(WidgetFunc postFunc_) {
-        postFunc = postFunc_;
-        return *this;
-    }
-    WidgetInfo& WindowName(const char* windowName_) {
-        windowName = windowName_;
-        return *this;
-    }
-    WidgetInfo& ValuePointer(std::variant<bool*, int32_t*, float*> valuePointer_) {
-        valuePointer = valuePointer_;
-        return *this;
-    }
-    WidgetInfo& SameLine(bool sameLine_) {
-        sameLine = sameLine_;
-        return *this;
-    }
-    WidgetInfo& CustomFunction(WidgetFunc customFunction_) {
-        customFunction = customFunction_;
-        return *this;
-    }
-    WidgetInfo& RaceDisable(bool disable) {
-        raceDisable = disable;
-        return *this;
     }
 };
 
@@ -236,17 +265,6 @@ struct MainMenuEntry {
     std::vector<std::string> sidebarOrder = {};
 };
 
-static const std::unordered_map<Ship::AudioBackend, const char*> audioBackendsMap = {
-    { Ship::AudioBackend::WASAPI, "Windows Audio Session API" },
-    { Ship::AudioBackend::SDL, "SDL" },
-};
-
-static const std::unordered_map<Ship::WindowBackend, const char*> windowBackendsMap = {
-    { Ship::WindowBackend::FAST3D_DXGI_DX11, "DirectX" },
-    { Ship::WindowBackend::FAST3D_SDL_OPENGL, "OpenGL" },
-    { Ship::WindowBackend::FAST3D_SDL_METAL, "Metal" },
-};
-
 struct MenuInit {
     static std::vector<std::function<void()>>& GetInitFuncs() {
         static std::vector<std::function<void()>> menuInitFuncs;
@@ -266,6 +284,24 @@ struct MenuInit {
             initFunc();
         }
     }
+};
+
+struct SearchEntry {
+    // First four required
+    std::string widgetName;
+    std::string menuName;
+    std::string sidebarName;
+    std::string location;
+    std::string extraTerms = "";
+};
+
+struct SearchWidget {
+    // First four required
+    WidgetInfo& info;
+    std::string menuName;
+    std::string sidebarName;
+    std::string location;
+    std::string extraTerms = "";
 };
 
 struct RegisterMenuInitFunc {

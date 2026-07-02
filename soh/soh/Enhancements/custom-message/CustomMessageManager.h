@@ -1,6 +1,6 @@
 #pragma once
 #include <unordered_map>
-#include <cstdint>
+#include <stdint.h>
 #include <exception>
 #include <vector>
 #include <string>
@@ -8,7 +8,7 @@
 #include "../../../include/z64item.h"
 #include "../../../include/z64.h"
 #include "../../../include/message_data_textbox_types.h"
-#include "../randomizer/3drando/text.hpp"
+#include "text.h"
 
 #undef MESSAGE_END
 
@@ -47,6 +47,7 @@ class CustomMessage {
                   TextBoxPosition position_ = TEXTBOX_POS_BOTTOM);
     CustomMessage(std::string english_, TextBoxType type_ = TEXTBOX_TYPE_BLACK,
                   TextBoxPosition position_ = TEXTBOX_POS_BOTTOM);
+    // RANDOTODO trying to declare this with capital and type causes ambiguity with the first signature
     CustomMessage(std::string english_, std::vector<std::string> colors_, std::vector<bool> capital_ = {},
                   TextBoxType type_ = TEXTBOX_TYPE_BLACK, TextBoxPosition position_ = TEXTBOX_POS_BOTTOM);
     CustomMessage(Text text, TextBoxType type_ = TEXTBOX_TYPE_BLACK, TextBoxPosition position_ = TEXTBOX_POS_BOTTOM);
@@ -60,6 +61,7 @@ class CustomMessage {
     static std::string POINTS(std::string x); // HIGH_SCORE is also a macro
     static std::string WAIT_FOR_INPUT();
     static std::string PLAYER_NAME();
+    static std::string TWO_WAY_CHOICE();
 
     const std::string GetEnglish(MessageFormat format = MF_FORMATTED) const;
     const std::string GetFrench(MessageFormat format = MF_FORMATTED) const;
@@ -75,6 +77,7 @@ class CustomMessage {
     const TextBoxType& GetTextBoxType() const;
     void SetTextBoxType(TextBoxType boxType);
     const TextBoxPosition& GetTextBoxPosition() const;
+    void SetTextBoxPosition(TextBoxPosition boxPos);
 
     CustomMessage operator+(const CustomMessage& right) const;
     CustomMessage operator+(const std::string& right) const;
@@ -83,6 +86,8 @@ class CustomMessage {
     bool operator==(const CustomMessage& operand) const;
     bool operator==(const std::string& operand) const;
     bool operator!=(const CustomMessage& right) const;
+
+    void LoadIntoFont();
 
     /**
      * @brief Finds an instance of oldStr in each language of the CustomMessage
@@ -154,6 +159,13 @@ class CustomMessage {
     void InsertNumber(uint8_t num);
 
     /**
+     * @brief A € sign at the end of an item name signals that it is plural.
+     * If a hint text has |singular|plural| forms specified, the unused one get's deleted.
+     * If no € sign is present, the singular form is used.
+     */
+    void SetSingularPlural();
+
+    /**
      * @brief Replaces various symbols with the control codes necessary to
      * display them in OoT's textboxes. i.e. special characters, colors, newlines,
      * wait for input, etc.
@@ -165,6 +177,7 @@ class CustomMessage {
      * textboxes, and use it's formatting.
      */
     void AutoFormat();
+    void AutoFormat(ItemID iid);
 
     /**
      * @brief Removes all OoT formatting from the message,
@@ -315,7 +328,7 @@ class MessageNotFoundException : public std::exception {
     }
     virtual const char* what() const noexcept {
         static char message[500];
-        sprintf(message, "Message from table %s with textId %u was not found", messageTableId.c_str(), textId);
+        snprintf(message, 500, "Message from table %s with textId %u was not found", messageTableId.c_str(), textId);
         return message;
     }
 };

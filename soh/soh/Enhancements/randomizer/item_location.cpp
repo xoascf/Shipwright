@@ -1,6 +1,9 @@
 #include "item_location.h"
-#include "context.h"
+#include "SeedContext.h"
 #include "logic.h"
+#include "3drando/random.hpp"
+
+#include <spdlog/spdlog.h>
 
 namespace Rando {
 ItemLocation::ItemLocation() : rc(RC_UNKNOWN_CHECK) {
@@ -123,6 +126,11 @@ bool ItemLocation::HasCustomPrice() const {
     return hasCustomPrice;
 }
 
+bool ItemLocation::CanBePurchased() const {
+    const RandomizerCheckType checkType = StaticData::GetLocation(rc)->GetRCType();
+    return checkType == RCTYPE_SHOP || checkType == RCTYPE_SCRUB || checkType == RCTYPE_MERCHANT;
+}
+
 void ItemLocation::SetCustomPrice(const uint16_t price_) {
     price = price_;
     hasCustomPrice = true;
@@ -134,6 +142,7 @@ bool ItemLocation::HasObtained() const {
 
 void ItemLocation::SetCheckStatus(RandomizerCheckStatus status_) {
     status = status_;
+    GameInteractor::Instance->ExecuteHooks<GameInteractor::OnRandoSetCheckStatus>(rc, status);
 }
 
 RandomizerCheckStatus ItemLocation::GetCheckStatus() {
@@ -142,6 +151,7 @@ RandomizerCheckStatus ItemLocation::GetCheckStatus() {
 
 void ItemLocation::SetIsSkipped(bool isSkipped_) {
     isSkipped = isSkipped_;
+    GameInteractor::Instance->ExecuteHooks<GameInteractor::OnRandoSetIsSkipped>(rc, isSkipped);
 }
 
 bool ItemLocation::GetIsSkipped() {
@@ -149,7 +159,7 @@ bool ItemLocation::GetIsSkipped() {
 }
 
 bool ItemLocation::IsHintable() const {
-    return isHintable;
+    return isHintable && !hidden;
 }
 
 void ItemLocation::SetAsHintable() {

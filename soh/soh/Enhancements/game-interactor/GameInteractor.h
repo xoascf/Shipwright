@@ -3,10 +3,8 @@
 #ifndef GameInteractor_h
 #define GameInteractor_h
 
-#include "libultraship/libultraship.h"
+#include <libultraship/bridge/consolevariablebridge.h>
 #include "vanilla-behavior/GIVanillaBehavior.h"
-#include "GameInteractionEffect.h"
-#include "soh/Enhancements/item-tables/ItemTableTypes.h"
 #include <z64.h>
 
 typedef enum {
@@ -54,16 +52,6 @@ typedef enum {
     /* 0x08 */ GI_COLOR_BLACK,
 } GIColors;
 
-typedef enum {
-    /*      */ GI_TP_DEST_LINKSHOUSE = ENTR_LINKS_HOUSE_CHILD_SPAWN,
-    /*      */ GI_TP_DEST_MINUET = ENTR_SACRED_FOREST_MEADOW_WARP_PAD,
-    /*      */ GI_TP_DEST_BOLERO = ENTR_DEATH_MOUNTAIN_CRATER_WARP_PAD,
-    /*      */ GI_TP_DEST_SERENADE = ENTR_LAKE_HYLIA_WARP_PAD,
-    /*      */ GI_TP_DEST_REQUIEM = ENTR_DESERT_COLOSSUS_WARP_PAD,
-    /*      */ GI_TP_DEST_NOCTURNE = ENTR_GRAVEYARD_WARP_PAD,
-    /*      */ GI_TP_DEST_PRELUDE = ENTR_TEMPLE_OF_TIME_WARP_PAD,
-} GITeleportDestinations;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -76,7 +64,7 @@ uint8_t GameInteractor_PacifistModeActive();
 uint8_t GameInteractor_DisableZTargetingActive();
 uint8_t GameInteractor_ReverseControlsActive();
 int32_t GameInteractor_DefenseModifier();
-int32_t GameInteractor_RunSpeedModifier();
+float GameInteractor_MovementSpeedMultiplier();
 GIGravityLevel GameInteractor_GravityLevel();
 uint32_t GameInteractor_GetEmulatedButtons();
 void GameInteractor_SetEmulatedButtons(uint32_t buttons);
@@ -94,19 +82,20 @@ void GameInteractor_SetTriforceHuntCreditsWarpActive(uint8_t state);
 
 #ifdef __cplusplus
 #include <stdarg.h>
-#include <thread>
+#include <cstdint>
 #include <map>
 #include <unordered_map>
 #include <vector>
 #include <functional>
-#include <string>
+#include <cstring>
 
-#include <version>
 #ifdef __cpp_lib_source_location
 #include <source_location>
 #else
 #pragma message("Compiling without <source_location> support, the Hook Debugger will not be available")
 #endif
+
+#include "GameInteractionEffect.h"
 
 typedef uint32_t HOOK_ID;
 
@@ -204,7 +193,7 @@ class GameInteractor {
         static bool DisableZTargetingActive;
         static bool ReverseControlsActive;
         static int32_t DefenseModifier;
-        static int32_t RunSpeedModifier;
+        static float MovementSpeedMultiplier;
         static GIGravityLevel GravityLevel;
         static uint32_t EmulatedButtons;
         static uint8_t RandomBombFuseTimerActive;
@@ -221,11 +210,14 @@ class GameInteractor {
     };
 
     // Effects
-    static GameInteractionEffectQueryResult CanApplyEffect(GameInteractionEffectBase* effect);
-    static GameInteractionEffectQueryResult ApplyEffect(GameInteractionEffectBase* effect);
-    static GameInteractionEffectQueryResult RemoveEffect(RemovableGameInteractionEffect* effect);
+    static GameInteractionEffectQueryResult CanApplyEffect(GameInteractionEffectBase& effect);
+    static GameInteractionEffectQueryResult ApplyEffect(GameInteractionEffectBase& effect);
+    static GameInteractionEffectQueryResult RemoveEffect(RemovableGameInteractionEffect& effect);
 
     // Game Hooks
+    //
+    // Hooks should be idempotent and execution order is not guaranteed.
+    // If two operations must happen in a specific order, they should be placed in the same hook.
     HOOK_ID nextHookId = 1;
 
     template <typename H> struct RegisteredGameHooks {
@@ -538,6 +530,7 @@ class GameInteractor {
     // Helpers
     static bool IsSaveLoaded(bool allowDbgSave = false);
     static bool IsGameplayPaused();
+    static bool IsPlayerInControl();
     static bool CanSpawnActor();
     static bool CanAddOrTakeAmmo(int16_t amount, int16_t item);
 
@@ -566,8 +559,6 @@ class GameInteractor {
         static void ClearAssignedButtons(uint8_t buttonSet);
         static void SetTimeOfDay(uint32_t time);
         static void SetCollisionViewer(bool active);
-        static void SetCosmeticsColor(uint8_t cosmeticCategory, uint8_t colorValue);
-        static void RandomizeCosmeticsColors(bool excludeBiddingWarColors);
         static void EmulateButtonPress(int32_t button);
         static void AddOrTakeAmmo(int16_t amount, int16_t item);
         static void EmulateRandomButtonPress(uint32_t chancePercentage = 100);
@@ -575,8 +566,10 @@ class GameInteractor {
         static void SetPlayerInvincibility(bool active);
         static void ClearCutscenePointer();
 
-        static GameInteractionEffectQueryResult SpawnEnemyWithOffset(uint32_t enemyId, int32_t enemyParams);
-        static GameInteractionEffectQueryResult SpawnActor(uint32_t actorId, int32_t actorParams);
+        static GameInteractionEffectQueryResult SpawnEnemyWithOffset(uint32_t enemyId, int32_t enemyParams,
+                                                                     std::string nameTag = "");
+        static GameInteractionEffectQueryResult SpawnActor(uint32_t actorId, int32_t actorParams,
+                                                           std::string nameTag = "");
     };
 };
 
