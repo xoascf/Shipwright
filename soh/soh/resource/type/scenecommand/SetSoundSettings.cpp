@@ -1,11 +1,11 @@
 #include "SetSoundSettings.h"
 
-namespace LUS {
+namespace SOH {
 SoundSettings* SetSoundSettings::GetPointer() {
     return &settings;
 }
 
 size_t SetSoundSettings::GetPointerSize() {
-	return sizeof(SoundSettings);
+    return sizeof(SoundSettings);
 }
-} // namespace LUS
+} // namespace SOH

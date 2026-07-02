@@ -2,7 +2,7 @@
 #include "objects/object_efc_erupc/object_efc_erupc.h"
 #include "soh/frame_interpolation.h"
 
-#define FLAGS (ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
 void EfcErupc_Init(Actor* thisx, PlayState* play);
 void EfcErupc_Destroy(Actor* thisx, PlayState* play);
@@ -56,7 +56,7 @@ void EfcErupc_UpdateAction(EfcErupc* this, PlayState* play) {
         if (play->csCtx.npcActions[1] != NULL) {
             if (play->csCtx.npcActions[1]->action == 2) {
                 if (this->unk_150 == 30) {
-                    func_800788CC(NA_SE_IT_EARTHQUAKE);
+                    Sfx_PlaySfxCentered2(NA_SE_IT_EARTHQUAKE);
                 }
                 if (this->unk_150 <= 64) {
                     if (this->unk_154 < 200) {
@@ -121,21 +121,20 @@ void EfcErupc_Draw(Actor* thisx, PlayState* play) {
     Gfx_SetupDL_25Xlu(play->state.gfxCtx);
 
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, 0, this->unk_14C * 1, this->unk_14E * -4, 32, 64, 1,
-                                this->unk_14C * 4, this->unk_14E * -20, 64, 64));
+               Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, this->unk_14C * 1, this->unk_14E * -4, 32, 64, 1,
+                                  this->unk_14C * 4, this->unk_14E * -20, 64, 64, 1, -4, 4, -20));
 
-    gSPSegment(
-        POLY_XLU_DISP++, 0x09,
-        Gfx_TwoTexScroll(play->state.gfxCtx, 0, 0, this->unk_150 * -4, 16, 128, 1, 0, this->unk_150 * 12, 32, 32));
+    gSPSegment(POLY_XLU_DISP++, 0x09,
+               Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, 0, this->unk_150 * -4, 16, 128, 1, 0, this->unk_150 * 12, 32,
+                                  32, 0, -4, 0, 12));
 
-    gSPSegment(
-        POLY_XLU_DISP++, 0x0A,
-        Gfx_TwoTexScroll(play->state.gfxCtx, 0, 0, this->unk_150 * -4, 16, 128, 1, 0, this->unk_150 * 12, 32, 32));
+    gSPSegment(POLY_XLU_DISP++, 0x0A,
+               Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, 0, this->unk_150 * -4, 16, 128, 1, 0, this->unk_150 * 12, 32,
+                                  32, 0, -4, 0, 12));
 
     Matrix_Push();
     Matrix_Scale(0.8f, 0.8f, 0.8f, MTXMODE_APPLY);
-    gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-              G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 
     if (play->csCtx.state != 0) {
         if ((play->csCtx.npcActions[1] != 0) && (play->csCtx.npcActions[1]->action == 2)) {
@@ -144,10 +143,9 @@ void EfcErupc_Draw(Actor* thisx, PlayState* play) {
     }
     Matrix_Pop();
     Matrix_Scale(3.4f, 3.4f, 3.4f, MTXMODE_APPLY);
-    gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-              G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
     if (play->csCtx.state != 0) {
-        CsCmdActorAction* csActorAction = play->csCtx.npcActions[2];
+        CsCmdActorCue* csActorAction = play->csCtx.npcActions[2];
         if (csActorAction != 0) {
             csAction = csActorAction->action;
             if ((csAction == 2) || (csAction == 3)) {
@@ -180,8 +178,7 @@ void EfcErupc_DrawParticles(EfcErupcParticles* particles, PlayState* play) {
             Matrix_Translate(particles->pos.x, particles->pos.y, particles->pos.z, MTXMODE_NEW);
             Matrix_ReplaceRotation(&play->billboardMtxF);
             Matrix_Scale(particles->scale, particles->scale, 1.0f, MTXMODE_APPLY);
-            gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(gfxCtx),
-                      G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+            gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             gSPDisplayList(POLY_XLU_DISP++, object_efc_erupc_DL_0027D8);
         }
 

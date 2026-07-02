@@ -1,6 +1,6 @@
 #include "z_en_holl.h"
 
-#define FLAGS ACTOR_FLAG_UPDATE_WHILE_CULLED
+#define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
 // Horizontal Plane parameters
 
@@ -77,7 +77,7 @@ void EnHoll_SetupAction(EnHoll* this, EnHollActionFunc func) {
 }
 
 s32 EnHoll_IsKokiriSetup8() {
-    return gSaveContext.entranceIndex == 0x00EE && gSaveContext.sceneSetupIndex == 8;
+    return gSaveContext.entranceIndex == ENTR_KOKIRI_FOREST_0 && gSaveContext.sceneSetupIndex == 8;
 }
 
 void EnHoll_ChooseAction(EnHoll* this) {
@@ -97,7 +97,7 @@ void EnHoll_Init(Actor* thisx, PlayState* play) {
 
     Actor_ProcessInitChain(&this->actor, sInitChain);
     EnHoll_ChooseAction(this);
-    this->unk_14F = 0;
+    this->resetBgCoverAlpha = 0;
 }
 
 void EnHoll_Destroy(Actor* thisx, PlayState* play) {
@@ -125,7 +125,7 @@ void func_80A58DD4(EnHoll* this, PlayState* play) {
     f32 absZ;
     s32 transitionActorIdx;
 
-    func_8002DBD0(&this->actor, &vec, &player->actor.world.pos);
+    Actor_WorldToActorCoords(&this->actor, &vec, &player->actor.world.pos);
     this->side = (vec.z < 0.0f) ? 0 : 1;
     absZ = fabsf(vec.z);
     if (vec.y > PLANE_Y_MIN && vec.y < PLANE_Y_MAX && fabsf(vec.x) < PLANE_HALFWIDTH &&
@@ -162,7 +162,7 @@ void func_80A59014(EnHoll* this, PlayState* play) {
     f32 planeHalfWidth;
     f32 absZ;
 
-    func_8002DBD0(&this->actor, &vec, (useViewEye) ? &play->view.eye : &player->actor.world.pos);
+    Actor_WorldToActorCoords(&this->actor, &vec, (useViewEye) ? &play->view.eye : &player->actor.world.pos);
     planeHalfWidth = (((this->actor.params >> 6) & 7) == 6) ? PLANE_HALFWIDTH : PLANE_HALFWIDTH_2;
 
     temp = EnHoll_IsKokiriSetup8();
@@ -206,13 +206,13 @@ void func_80A591C0(EnHoll* this, PlayState* play) {
             if (this->actor.room != play->roomCtx.curRoom.num &&
                 func_8009728C(play, &play->roomCtx, this->actor.room) != 0) {
                 EnHoll_SetupAction(this, EnHoll_NextAction);
-                this->unk_14F = 1;
+                this->resetBgCoverAlpha = 1;
                 player->actor.speedXZ = 0.0f;
             }
         }
-    } else if (this->unk_14F != 0) {
+    } else if (this->resetBgCoverAlpha != 0) {
         play->unk_11E18 = 0;
-        this->unk_14F = 0;
+        this->resetBgCoverAlpha = 0;
     }
 }
 
@@ -235,11 +235,11 @@ void func_80A593A4(EnHoll* this, PlayState* play) {
             if (this->actor.room != play->roomCtx.curRoom.num &&
                 func_8009728C(play, &play->roomCtx, this->actor.room) != 0) {
                 EnHoll_SetupAction(this, EnHoll_NextAction);
-                this->unk_14F = 1;
+                this->resetBgCoverAlpha = 1;
             }
         }
-    } else if (this->unk_14F != 0) {
-        this->unk_14F = 0;
+    } else if (this->resetBgCoverAlpha != 0) {
+        this->resetBgCoverAlpha = 0;
         play->unk_11E18 = 0;
     }
 }
@@ -273,15 +273,15 @@ void func_80A59618(EnHoll* this, PlayState* play) {
     s32 transitionActorIdx;
 
     if (!Flags_GetSwitch(play, this->actor.params & 0x3F)) {
-        if (this->unk_14F != 0) {
+        if (this->resetBgCoverAlpha != 0) {
             play->unk_11E18 = 0;
-            this->unk_14F = 0;
+            this->resetBgCoverAlpha = 0;
         }
     } else {
-        func_8002DBD0(&this->actor, &vec, &player->actor.world.pos);
+        Actor_WorldToActorCoords(&this->actor, &vec, &player->actor.world.pos);
         absZ = fabsf(vec.z);
         if (PLANE_Y_MIN < vec.y && vec.y < PLANE_Y_MAX && fabsf(vec.x) < PLANE_HALFWIDTH_2 && absZ < 100.0f) {
-            this->unk_14F = 1;
+            this->resetBgCoverAlpha = 1;
             transitionActorIdx = (u16)this->actor.params >> 0xA;
             play->unk_11E18 = 0xFF - (s32)((absZ - 50.0f) * 5.9f);
             if (play->unk_11E18 >= 0x100) {
@@ -297,9 +297,9 @@ void func_80A59618(EnHoll* this, PlayState* play) {
                     EnHoll_SetupAction(this, EnHoll_NextAction);
                 }
             }
-        } else if (this->unk_14F != 0) {
+        } else if (this->resetBgCoverAlpha != 0) {
             play->unk_11E18 = 0;
-            this->unk_14F = 0;
+            this->resetBgCoverAlpha = 0;
         }
     }
 }
@@ -308,7 +308,7 @@ void EnHoll_NextAction(EnHoll* this, PlayState* play) {
     if (!EnHoll_IsKokiriSetup8() && play->roomCtx.status == 0) {
         func_80097534(play, &play->roomCtx);
         if (play->unk_11E18 == 0) {
-            this->unk_14F = 0;
+            this->resetBgCoverAlpha = 0;
         }
         EnHoll_ChooseAction(this);
     }
@@ -343,8 +343,7 @@ void EnHoll_Draw(Actor* thisx, PlayState* play) {
             Matrix_RotateY(M_PI, MTXMODE_APPLY);
         }
 
-        gSPMatrix(gfxP++, MATRIX_NEWMTX(play->state.gfxCtx),
-                  G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        gSPMatrix(gfxP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gDPSetPrimColor(gfxP++, 0, 0, 0, 0, 0, (u8)this->planeAlpha);
         gSPDisplayList(gfxP++, sPlaneDL);
 

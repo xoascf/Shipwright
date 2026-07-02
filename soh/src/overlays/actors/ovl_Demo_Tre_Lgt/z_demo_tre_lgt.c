@@ -3,7 +3,7 @@
 #include "objects/object_box/object_box.h"
 #include <assert.h>
 
-#define FLAGS ACTOR_FLAG_UPDATE_WHILE_CULLED
+#define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
 void DemoTreLgt_Init(Actor* thisx, PlayState* play);
 void DemoTreLgt_Destroy(Actor* thisx, PlayState* play);
@@ -119,8 +119,8 @@ void func_80993848(DemoTreLgt* this, PlayState* play) {
     }
     if ((currentFrame > 30.0f) && !(this->status & 1)) {
         this->status |= 1;
-        Audio_PlaySoundGeneral(NA_SE_EV_TRE_BOX_FLASH, &this->actor.projectedPos, 4, &D_801333E0, &D_801333E0,
-                               &D_801333E8);
+        Audio_PlaySoundGeneral(NA_SE_EV_TRE_BOX_FLASH, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
+                               &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
     }
     if (SkelCurve_Update(play, &this->skelCurve)) {
         Actor_Kill(&this->actor);
@@ -139,8 +139,8 @@ s32 DemoTreLgt_PostLimbDraw(PlayState* play, SkelAnimeCurve* skelCurve, s32 limb
 
     OPEN_DISPS(play->state.gfxCtx);
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, 0, (play->state.frames * 2) % 256, 0, 64, 32, 1,
-                                (play->state.frames * -2) % 256, 0, 64, 32));
+               Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, (play->state.frames * 2) % 256, 0, 64, 32, 1,
+                                  (play->state.frames * -2) % 256, 0, 64, 32, 2, 0, -2, 0));
 
     if (limbIndex == 1) {
         gDPSetPrimColor(POLY_XLU_DISP++, 0, 0x80, 255, 255, 180, this->unk_170);

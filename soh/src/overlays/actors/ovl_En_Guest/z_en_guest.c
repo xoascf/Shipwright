@@ -9,8 +9,9 @@
 #include "objects/object_boj/object_boj.h"
 #include "vt.h"
 #include <assert.h>
+#include "soh/ResourceManagerHelpers.h"
 
-#define FLAGS (ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_WHILE_CULLED)
+#define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_CULLING_DISABLED)
 
 void EnGuest_Init(Actor* thisx, PlayState* play);
 void EnGuest_Destroy(Actor* thisx, PlayState* play);
@@ -81,10 +82,11 @@ void EnGuest_Update(Actor* thisx, PlayState* play) {
     s32 pad;
 
     if (Object_IsLoaded(&play->objectCtx, this->osAnimeBankIndex)) {
-        this->actor.flags &= ~ACTOR_FLAG_UPDATE_WHILE_CULLED;
+        this->actor.flags &= ~ACTOR_FLAG_UPDATE_CULLING_DISABLED;
         Actor_ProcessInitChain(&this->actor, sInitChain);
 
-        SkelAnime_InitFlex(play, &this->skelAnime, &object_boj_Skel_0000F0, NULL, this->jointTable, this->morphTable, 16);
+        SkelAnime_InitFlex(play, &this->skelAnime, &object_boj_Skel_0000F0, NULL, this->jointTable, this->morphTable,
+                           16);
         gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.status[this->osAnimeBankIndex].segment);
         Animation_Change(&this->skelAnime, &gObjOsAnim_42AC, 1.0f, 0.0f, Animation_GetLastFrame(&gObjOsAnim_42AC),
                          ANIMMODE_LOOP, 0.0f);
@@ -161,7 +163,7 @@ void func_80A505CC(Actor* thisx, PlayState* play) {
     }
     Npc_TrackPoint(&this->actor, &this->interactInfo, 6, NPC_TRACKING_HEAD_AND_TORSO);
 
-    func_80034F54(play, this->unk_2CC, this->unk_2EC, 16);
+    func_80034F54(play, this->fidgetTableY, this->fidgetTableZ, 16);
 
     gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.status[this->osAnimeBankIndex].segment);
 
@@ -182,8 +184,7 @@ Gfx* func_80A50708(GraphicsContext* gfxCtx, u8 r, u8 g, u8 b, u8 a) {
     return dlist;
 }
 
-s32 EnGuest_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
-                             void* thisx) {
+s32 EnGuest_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnGuest* this = (EnGuest*)thisx;
     Vec3s sp3C;
 
@@ -205,8 +206,8 @@ s32 EnGuest_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f*
     }
 
     if (limbIndex == 8 || limbIndex == 9 || limbIndex == 12) {
-        rot->y += Math_SinS(this->unk_2CC[limbIndex]) * 200.0f;
-        rot->z += Math_CosS(this->unk_2EC[limbIndex]) * 200.0f;
+        rot->y += Math_SinS(this->fidgetTableY[limbIndex]) * 200.0f;
+        rot->z += Math_CosS(this->fidgetTableZ[limbIndex]) * 200.0f;
     }
 
     CLOSE_DISPS(play->state.gfxCtx);

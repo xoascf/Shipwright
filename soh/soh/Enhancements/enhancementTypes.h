@@ -8,16 +8,23 @@ typedef enum {
 } BetterDebugWarpOverrideMQMode;
 
 typedef enum {
-    CSMC_DISABLED,
-    CSMC_BOTH,
-    CSMC_TEXTURE,
-    CSMC_SIZE
-} ChestStyleMatchesContentsType;
+    SGIA_DISABLED,
+    SGIA_JUNK,
+    SGIA_ALL,
+    SGIA_SIZE,
+} SkipGetItemAnimationType;
+
+typedef enum {
+    FORCED_DIALOG_SKIP_NONE,
+    FORCED_DIALOG_SKIP_NAVI,
+    FORCED_DIALOG_SKIP_NPC,
+    FORCED_DIALOG_SKIP_ALL
+} ForcedDialogMode;
 
 typedef enum {
     BUNNY_HOOD_VANILLA,
+    BUNNY_HOOD_FAST,
     BUNNY_HOOD_FAST_AND_JUMP,
-    BUNNY_HOOD_FAST
 } BunnyHoodMode;
 
 typedef enum {
@@ -25,7 +32,7 @@ typedef enum {
     MIRRORED_WORLD_ALWAYS,
     MIRRORED_WORLD_RANDOM,
     MIRRORED_WORLD_RANDOM_SEEDED,
-    MIRRORED_WORLD_DUNGEONS_All,
+    MIRRORED_WORLD_DUNGEONS_ALL,
     MIRRORED_WORLD_DUNGEONS_VANILLA,
     MIRRORED_WORLD_DUNGEONS_MQ,
     MIRRORED_WORLD_DUNGEONS_RANDOM,
@@ -39,21 +46,12 @@ typedef enum {
 } EnemyRandomizerMode;
 
 typedef enum {
-    FASTFILE_1,
-    FASTFILE_2,
-    FASTFILE_3,
-    FASTFILE_MAP_SELECT,
-    FASTFILE_FILE_SELECT
-} FastFileSelectTarget;
-
-typedef enum {
-    AUTOSAVE_OFF,
-    AUTOSAVE_LOCATION_AND_MAJOR_ITEMS,
-    AUTOSAVE_LOCATION_AND_ALL_ITEMS,
-    AUTOSAVE_LOCATION,
-    AUTOSAVE_MAJOR_ITEMS,
-    AUTOSAVE_ALL_ITEMS
-} AutosaveType;
+    BOOTSEQUENCE_DEFAULT,
+    BOOTSEQUENCE_AUTHENTIC,
+    BOOTSEQUENCE_FILESELECT,
+    BOOTSEQUENCE_DEBUGWARPSCREEN,
+    BOOTSEQUENCE_WARPPOINT,
+} BootSequenceType;
 
 typedef enum {
     ZFIGHT_FIX_DISABLED,
@@ -73,9 +71,59 @@ typedef enum {
 } BonkDamage;
 
 typedef enum {
+    DAMAGE_VANILLA,
+    DAMAGE_DOUBLE,
+    DAMAGE_QUADRUPLE,
+    DAMAGE_OCTUPLE,
+    DAMAGE_FOOLISH,
+    DAMAGE_RIDICULOUS,
+    DAMAGE_MERCILESS,
+    DAMAGE_TORTURE,
+    DAMAGE_OHKO
+} DamageMultType;
+
+typedef enum {
+    DAMPE_NONE,
+    DAMPE_NORMAL,
+    DAMPE_JALAPENO,
+    DAMPE_CHIPOTLE,
+    DAMPE_SCOTCH_BONNET,
+    DAMPE_GHOST_PEPPER,
+    DAMPE_INFERNO,
+} DampeDropRate;
+
+typedef enum {
     DEKU_STICK_NORMAL,
     DEKU_STICK_UNBREAKABLE,
     DEKU_STICK_UNBREAKABLE_AND_ALWAYS_ON_FIRE,
 } DekuStickType;
+
+typedef enum {
+    SWORD_TOGGLE_NONE,
+    SWORD_TOGGLE_CHILD,
+    SWORD_TOGGLE_BOTH_AGES,
+} SwordToggleMode;
+
+typedef enum {
+    TIME_TRAVEL_DISABLED,
+    TIME_TRAVEL_OOT,
+    TIME_TRAVEL_OOT_MS,
+    TIME_TRAVEL_ANY,
+    TIME_TRAVEL_ANY_MS
+} TimeTravelType;
+
+typedef enum {
+    WATERFALL_ALWAYS,
+    WATERFALL_ONCE,
+    WATERFALL_NEVER,
+} SleepingWaterfallType;
+
+typedef enum {
+    RANDOMIZE_OFF,
+    RANDOMIZE_ON_NEW_SCENE,
+    RANDOMIZE_ON_RANDO_GEN_ONLY,
+    RANDOMIZE_ON_FILE_LOAD,
+    RANDOMIZE_ON_FILE_LOAD_SEEDED,
+} RandomizeOnMode;
 
 #endif

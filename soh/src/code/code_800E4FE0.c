@@ -247,11 +247,12 @@ void func_800E5584(AudioCmd* cmd) {
             AudioLoad_SyncLoadSeqParts(cmd->arg1, cmd->arg2);
             return;
         case 0x82:
-            AudioLoad_SyncInitSeqPlayer(cmd->arg0, cmd->arg1, cmd->arg2);
+            // 16-bit seqId packed in opArgs bits 0-15. See func_800F9280().
+            AudioLoad_SyncInitSeqPlayer(cmd->arg0, cmd->opArgs & 0xFFFF, 0);
             func_800E59AC(cmd->arg0, cmd->data);
             return;
         case 0x85:
-            AudioLoad_SyncInitSeqPlayerSkipTicks(cmd->arg0, cmd->arg1, cmd->data);
+            AudioLoad_SyncInitSeqPlayerSkipTicks(cmd->arg0, cmd->opArgs & 0xFFFF, cmd->data);
             return;
         case 0x83:
             if (gAudioContext.seqPlayers[cmd->arg0].enabled) {
@@ -396,8 +397,7 @@ void Audio_QueueCmd(u32 opArgs, u32 data) {
 }
 
 void Audio_QueueCmdF32(u32 opArgs, f32 data) {
-    union
-    {
+    union {
         f32 f;
         u32 u;
     } uData = { .f = data };
@@ -428,9 +428,8 @@ s32 Audio_ScheduleProcessCmds(void) {
         D_801304E8 = (u8)((gAudioContext.cmdWrPos - gAudioContext.cmdRdPos) + 0x100);
     }
 
-    ret =
-        osSendMesg32(gAudioContext.cmdProcQueueP,
-                   (((gAudioContext.cmdRdPos & 0xFF) << 8) | (gAudioContext.cmdWrPos & 0xFF)), OS_MESG_NOBLOCK);
+    ret = osSendMesg32(gAudioContext.cmdProcQueueP,
+                       (((gAudioContext.cmdRdPos & 0xFF) << 8) | (gAudioContext.cmdWrPos & 0xFF)), OS_MESG_NOBLOCK);
     if (ret != -1) {
         gAudioContext.cmdRdPos = gAudioContext.cmdWrPos;
         ret = 0;
@@ -794,7 +793,7 @@ s32 func_800E6590(s32 playerIdx, s32 arg1, s32 arg2) {
                 if (sound == NULL) {
                     return 0;
                 }
-                loopEnd = sound->sample->loop->end;
+                loopEnd = sound->sample->loop->loopEnd;
                 samplePos = note->synthesisState.samplePosInt;
                 return loopEnd - samplePos;
             }

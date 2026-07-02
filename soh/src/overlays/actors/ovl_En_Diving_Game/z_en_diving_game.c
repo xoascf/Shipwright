@@ -8,8 +8,10 @@
 #include "overlays/actors/ovl_En_Ex_Ruppy/z_en_ex_ruppy.h"
 #include "objects/object_zo/object_zo.h"
 #include "vt.h"
+#include "soh/ResourceManagerHelpers.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 
-#define FLAGS (ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_WHILE_CULLED)
+#define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_CULLING_DISABLED)
 
 void EnDivingGame_Init(Actor* thisx, PlayState* play);
 void EnDivingGame_Destroy(Actor* thisx, PlayState* play);
@@ -105,7 +107,7 @@ void EnDivingGame_Destroy(Actor* thisx, PlayState* play) {
 
     if (this->unk_31F == 0) {
         sHasSpawned = false;
-        gSaveContext.timer1State = 0;
+        gSaveContext.timerState = TIMER_STATE_OFF;
     }
     Collider_DestroyCylinder(play, &this->collider);
 
@@ -129,16 +131,16 @@ void EnDivingGame_SpawnRuppy(EnDivingGame* this, PlayState* play) {
 }
 
 s32 EnDivingGame_HasMinigameFinished(EnDivingGame* this, PlayState* play) {
-    if (gSaveContext.timer1State == 10 && !Play_InCsMode(play)) {
+    if (gSaveContext.timerState == TIMER_STATE_STOP && !Play_InCsMode(play)) {
         // Failed.
-        gSaveContext.timer1State = 0;
+        gSaveContext.timerState = TIMER_STATE_OFF;
         func_800F5B58();
-        func_80078884(NA_SE_SY_FOUND);
+        Sfx_PlaySfxCentered(NA_SE_SY_FOUND);
         this->actor.textId = 0x71AD;
         Message_StartTextbox(play, this->actor.textId, NULL);
         this->unk_292 = TEXT_STATE_EVENT;
         this->allRupeesThrown = this->state = this->phase = this->unk_2A2 = this->grabbedRupeesCounter = 0;
-        func_8002DF54(play, NULL, 8);
+        Player_SetCsActionWithHaltedActors(play, NULL, 8);
         this->actionFunc = func_809EE048;
         return true;
     } else {
@@ -149,7 +151,7 @@ s32 EnDivingGame_HasMinigameFinished(EnDivingGame* this, PlayState* play) {
         }
         if (this->grabbedRupeesCounter >= rupeesNeeded) {
             // Won.
-            gSaveContext.timer1State = 0;
+            gSaveContext.timerState = TIMER_STATE_OFF;
             this->allRupeesThrown = this->state = this->phase = this->unk_2A2 = this->grabbedRupeesCounter = 0;
             if (!Flags_GetEventChkInf(EVENTCHKINF_OBTAINED_SILVER_SCALE)) {
                 this->actor.textId = 0x4055;
@@ -163,7 +165,7 @@ s32 EnDivingGame_HasMinigameFinished(EnDivingGame* this, PlayState* play) {
             this->unk_292 = TEXT_STATE_EVENT;
             func_800F5B58();
             Audio_PlayFanfare(NA_BGM_SMALL_ITEM_GET);
-            func_8002DF54(play, NULL, 8);
+            Player_SetCsActionWithHaltedActors(play, NULL, 8);
             if (!Flags_GetEventChkInf(EVENTCHKINF_OBTAINED_SILVER_SCALE)) {
                 this->actionFunc = func_809EE96C;
             } else {
@@ -191,7 +193,7 @@ void EnDivingGame_Talk(EnDivingGame* this, PlayState* play) {
             if (this->unk_292 != TEXT_STATE_DONE) {
                 switch (this->state) {
                     case ENDIVINGGAME_STATE_NOTPLAYING:
-                        func_8002DF54(play, NULL, 8);
+                        Player_SetCsActionWithHaltedActors(play, NULL, 8);
                         this->actionFunc = EnDivingGame_HandlePlayChoice;
                         break;
                     case ENDIVINGGAME_STATE_AWARDPRIZE:
@@ -252,13 +254,14 @@ void EnDivingGame_HandlePlayChoice(EnDivingGame* this, PlayState* play) {
                 this->allRupeesThrown = this->state = this->phase = this->unk_2A2 = this->grabbedRupeesCounter = 0;
                 break;
         }
-        if (!Flags_GetEventChkInf(EVENTCHKINF_OBTAINED_SILVER_SCALE) || this->actor.textId == 0x85 || this->actor.textId == 0x2D) {
+        if (!Flags_GetEventChkInf(EVENTCHKINF_OBTAINED_SILVER_SCALE) || this->actor.textId == 0x85 ||
+            this->actor.textId == 0x2D) {
             Message_ContinueTextbox(play, this->actor.textId);
             this->unk_292 = TEXT_STATE_EVENT;
             this->actionFunc = func_809EE048;
         } else {
             play->msgCtx.msgMode = MSGMODE_PAUSED;
-            func_8002DF54(play, NULL, 8);
+            Player_SetCsActionWithHaltedActors(play, NULL, 8);
             this->actionFunc = func_809EE0FC;
         }
     }
@@ -270,11 +273,11 @@ void func_809EE048(EnDivingGame* this, PlayState* play) {
     if (this->unk_292 == Message_GetState(&play->msgCtx) && Message_ShouldAdvance(play)) {
         if (this->phase == ENDIVINGGAME_PHASE_ENDED) {
             Message_CloseTextbox(play);
-            func_8002DF54(play, NULL, 7);
+            Player_SetCsActionWithHaltedActors(play, NULL, 7);
             this->actionFunc = func_809EDCB0;
         } else {
             play->msgCtx.msgMode = MSGMODE_PAUSED;
-            func_8002DF54(play, NULL, 8);
+            Player_SetCsActionWithHaltedActors(play, NULL, 8);
             this->actionFunc = func_809EE0FC;
         }
     }
@@ -305,35 +308,36 @@ void EnDivingGame_SetupRupeeThrow(EnDivingGame* this, PlayState* play) {
     Play_ChangeCameraStatus(play, 0, CAM_STAT_WAIT);
     Play_ChangeCameraStatus(play, this->subCamId, CAM_STAT_ACTIVE);
     this->spawnRuppyTimer = 10;
-    this->unk_2F4.x = -210.0f;
-    this->unk_2F4.y = -80.0f;
-    this->unk_2F4.z = -1020.0f;
-    this->unk_2D0.x = -280.0f;
-    this->unk_2D0.y = -20.0f;
-    this->unk_2D0.z = -240.0f;
+    this->subCamAtNext.x = -210.0f;
+    this->subCamAtNext.y = -80.0f;
+    this->subCamAtNext.z = -1020.0f;
+    this->subCamEyeNext.x = -280.0f;
+    this->subCamEyeNext.y = -20.0f;
+    this->subCamEyeNext.z = -240.0f;
     if (!Flags_GetEventChkInf(EVENTCHKINF_OBTAINED_SILVER_SCALE)) {
         this->rupeesLeftToThrow = 5;
     } else {
         this->rupeesLeftToThrow = 10;
     }
-    this->unk_2DC.x = this->unk_2DC.y = this->unk_2DC.z = this->unk_300.x = this->unk_300.y = this->unk_300.z = 0.1f;
+    this->subCamEyeMaxVelFrac.x = this->subCamEyeMaxVelFrac.y = this->subCamEyeMaxVelFrac.z =
+        this->subCamAtMaxVelFrac.x = this->subCamAtMaxVelFrac.y = this->subCamAtMaxVelFrac.z = 0.1f;
     this->camLookAt.x = play->view.lookAt.x;
     this->camLookAt.y = play->view.lookAt.y;
     this->camLookAt.z = play->view.lookAt.z;
     this->camEye.x = play->view.eye.x;
     this->camEye.y = play->view.eye.y + 80.0f;
     this->camEye.z = play->view.eye.z + 250.0f;
-    this->unk_2E8.x = fabsf(this->camEye.x - this->unk_2D0.x) * 0.04f;
-    this->unk_2E8.y = fabsf(this->camEye.y - this->unk_2D0.y) * 0.04f;
-    this->unk_2E8.z = fabsf(this->camEye.z - this->unk_2D0.z) * 0.04f;
-    this->unk_30C.x = fabsf(this->camLookAt.x - this->unk_2F4.x) * 0.04f;
-    this->unk_30C.y = fabsf(this->camLookAt.y - this->unk_2F4.y) * 0.04f;
-    this->unk_30C.z = fabsf(this->camLookAt.z - this->unk_2F4.z) * 0.04f;
+    this->subCamEyeVel.x = fabsf(this->camEye.x - this->subCamEyeNext.x) * 0.04f;
+    this->subCamEyeVel.y = fabsf(this->camEye.y - this->subCamEyeNext.y) * 0.04f;
+    this->subCamEyeVel.z = fabsf(this->camEye.z - this->subCamEyeNext.z) * 0.04f;
+    this->subCamAtVel.x = fabsf(this->camLookAt.x - this->subCamAtNext.x) * 0.04f;
+    this->subCamAtVel.y = fabsf(this->camLookAt.y - this->subCamAtNext.y) * 0.04f;
+    this->subCamAtVel.z = fabsf(this->camLookAt.z - this->subCamAtNext.z) * 0.04f;
     Play_CameraSetAtEye(play, this->subCamId, &this->camLookAt, &this->camEye);
     Play_CameraSetFov(play, this->subCamId, play->mainCamera.fov);
     this->csCameraTimer = 60;
     this->actionFunc = EnDivingGame_RupeeThrow;
-    this->unk_318 = 0.0f;
+    this->subCamVelFactor = 0.0f;
 }
 
 // Throws rupee when this->spawnRuppyTimer == 0
@@ -343,12 +347,17 @@ void EnDivingGame_RupeeThrow(EnDivingGame* this, PlayState* play) {
         Audio_SetExtraFilter(0);
     }
     if (this->subCamId != 0) {
-        Math_ApproachF(&this->camEye.x, this->unk_2D0.x, this->unk_2DC.x, this->unk_2E8.x * this->unk_318);
-        Math_ApproachF(&this->camEye.z, this->unk_2D0.z, this->unk_2DC.z, this->unk_2E8.z * this->unk_318);
-        Math_ApproachF(&this->camLookAt.x, this->unk_2F4.x, this->unk_300.x, this->unk_30C.x * this->unk_318);
-        Math_ApproachF(&this->camLookAt.y, this->unk_2F4.y, this->unk_300.y, this->unk_30C.y * this->unk_318);
-        Math_ApproachF(&this->camLookAt.z, this->unk_2F4.z, this->unk_300.z, this->unk_30C.z * this->unk_318);
-        Math_ApproachF(&this->unk_318, 1.0f, 1.0f, 0.02f);
+        Math_ApproachF(&this->camEye.x, this->subCamEyeNext.x, this->subCamEyeMaxVelFrac.x,
+                       this->subCamEyeVel.x * this->subCamVelFactor);
+        Math_ApproachF(&this->camEye.z, this->subCamEyeNext.z, this->subCamEyeMaxVelFrac.z,
+                       this->subCamEyeVel.z * this->subCamVelFactor);
+        Math_ApproachF(&this->camLookAt.x, this->subCamAtNext.x, this->subCamAtMaxVelFrac.x,
+                       this->subCamAtVel.x * this->subCamVelFactor);
+        Math_ApproachF(&this->camLookAt.y, this->subCamAtNext.y, this->subCamAtMaxVelFrac.y,
+                       this->subCamAtVel.y * this->subCamVelFactor);
+        Math_ApproachF(&this->camLookAt.z, this->subCamAtNext.z, this->subCamAtMaxVelFrac.z,
+                       this->subCamAtVel.z * this->subCamVelFactor);
+        Math_ApproachF(&this->subCamVelFactor, 1.0f, 1.0f, 0.02f);
     }
     Play_CameraSetAtEye(play, this->subCamId, &this->camLookAt, &this->camEye);
     if (!this->allRupeesThrown && this->spawnRuppyTimer == 0) {
@@ -365,10 +374,12 @@ void EnDivingGame_RupeeThrow(EnDivingGame* this, PlayState* play) {
             this->allRupeesThrown = true;
         }
     }
-    if (this->csCameraTimer == 0 ||
-        ((fabsf(this->camEye.x - this->unk_2D0.x) < 2.0f) && (fabsf(this->camEye.y - this->unk_2D0.y) < 2.0f) &&
-         (fabsf(this->camEye.z - this->unk_2D0.z) < 2.0f) && (fabsf(this->camLookAt.x - this->unk_2F4.x) < 2.0f) &&
-         (fabsf(this->camLookAt.y - this->unk_2F4.y) < 2.0f) && (fabsf(this->camLookAt.z - this->unk_2F4.z) < 2.0f))) {
+    if (this->csCameraTimer == 0 || ((fabsf(this->camEye.x - this->subCamEyeNext.x) < 2.0f) &&
+                                     (fabsf(this->camEye.y - this->subCamEyeNext.y) < 2.0f) &&
+                                     (fabsf(this->camEye.z - this->subCamEyeNext.z) < 2.0f) &&
+                                     (fabsf(this->camLookAt.x - this->subCamAtNext.x) < 2.0f) &&
+                                     (fabsf(this->camLookAt.y - this->subCamAtNext.y) < 2.0f) &&
+                                     (fabsf(this->camLookAt.z - this->subCamAtNext.z) < 2.0f))) {
         if (this->unk_2A2 != 0) {
             this->csCameraTimer = 70;
             this->unk_2A2 = 2;
@@ -386,12 +397,12 @@ void EnDivingGame_SetupUnderwaterViewCs(EnDivingGame* this, PlayState* play) {
         this->unk_2A2 = 1;
         this->csCameraTimer = 100;
         this->actionFunc = EnDivingGame_RupeeThrow;
-        this->camLookAt.x = this->unk_2F4.x = -210.0f;
-        this->camLookAt.y = this->unk_2F4.y = -80.0f;
-        this->camLookAt.z = this->unk_2F4.z = -1020.0f;
-        this->camEye.x = this->unk_2D0.x = -280.0f;
-        this->camEye.y = this->unk_2D0.y = -20.0f;
-        this->camEye.z = this->unk_2D0.z = -240.0f;
+        this->camLookAt.x = this->subCamAtNext.x = -210.0f;
+        this->camLookAt.y = this->subCamAtNext.y = -80.0f;
+        this->camLookAt.z = this->subCamAtNext.z = -1020.0f;
+        this->camEye.x = this->subCamEyeNext.x = -280.0f;
+        this->camEye.y = this->subCamEyeNext.y = -20.0f;
+        this->camEye.z = this->subCamEyeNext.z = -240.0f;
     }
 }
 
@@ -413,13 +424,15 @@ void func_809EE800(EnDivingGame* this, PlayState* play) {
     SkelAnime_Update(&this->skelAnime);
     if (this->unk_292 == Message_GetState(&play->msgCtx) && Message_ShouldAdvance(play)) {
         Message_CloseTextbox(play);
-        if (!Flags_GetEventChkInf(EVENTCHKINF_OBTAINED_SILVER_SCALE)) {
-            func_80088B34(BREG(2) + 50);
-        } else {
-            func_80088B34(BREG(2) + 50);
+        if (GameInteractor_Should(VB_SET_DIVING_GAME_TIME_LIMIT, true)) {
+            if (!Flags_GetEventChkInf(EVENTCHKINF_OBTAINED_SILVER_SCALE)) {
+                Interface_SetTimer(BREG(2) + 50);
+            } else {
+                Interface_SetTimer(BREG(2) + 50);
+            }
         }
         func_800F5ACC(NA_BGM_TIMED_MINI_GAME);
-        func_8002DF54(play, NULL, 7);
+        Player_SetCsActionWithHaltedActors(play, NULL, 7);
         this->actor.textId = 0x405B;
         this->unk_292 = TEXT_STATE_EVENT;
         this->state = ENDIVINGGAME_STATE_PLAYING;
@@ -442,7 +455,7 @@ void func_809EE96C(EnDivingGame* this, PlayState* play) {
     SkelAnime_Update(&this->skelAnime);
     if ((this->unk_292 == Message_GetState(&play->msgCtx) && Message_ShouldAdvance(play))) {
         Message_CloseTextbox(play);
-        func_8002DF54(play, NULL, 7);
+        Player_SetCsActionWithHaltedActors(play, NULL, 7);
         this->actor.textId = 0x4056;
         this->unk_292 = TEXT_STATE_EVENT;
         this->state = ENDIVINGGAME_STATE_AWARDPRIZE;
@@ -455,11 +468,8 @@ void func_809EEA00(EnDivingGame* this, PlayState* play) {
     if ((this->unk_292 == Message_GetState(&play->msgCtx) && Message_ShouldAdvance(play))) {
         Message_CloseTextbox(play);
         this->actor.parent = NULL;
-        if (!IS_RANDO) {
-            func_8002F434(&this->actor, play, GI_SCALE_SILVER, 90.0f, 10.0f);
-        } else {
-            GetItemEntry getItemEntry = Randomizer_GetItemFromKnownCheck(RC_ZD_DIVING_MINIGAME, GI_SCALE_SILVER);
-            GiveItemEntryFromActor(&this->actor, play, getItemEntry, 90.0f, 10.0f);
+        if (GameInteractor_Should(VB_GIVE_ITEM_FROM_DIVING_MINIGAME, true, &this->actor)) {
+            Actor_OfferGetItem(&this->actor, play, GI_SCALE_SILVER, 90.0f, 10.0f);
         }
         this->actionFunc = func_809EEA90;
     }
@@ -467,14 +477,12 @@ void func_809EEA00(EnDivingGame* this, PlayState* play) {
 
 void func_809EEA90(EnDivingGame* this, PlayState* play) {
     SkelAnime_Update(&this->skelAnime);
-    if (Actor_HasParent(&this->actor, play)) {
+    if (Actor_HasParent(&this->actor, play) ||
+        !GameInteractor_Should(VB_GIVE_ITEM_FROM_DIVING_MINIGAME, true, &this->actor)) {
         this->actionFunc = func_809EEAF8;
     } else {
-        if (!IS_RANDO) {
-            func_8002F434(&this->actor, play, GI_SCALE_SILVER, 90.0f, 10.0f);
-        } else {
-            GetItemEntry getItemEntry = Randomizer_GetItemFromKnownCheck(RC_ZD_DIVING_MINIGAME, GI_SCALE_SILVER);
-            GiveItemEntryFromActor(&this->actor, play, getItemEntry, 90.0f, 10.0f);
+        if (GameInteractor_Should(VB_GIVE_ITEM_FROM_DIVING_MINIGAME, true, &this->actor)) {
+            Actor_OfferGetItem(&this->actor, play, GI_SCALE_SILVER, 90.0f, 10.0f);
         }
     }
 }
@@ -482,7 +490,8 @@ void func_809EEA90(EnDivingGame* this, PlayState* play) {
 // Award the scale?
 void func_809EEAF8(EnDivingGame* this, PlayState* play) {
     SkelAnime_Update(&this->skelAnime);
-    if (Message_GetState(&play->msgCtx) == TEXT_STATE_DONE && Message_ShouldAdvance(play)) {
+    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_DONE && Message_ShouldAdvance(play)) ||
+        !GameInteractor_Should(VB_GIVE_ITEM_FROM_DIVING_MINIGAME, true, &this->actor)) {
         // "Successful completion"
         osSyncPrintf(VT_FGCOL(GREEN) "☆☆☆☆☆ 正常終了 ☆☆☆☆☆ \n" VT_RST);
         this->allRupeesThrown = this->state = this->phase = this->unk_2A2 = this->grabbedRupeesCounter = 0;
@@ -510,7 +519,7 @@ void EnDivingGame_Update(Actor* thisx, PlayState* play2) {
         this->spawnRuppyTimer--;
     }
 
-    if (gSaveContext.timer1Value == 10) {
+    if (gSaveContext.timerSeconds == 10) {
         func_800F5918();
     }
     if (this->eyeTimer == 0) {
@@ -546,8 +555,7 @@ Gfx* EnDivingGame_EmptyDList(GraphicsContext* gfxCtx) {
     return displayList;
 }
 
-s32 EnDivingGame_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
-                                  void* thisx) {
+s32 EnDivingGame_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnDivingGame* this = (EnDivingGame*)thisx;
     s32 pad;
 

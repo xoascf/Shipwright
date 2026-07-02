@@ -5,8 +5,10 @@
  */
 
 #include "z_oceff_storm.h"
+#include "soh/OTRGlobals.h"
+#include "soh/ResourceManagerHelpers.h"
 
-#define FLAGS (ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED | ACTOR_FLAG_NO_FREEZE_OCARINA)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED | ACTOR_FLAG_UPDATE_DURING_OCARINA)
 
 void OceffStorm_Init(Actor* thisx, PlayState* play);
 void OceffStorm_Destroy(Actor* thisx, PlayState* play);
@@ -52,7 +54,7 @@ void OceffStorm_Init(Actor* thisx, PlayState* play) {
         this->actor.draw = OceffStorm_Draw2;
     } else {
         Actor_Spawn(&play->actorCtx, play, ACTOR_EN_OKARINA_EFFECT, this->actor.world.pos.x,
-                    this->actor.world.pos.y - 30.0f, this->actor.world.pos.z, 0, 0, 0, 1, true);
+                    this->actor.world.pos.y - 30.0f, this->actor.world.pos.z, 0, 0, 0, 1);
     }
 }
 
@@ -136,8 +138,8 @@ void OceffStorm_Draw2(Actor* thisx, PlayState* play) {
     gDPSetColorDither(POLY_XLU_DISP++, G_CD_NOISE);
     gDPSetPrimColor(POLY_XLU_DISP++, 0x80, 0x80, 200, 200, 150, this->primColorAlpha);
     gSPDisplayList(POLY_XLU_DISP++, sMaterialDL);
-    gSPDisplayList(POLY_XLU_DISP++, Gfx_TwoTexScroll(play->state.gfxCtx, 0, scroll * 8, scroll * 4, 64, 64, 1,
-                                                     scroll * 4, scroll * 4, 64, 64));
+    gSPDisplayList(POLY_XLU_DISP++, Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, scroll * 8, scroll * 4, 64, 64, 1,
+                                                       scroll * 4, scroll * 4, 64, 64, 8, 4, 4, 4));
     gSPWideTextureRectangle(POLY_XLU_DISP++, OTRGetRectDimensionFromLeftEdge(0) << 2, 0,
                             OTRGetRectDimensionFromRightEdge(SCREEN_WIDTH) << 2, 0x03C0, G_TX_RENDERTILE, 0, 0, 0x008C,
                             -0x008C);
@@ -162,12 +164,11 @@ void OceffStorm_Draw(Actor* thisx, PlayState* play) {
     vtxPtr[0].v.cn[3] = vtxPtr[6].v.cn[3] = vtxPtr[16].v.cn[3] = vtxPtr[25].v.cn[3] = this->vtxAlpha >> 1;
     vtxPtr[10].v.cn[3] = vtxPtr[22].v.cn[3] = this->vtxAlpha;
 
-    gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-              G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 
     gSPDisplayList(POLY_XLU_DISP++, sCylinderMaterialDL);
-    gSPDisplayList(POLY_XLU_DISP++, Gfx_TwoTexScroll(play->state.gfxCtx, 0, scroll * 4, (0 - scroll) * 8, 32, 32,
-                                                     1, scroll * 8, (0 - scroll) * 12, 32, 32));
+    gSPDisplayList(POLY_XLU_DISP++, Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, scroll * 4, (0 - scroll) * 8, 32, 32, 1,
+                                                       scroll * 8, (0 - scroll) * 12, 32, 32, 4, -8, 8, -12));
     gSPDisplayList(POLY_XLU_DISP++, sCylinderModelDL);
 
     CLOSE_DISPS(play->state.gfxCtx);

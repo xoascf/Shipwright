@@ -1,11 +1,11 @@
 #include "SetTransitionActorList.h"
 
-namespace LUS {
+namespace SOH {
 TransitionActorEntry* SetTransitionActorList::GetPointer() {
     return transitionActorList.data();
 }
 
 size_t SetTransitionActorList::GetPointerSize() {
-	return transitionActorList.size() * sizeof(TransitionActorEntry);
+    return transitionActorList.size() * sizeof(TransitionActorEntry);
 }
-} // namespace LUS
+} // namespace SOH

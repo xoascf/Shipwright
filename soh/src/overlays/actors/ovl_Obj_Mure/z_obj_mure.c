@@ -142,8 +142,7 @@ void ObjMure_SpawnActors0(ObjMure* this, PlayState* play) {
     for (i = 0; i < maxChildren; i++) {
         if (this->children[i] != NULL) {
             // "Error: I already have a child(%s %d)(arg_data 0x%04x)"
-            osSyncPrintf("Error : 既に子供がいる(%s %d)(arg_data 0x%04x)\n", __FILE__, __LINE__,
-                         this->actor.params);
+            osSyncPrintf("Error : 既に子供がいる(%s %d)(arg_data 0x%04x)\n", __FILE__, __LINE__, this->actor.params);
         }
         switch (this->childrenStates[i]) {
             case OBJMURE_CHILD_STATE_1:
@@ -153,9 +152,9 @@ void ObjMure_SpawnActors0(ObjMure* this, PlayState* play) {
                 ObjMure_GetSpawnPos(&pos, &this->actor.world.pos, this->ptn, i);
                 this->children[i] =
                     Actor_Spawn(ac, play, sSpawnActorIds[this->type], pos.x, pos.y, pos.z, this->actor.world.rot.x,
-                                this->actor.world.rot.y, this->actor.world.rot.z, sSpawnParams[this->type], true);
+                                this->actor.world.rot.y, this->actor.world.rot.z, sSpawnParams[this->type]);
                 if (this->children[i] != NULL) {
-                    this->children[i]->flags |= ACTOR_FLAG_ENKUSA_CUT;
+                    this->children[i]->flags |= ACTOR_FLAG_GRASS_DESTROYED;
                     this->children[i]->room = this->actor.room;
                 } else {
                     osSyncPrintf("warning 発生失敗 (%s %d)\n", __FILE__, __LINE__);
@@ -166,7 +165,7 @@ void ObjMure_SpawnActors0(ObjMure* this, PlayState* play) {
                 ObjMure_GetSpawnPos(&pos, &this->actor.world.pos, this->ptn, i);
                 this->children[i] =
                     Actor_Spawn(ac, play, sSpawnActorIds[this->type], pos.x, pos.y, pos.z, this->actor.world.rot.x,
-                                this->actor.world.rot.y, this->actor.world.rot.z, sSpawnParams[this->type], true);
+                                this->actor.world.rot.y, this->actor.world.rot.z, sSpawnParams[this->type]);
                 if (this->children[i] != NULL) {
                     this->children[i]->room = this->actor.room;
                 } else {
@@ -192,8 +191,8 @@ void ObjMure_SpawnActors1(ObjMure* this, PlayState* play) {
         ObjMure_GetSpawnPos(&spawnPos, &actor->world.pos, this->ptn, i);
         this->children[i] = Actor_Spawn(ac, play, sSpawnActorIds[this->type], spawnPos.x, spawnPos.y, spawnPos.z,
                                         actor->world.rot.x, actor->world.rot.y, actor->world.rot.z,
-                                        (this->type == 4 && i == 0) ? 1 : sSpawnParams[this->type], true);
-        if (this->children[i] != NULL) {
+                                        (this->type == 4 && i == 0) ? 1 : sSpawnParams[this->type]);
+        if (this->children[i] != NULL && this->children[i]->update != NULL) {
             this->childrenStates[i] = OBJMURE_CHILD_STATE_0;
             this->children[i]->room = actor->room;
         } else {
@@ -255,7 +254,7 @@ void ObjMure_CheckChildren(ObjMure* this, PlayState* play) {
         if (this->children[i] != NULL) {
             if (this->childrenStates[i] == OBJMURE_CHILD_STATE_0) {
                 if (this->children[i]->update != NULL) {
-                    if (this->children[i]->flags & ACTOR_FLAG_ENKUSA_CUT) {
+                    if (this->children[i]->flags & ACTOR_FLAG_GRASS_DESTROYED) {
                         this->childrenStates[i] = OBJMURE_CHILD_STATE_2;
                     }
                 } else {
@@ -276,13 +275,13 @@ void ObjMure_InitialAction(ObjMure* this, PlayState* play) {
 
 void ObjMure_CulledState(ObjMure* this, PlayState* play) {
     // #region SOH [Enhancements] Extended draw distance
-    s32 distanceMultiplier = CVarGetInteger("gDisableDrawDistance", 1);
+    s32 distanceMultiplier = CVarGetInteger(CVAR_ENHANCEMENT("DisableDrawDistance"), 1);
     distanceMultiplier = MAX(distanceMultiplier, 1);
 
     if (fabsf(this->actor.projectedPos.z) < sZClip[this->type] * distanceMultiplier) {
         // #endregion
         this->actionFunc = ObjMure_ActiveState;
-        this->actor.flags |= ACTOR_FLAG_UPDATE_WHILE_CULLED;
+        this->actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
         ObjMure_SpawnActors(this, play);
     }
 }
@@ -405,13 +404,13 @@ void ObjMure_ActiveState(ObjMure* this, PlayState* play) {
     ObjMure_CheckChildren(this, play);
 
     // #region SOH [Enhancements] Extended draw distance
-    s32 distanceMultiplier = CVarGetInteger("gDisableDrawDistance", 1);
+    s32 distanceMultiplier = CVarGetInteger(CVAR_ENHANCEMENT("DisableDrawDistance"), 1);
     distanceMultiplier = MAX(distanceMultiplier, 1);
 
     if ((sZClip[this->type] + 40.0f) * distanceMultiplier <= fabsf(this->actor.projectedPos.z)) {
         // #endregion
         this->actionFunc = ObjMure_CulledState;
-        this->actor.flags &= ~ACTOR_FLAG_UPDATE_WHILE_CULLED;
+        this->actor.flags &= ~ACTOR_FLAG_UPDATE_CULLING_DISABLED;
         ObjMure_KillActors(this, play);
     } else if (sTypeGroupBehaviorFunc[this->type] != NULL) {
         sTypeGroupBehaviorFunc[this->type](this, play);

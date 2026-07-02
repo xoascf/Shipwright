@@ -1,12 +1,12 @@
 #pragma once
 
-#include <libultraship/libultraship.h>
+#include <ship/window/gui/GuiWindow.h>
 
-class DLViewerWindow : public LUS::GuiWindow {
+class DLViewerWindow final : public Ship::GuiWindow {
   public:
     using GuiWindow::GuiWindow;
 
     void InitElement() override;
     void DrawElement() override;
-    void UpdateElement() override {};
+    void UpdateElement() override{};
 };

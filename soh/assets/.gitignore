@@ -4,4 +4,5 @@
 *.cfg
 *.vtx.inc
 *.dlist.inc
-*.txt
+!*.png
+custom/shaders

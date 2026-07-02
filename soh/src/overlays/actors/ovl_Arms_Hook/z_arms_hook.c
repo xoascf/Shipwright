@@ -1,7 +1,9 @@
 #include "z_arms_hook.h"
 #include "objects/object_link_boy/object_link_boy.h"
+#include "soh/Enhancements/game-interactor/GameInteractor.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 
-#define FLAGS (ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
 void ArmsHook_Init(Actor* thisx, PlayState* play);
 void ArmsHook_Destroy(Actor* thisx, PlayState* play);
@@ -85,16 +87,17 @@ void ArmsHook_Wait(ArmsHook* this, PlayState* play) {
     if (this->actor.parent == NULL) {
         Player* player = GET_PLAYER(play);
         // get correct timer length for hookshot or longshot
-        s32 length = ((player->heldItemAction == PLAYER_IA_HOOKSHOT) ? 13 : 26) * CVarGetFloat("gCheatHookshotReachMultiplier", 1.0f);
+        s32 length = ((player->heldItemAction == PLAYER_IA_HOOKSHOT) ? 13 : 26) *
+                     CVarGetFloat(CVAR_CHEAT("HookshotReachMultiplier"), 1.0f);
 
         ArmsHook_SetupAction(this, ArmsHook_Shoot);
-        func_8002D9A4(&this->actor, 20.0f);
+        Actor_SetProjectileSpeed(&this->actor, 20.0f);
         this->actor.parent = &GET_PLAYER(play)->actor;
         this->timer = length;
     }
 }
 
-void func_80865044(ArmsHook* this) {
+void ArmsHook_PullPlayer(ArmsHook* this) {
     this->actor.child = this->actor.parent;
     this->actor.parent->parent = &this->actor;
 }
@@ -121,8 +124,8 @@ s32 ArmsHook_CheckForCancel(ArmsHook* this) {
     Player* player = (Player*)this->actor.parent;
 
     if (Player_HoldsHookshot(player)) {
-        if ((player->itemAction != player->heldItemAction) || (player->actor.flags & ACTOR_FLAG_PLAYER_TALKED_TO) ||
-            ((player->stateFlags1 & 0x4000080))) {
+        if ((player->itemAction != player->heldItemAction) || (player->actor.flags & ACTOR_FLAG_TALK) ||
+            ((player->stateFlags1 & (PLAYER_STATE1_DEAD | PLAYER_STATE1_DAMAGED)))) {
             this->timer = 0;
             ArmsHook_DetachHookFromActor(this);
             Math_Vec3f_Copy(&this->actor.world.pos, &player->unk_3C8);
@@ -172,17 +175,18 @@ void ArmsHook_Shoot(ArmsHook* this, PlayState* play) {
     if ((this->timer != 0) && (this->collider.base.atFlags & AT_HIT) &&
         (this->collider.info.atHitInfo->elemType != ELEMTYPE_UNK4)) {
         touchedActor = this->collider.base.at;
-        if ((touchedActor->update != NULL) && (touchedActor->flags & (ACTOR_FLAG_HOOKSHOT_DRAGS | ACTOR_FLAG_DRAGGED_BY_HOOKSHOT))) {
+        if ((touchedActor->update != NULL) &&
+            (touchedActor->flags & (ACTOR_FLAG_HOOKSHOT_PULLS_ACTOR | ACTOR_FLAG_HOOKSHOT_PULLS_PLAYER))) {
             if (this->collider.info.atHitInfo->bumperFlags & BUMP_HOOKABLE) {
                 ArmsHook_AttachHookToActor(this, touchedActor);
-                if (CHECK_FLAG_ALL(touchedActor->flags, ACTOR_FLAG_DRAGGED_BY_HOOKSHOT)) {
-                    func_80865044(this);
+                if (CHECK_FLAG_ALL(touchedActor->flags, ACTOR_FLAG_HOOKSHOT_PULLS_PLAYER)) {
+                    ArmsHook_PullPlayer(this);
                 }
             }
         }
         this->timer = 0;
-        Audio_PlaySoundGeneral(NA_SE_IT_ARROW_STICK_CRE, &this->actor.projectedPos, 4, &D_801333E0, &D_801333E0,
-                               &D_801333E8);
+        Audio_PlaySoundGeneral(NA_SE_IT_ARROW_STICK_CRE, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
+                               &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
     } else if (DECR(this->timer) == 0) {
         grabbed = this->grabbed;
         if (grabbed != NULL) {
@@ -250,7 +254,7 @@ void ArmsHook_Shoot(ArmsHook* this, PlayState* play) {
             }
         }
     } else {
-        Actor_MoveForward(&this->actor);
+        Actor_MoveXZGravity(&this->actor);
         Math_Vec3f_Diff(&this->actor.world.pos, &this->actor.prevPos, &prevFrameDiff);
         Math_Vec3f_Sum(&this->unk_1E8, &prevFrameDiff, &this->unk_1E8);
         this->actor.shape.rot.x = Math_Atan2S(this->actor.speedXZ, -this->actor.velocity.y);
@@ -258,7 +262,7 @@ void ArmsHook_Shoot(ArmsHook* this, PlayState* play) {
         sp60.y = this->unk_1F4.y - (this->unk_1E8.y - this->unk_1F4.y);
         sp60.z = this->unk_1F4.z - (this->unk_1E8.z - this->unk_1F4.z);
         u16 buttonsToCheck = BTN_A | BTN_B | BTN_R | BTN_CUP | BTN_CLEFT | BTN_CRIGHT | BTN_CDOWN;
-        if (CVarGetInteger("gDpadEquips", 0) != 0) {
+        if (CVarGetInteger(CVAR_ENHANCEMENT("DpadEquips"), 0) != 0) {
             buttonsToCheck |= BTN_DUP | BTN_DDOWN | BTN_DLEFT | BTN_DRIGHT;
         }
         if (BgCheck_EntityLineTest1(&play->colCtx, &sp60, &this->unk_1E8, &sp78, &poly, true, true, true, true,
@@ -277,13 +281,13 @@ void ArmsHook_Shoot(ArmsHook* this, PlayState* play) {
                         ArmsHook_AttachHookToActor(this, &dynaPolyActor->actor);
                     }
                 }
-                func_80865044(this);
-                Audio_PlaySoundGeneral(NA_SE_IT_HOOKSHOT_STICK_OBJ, &this->actor.projectedPos, 4, &D_801333E0,
-                                       &D_801333E0, &D_801333E8);
+                ArmsHook_PullPlayer(this);
+                Audio_PlaySoundGeneral(NA_SE_IT_HOOKSHOT_STICK_OBJ, &this->actor.projectedPos, 4,
+                                       &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
             } else {
                 CollisionCheck_SpawnShieldParticlesMetal(play, &this->actor.world.pos);
-                Audio_PlaySoundGeneral(NA_SE_IT_HOOKSHOT_REFLECT, &this->actor.projectedPos, 4, &D_801333E0,
-                                       &D_801333E0, &D_801333E8);
+                Audio_PlaySoundGeneral(NA_SE_IT_HOOKSHOT_REFLECT, &this->actor.projectedPos, 4,
+                                       &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
             }
         } else if (CHECK_BTN_ANY(play->state.input[0].press.button, (buttonsToCheck))) {
             this->timer = 0;
@@ -324,19 +328,30 @@ void ArmsHook_Draw(Actor* thisx, PlayState* play) {
 
         func_80090480(play, &this->collider, &this->hookInfo, &sp6C, &sp60);
         Gfx_SetupDL_25Opa(play->state.gfxCtx);
-        gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-                  G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-        gSPDisplayList(POLY_OPA_DISP++, gLinkAdultHookshotTipDL);
+        if (CVarGetInteger(CVAR_ENHANCEMENT("EquipmentAlwaysVisible"), 0) &&
+            CVarGetInteger(CVAR_ENHANCEMENT("ScaleAdultEquipmentAsChild"), 0) && LINK_IS_CHILD) {
+            Matrix_Scale(0.8, 0.8, 0.8, MTXMODE_APPLY);
+        }
+        gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        if (GameInteractor_Should(VB_DRAW_HOOKSHOT_TIP, true, player, play)) {
+            gSPDisplayList(POLY_OPA_DISP++, gLinkAdultHookshotTipDL);
+        }
         Matrix_Translate(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z, MTXMODE_NEW);
         Math_Vec3f_Diff(&player->unk_3C8, &this->actor.world.pos, &sp78);
         sp58 = SQ(sp78.x) + SQ(sp78.z);
         sp5C = sqrtf(sp58);
         Matrix_RotateY(Math_FAtan2F(sp78.x, sp78.z), MTXMODE_APPLY);
         Matrix_RotateX(Math_FAtan2F(-sp78.y, sp5C), MTXMODE_APPLY);
-        Matrix_Scale(0.015f, 0.015f, sqrtf(SQ(sp78.y) + sp58) * 0.01f, MTXMODE_APPLY);
-        gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-                  G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-        gSPDisplayList(POLY_OPA_DISP++, gLinkAdultHookshotChainDL);
+        if (CVarGetInteger(CVAR_ENHANCEMENT("EquipmentAlwaysVisible"), 0) &&
+            CVarGetInteger(CVAR_ENHANCEMENT("ScaleAdultEquipmentAsChild"), 0) && LINK_IS_CHILD) {
+            Matrix_Scale(0.012f, 0.012f, sqrtf(SQ(sp78.y) + sp58) * 0.01f, MTXMODE_APPLY);
+        } else {
+            Matrix_Scale(0.015f, 0.015f, sqrtf(SQ(sp78.y) + sp58) * 0.01f, MTXMODE_APPLY);
+        }
+        gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        if (GameInteractor_Should(VB_DRAW_HOOKSHOT_CHAIN, true, player, play)) {
+            gSPDisplayList(POLY_OPA_DISP++, gLinkAdultHookshotChainDL);
+        }
 
         CLOSE_DISPS(play->state.gfxCtx);
     }

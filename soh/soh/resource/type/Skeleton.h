@@ -1,11 +1,11 @@
 #pragma once
 
-#include <cstdint>
-#include "Resource.h"
+#include <stdint.h>
+#include <ship/resource/Resource.h>
 #include "SkeletonLimb.h"
 #include <z64animation.h>
 
-namespace LUS {
+namespace SOH {
 
 enum class SkeletonType {
     Normal,
@@ -24,7 +24,7 @@ enum class SkeletonType {
 typedef struct {
     /* 0x00 */ void** segment;
     /* 0x04 */ uint8_t limbCount;
-               uint8_t skeletonType;
+    uint8_t skeletonType;
 } SkeletonHeader; // size = 0x8
 
 // Model has limbs with flexible meshes
@@ -50,18 +50,19 @@ union SkeletonData {
     SkelCurveLimbList skelCurveLimbList;
 };
 
-class Skeleton : public Resource<SkeletonData> {
+class Skeleton : public Ship::Resource<SkeletonData> {
   public:
     using Resource::Resource;
 
-    Skeleton() : Resource(std::shared_ptr<ResourceInitData>()) {}
+    Skeleton() : Resource(std::shared_ptr<Ship::ResourceInitData>()) {
+    }
 
     SkeletonData* GetPointer();
     size_t GetPointerSize();
 
     SkeletonType type;
     SkeletonData skeletonData;
-    
+
     LimbType limbType;
     int limbCount;
     int dListCount;
@@ -74,10 +75,10 @@ class Skeleton : public Resource<SkeletonData> {
 };
 
 // TODO: CLEAN THIS UP LATER
-struct SkeletonPatchInfo 
-{
+struct SkeletonPatchInfo {
     SkelAnime* skelAnime;
     std::string vanillaSkeletonPath;
+    bool isLocalPlayer;
 };
 
 class SkeletonPatcher {
@@ -86,9 +87,16 @@ class SkeletonPatcher {
     static void UnregisterSkeleton(SkelAnime* skelAnime);
     static void ClearSkeletons();
     static void UpdateSkeletons();
+    static void UpdateCustomSkeletons();
 
     static std::vector<SkeletonPatchInfo> skeletons;
+
+  private:
+    inline static const std::string sOtr = "__OTR__";
+    static bool IsLinkSkeletonPath(const std::string& path);
+    static bool IsLocalPlayerSkelAnime(SkelAnime* skelAnime);
+    static void UpdateTunicSkeletons(SkeletonPatchInfo& skel);
+    static void UpdateCustomSkeletonFromPath(const std::string& skeletonPath, SkeletonPatchInfo& skel);
 };
 
-
-} // namespace LUS
+} // namespace SOH

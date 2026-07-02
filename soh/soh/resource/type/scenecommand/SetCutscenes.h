@@ -1,15 +1,13 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
+#include <stdint.h>
 #include <memory>
 #include <string>
-#include "Resource.h"
 #include "soh/resource/type/scenecommand/SceneCommand.h"
 #include "soh/resource/type/Cutscene.h"
 // #include <libultraship/libultra.h>
 
-namespace LUS {
+namespace SOH {
 class SetCutscenes : public SceneCommand<uint32_t> {
   public:
     using SceneCommand::SceneCommand;
@@ -20,4 +18,4 @@ class SetCutscenes : public SceneCommand<uint32_t> {
     std::string fileName;
     std::shared_ptr<Cutscene> cutscene;
 };
-}; // namespace LUS
+}; // namespace SOH

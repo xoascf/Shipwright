@@ -1,30 +1,30 @@
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
 #include <vector>
-#include "Resource.h"
+#include <ship/resource/Resource.h>
 #include <libultraship/libultra/types.h>
 
-namespace LUS {
+namespace SOH {
 // TODO: we've moved away from using classes for this stuff
-class MessageEntry
-{
-public:
-	uint16_t id;
-	uint8_t textboxType;
-	uint8_t textboxYPos;
-	std::string msg;
+class MessageEntry {
+  public:
+    uint16_t id;
+    uint8_t textboxType;
+    uint8_t textboxYPos;
+    std::string msg;
 };
 
-class Text : public Resource<MessageEntry> {
-public:
-  using Resource::Resource;
+class Text : public Ship::Resource<MessageEntry> {
+  public:
+    using Resource::Resource;
 
-    Text() : Resource(std::shared_ptr<ResourceInitData>()) {}
+    Text() : Resource(std::shared_ptr<Ship::ResourceInitData>()) {
+    }
 
     MessageEntry* GetPointer();
     size_t GetPointerSize();
 
     std::vector<MessageEntry> messages;
 };
-}; // namespace LUS
+}; // namespace SOH

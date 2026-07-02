@@ -8,7 +8,7 @@
 #include "objects/gameplay_keep/gameplay_keep.h"
 #include "soh/frame_interpolation.h"
 
-#define FLAGS (ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
 void EffDust_Init(Actor* thisx, PlayState* play);
 void EffDust_Destroy(Actor* thisx, PlayState* play);
@@ -180,7 +180,7 @@ void EffDust_UpdateFunc_8099DFC0(EffDust* this, PlayState* play) {
     s32 i;
     s32 j;
 
-    if (parent == NULL || parent->update == NULL || !(player->stateFlags1 & 0x1000)) {
+    if (parent == NULL || parent->update == NULL || !(player->stateFlags1 & PLAYER_STATE1_CHARGING_SPIN_ATTACK)) {
         if (this->life != 0) {
             this->life -= 1;
         } else {
@@ -296,8 +296,7 @@ void EffDust_DrawFunc_8099E4F4(Actor* thisx, PlayState* play2) {
             Matrix_Scale(this->scalingFactor, this->scalingFactor, this->scalingFactor, MTXMODE_APPLY);
             Matrix_Mult(&play->billboardMtxF, MTXMODE_APPLY);
 
-            gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(gfxCtx),
-                      G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+            gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             gSPDisplayList(POLY_XLU_DISP++, SEGMENTED_TO_VIRTUAL(gEffSparklesDL));
         }
 
@@ -359,8 +358,7 @@ void EffDust_DrawFunc_8099E784(Actor* thisx, PlayState* play2) {
 
             Matrix_ReplaceRotation(&play->billboardMtxF);
 
-            gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(gfxCtx),
-                      G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+            gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             gSPDisplayList(POLY_XLU_DISP++, SEGMENTED_TO_VIRTUAL(gEffSparklesDL));
         }
 

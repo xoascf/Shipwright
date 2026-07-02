@@ -7,15 +7,17 @@
 #include "z_en_ma3.h"
 #include "objects/object_ma2/object_ma2.h"
 
-#define FLAGS (ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED)
+#define FLAGS                                                                                  \
+    (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_CULLING_DISABLED | \
+     ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
 void EnMa3_Init(Actor* thisx, PlayState* play);
 void EnMa3_Destroy(Actor* thisx, PlayState* play);
 void EnMa3_Update(Actor* thisx, PlayState* play);
 void EnMa3_Draw(Actor* thisx, PlayState* play);
 
-u16 func_80AA2AA0(PlayState* play, Actor* this);
-s16 func_80AA2BD4(PlayState* play, Actor* this);
+u16 EnMa3_GetTextId(PlayState* play, Actor* this);
+s16 EnMa3_UpdateTalkState(PlayState* play, Actor* this);
 
 void func_80AA2E54(EnMa3* this, PlayState* play);
 s32 func_80AA2EC8(EnMa3* this, PlayState* play);
@@ -72,33 +74,33 @@ static AnimationFrameCountInfo sAnimationInfo[] = {
     { &gMalonAdultSingAnim, 1.0f, ANIMMODE_LOOP, -10.0f },
 };
 
-u16 func_80AA2AA0(PlayState* play, Actor* thisx) {
+u16 EnMa3_GetTextId(PlayState* play, Actor* thisx) {
     Player* player = GET_PLAYER(play);
-    s16* timer1ValuePtr; // weirdness with this necessary to match
+    s16* timerSecondsPtr; // weirdness with this necessary to match
 
     if (!Flags_GetInfTable(INFTABLE_B8)) {
         return 0x2000;
     }
-    timer1ValuePtr = &gSaveContext.timer1Value;
+    timerSecondsPtr = &gSaveContext.timerSeconds;
     if (gSaveContext.eventInf[0] & 0x400) {
-        gSaveContext.timer1Value = gSaveContext.timer1Value;
-        thisx->flags |= ACTOR_FLAG_WILL_TALK;
-        if (gSaveContext.timer1Value >= 0xD3) {
+        gSaveContext.timerSeconds = gSaveContext.timerSeconds;
+        thisx->flags |= ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
+        if (gSaveContext.timerSeconds >= 0xD3) {
             return 0x208E;
         }
         if ((HIGH_SCORE(HS_HORSE_RACE) == 0) || (HIGH_SCORE(HS_HORSE_RACE) >= 0xB4)) {
             HIGH_SCORE(HS_HORSE_RACE) = 0xB4;
-            gSaveContext.timer1Value = *timer1ValuePtr;
+            gSaveContext.timerSeconds = *timerSecondsPtr;
         }
-        if (!Flags_GetEventChkInf(EVENTCHKINF_WON_COW_IN_MALONS_RACE) && (gSaveContext.timer1Value < 0x32)) {
+        if (!Flags_GetEventChkInf(EVENTCHKINF_WON_COW_IN_MALONS_RACE) && (gSaveContext.timerSeconds < 0x32)) {
             return 0x208F;
-        } else if (gSaveContext.timer1Value < HIGH_SCORE(HS_HORSE_RACE)) {
+        } else if (gSaveContext.timerSeconds < HIGH_SCORE(HS_HORSE_RACE)) {
             return 0x2012;
         } else {
             return 0x2004;
         }
     }
-    if ((!(player->stateFlags1 & 0x800000)) &&
+    if ((!(player->stateFlags1 & PLAYER_STATE1_ON_HORSE)) &&
         (Actor_FindNearby(play, thisx, ACTOR_EN_HORSE, 1, 1200.0f) == NULL)) {
         return 0x2001;
     }
@@ -109,18 +111,18 @@ u16 func_80AA2AA0(PlayState* play, Actor* thisx) {
     }
 }
 
-s16 func_80AA2BD4(PlayState* play, Actor* thisx) {
+s16 EnMa3_UpdateTalkState(PlayState* play, Actor* thisx) {
     s16 ret = NPC_TALK_STATE_TALKING;
 
     switch (Message_GetState(&play->msgCtx)) {
         case TEXT_STATE_EVENT:
             if (Message_ShouldAdvance(play)) {
-                play->nextEntranceIndex = 0x157;
+                play->nextEntranceIndex = ENTR_LON_LON_RANCH_ENTRANCE;
                 gSaveContext.nextCutsceneIndex = 0xFFF0;
-                play->fadeTransition = 0x26;
-                play->sceneLoadFlag = 0x14;
+                play->transitionType = TRANS_TYPE_CIRCLE(TCA_STARBURST, TCC_BLACK, TCS_FAST);
+                play->transitionTrigger = TRANS_TRIGGER_START;
                 gSaveContext.eventInf[0] |= 0x400;
-                gSaveContext.timer1State = 0xF;
+                gSaveContext.timerState = TIMER_STATE_UP_FREEZE;
             }
             break;
         case TEXT_STATE_CHOICE:
@@ -147,14 +149,14 @@ s16 func_80AA2BD4(PlayState* play, Actor* thisx) {
                     Flags_SetEventChkInf(EVENTCHKINF_WON_COW_IN_MALONS_RACE);
                 case 0x2004:
                 case 0x2012:
-                    if (HIGH_SCORE(HS_HORSE_RACE) > gSaveContext.timer1Value) {
-                        HIGH_SCORE(HS_HORSE_RACE) = gSaveContext.timer1Value;
+                    if (HIGH_SCORE(HS_HORSE_RACE) > gSaveContext.timerSeconds) {
+                        HIGH_SCORE(HS_HORSE_RACE) = gSaveContext.timerSeconds;
                     }
                 case 0x208E:
                     gSaveContext.eventInf[0] &= ~0x400;
-                    thisx->flags &= ~ACTOR_FLAG_WILL_TALK;
+                    thisx->flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
                     ret = NPC_TALK_STATE_IDLE;
-                    gSaveContext.timer1State = 0xA;
+                    gSaveContext.timerState = TIMER_STATE_STOP;
                     break;
                 case 0x2002:
                     Flags_SetInfTable(INFTABLE_B9);
@@ -277,7 +279,7 @@ void EnMa3_Destroy(Actor* thisx, PlayState* play) {
 
 void func_80AA3200(EnMa3* this, PlayState* play) {
     if (this->interactInfo.talkState == NPC_TALK_STATE_ACTION) {
-        this->actor.flags &= ~ACTOR_FLAG_WILL_TALK;
+        this->actor.flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
         this->interactInfo.talkState = NPC_TALK_STATE_IDLE;
     }
 }
@@ -293,15 +295,15 @@ void EnMa3_Update(Actor* thisx, PlayState* play) {
     this->actionFunc(this, play);
     func_80AA2E54(this, play);
     Npc_UpdateTalking(play, &this->actor, &this->interactInfo.talkState, (f32)this->collider.dim.radius + 150.0f,
-                      func_80AA2AA0, func_80AA2BD4);
+                      EnMa3_GetTextId, EnMa3_UpdateTalkState);
     if (this->interactInfo.talkState == NPC_TALK_STATE_IDLE) {
-        if (this->unk_20A != 0) {
+        if (this->isNotSinging != 0) {
             func_800F6584(0);
-            this->unk_20A = 0;
+            this->isNotSinging = 0;
         }
-    } else if (this->unk_20A == 0) {
+    } else if (this->isNotSinging == 0) {
         func_800F6584(1);
-        this->unk_20A = 1;
+        this->isNotSinging = 1;
     }
 }
 

@@ -1,1225 +1,1001 @@
 #include "item_pool.hpp"
 
-#include "dungeon.hpp"
+#include "../dungeon.h"
 #include "fill.hpp"
-#include "item_list.hpp"
-#include "item_location.hpp"
-#include "pool_functions.hpp"
+#include "../static_data.h"
+#include "../SeedContext.h"
 #include "random.hpp"
-#include "settings.hpp"
-#include "spoiler_log.hpp"
-#include "z64item.h"
+#include "soh/Enhancements/randomizer/Traps.h"
+#include <algorithm>
 #include <spdlog/spdlog.h>
 
-
-using namespace Settings;
-using namespace Dungeon;
-
-std::vector<uint32_t> ItemPool = {};
-std::vector<uint32_t> PendingJunkPool = {};
-std::vector<uint8_t> IceTrapModels = {};
-const std::array<uint32_t, 9> dungeonRewards = {
-  KOKIRI_EMERALD,
-  GORON_RUBY,
-  ZORA_SAPPHIRE,
-  FOREST_MEDALLION,
-  FIRE_MEDALLION,
-  WATER_MEDALLION,
-  SPIRIT_MEDALLION,
-  SHADOW_MEDALLION,
-  LIGHT_MEDALLION,
+std::vector<RandomizerGet> itemPool = {};
+std::vector<RandomizerGet> lesserPool = {};
+std::vector<RandomizerGet> plentifulPool = {};
+std::vector<RandomizerGet> junkPool = {};
+const std::array<RandomizerGet, 13> JunkPoolItems = {
+    RG_BOMBS_5,  RG_BOMBS_10,  RG_BOMBS_20,  RG_DEKU_NUTS_5, RG_DEKU_STICK_1, RG_DEKU_SEEDS_30, RG_RECOVERY_HEART,
+    RG_ARROWS_5, RG_ARROWS_10, RG_ARROWS_30, RG_BLUE_RUPEE,  RG_RED_RUPEE,    RG_DEKU_NUTS_10,
 };
-const std::array<uint32_t, 16> JunkPoolItems = {
-  BOMBS_5,
-  BOMBS_10,
-  BOMBS_20,
-  DEKU_NUTS_5,
-  DEKU_STICK_1,
-  DEKU_SEEDS_30,
-  RECOVERY_HEART,
-  ARROWS_5,
-  ARROWS_10,
-  ARROWS_30,
-  BLUE_RUPEE,
-  RED_RUPEE,
-  PURPLE_RUPEE,
-  HUGE_RUPEE,
-  DEKU_NUTS_10,
-  ICE_TRAP,
-};
-const std::array<uint32_t, 59> alwaysItems = {
-  BIGGORON_SWORD,
-  BOOMERANG,
-  LENS_OF_TRUTH,
-  MEGATON_HAMMER,
-  IRON_BOOTS,
-  GORON_TUNIC,
-  ZORA_TUNIC,
-  HOVER_BOOTS,
-  MIRROR_SHIELD,
-  STONE_OF_AGONY,
-  FIRE_ARROWS,
-  ICE_ARROWS,
-  LIGHT_ARROWS,
-  DINS_FIRE,
-  FARORES_WIND,
-  NAYRUS_LOVE,
-  GREG_RUPEE,
-  PROGRESSIVE_HOOKSHOT,  //2 progressive hookshots
-  PROGRESSIVE_HOOKSHOT,
-  DEKU_SHIELD,
-  HYLIAN_SHIELD,
-  PROGRESSIVE_STRENGTH,  //3 progressive strength upgrades
-  PROGRESSIVE_STRENGTH,
-  PROGRESSIVE_STRENGTH,
-  PROGRESSIVE_SCALE,     //2 progressive scales
-  PROGRESSIVE_SCALE,
-  PROGRESSIVE_BOW,       //3 progressive Bows
-  PROGRESSIVE_BOW,
-  PROGRESSIVE_BOW,
-  PROGRESSIVE_SLINGSHOT, //3 progressive bullet bags
-  PROGRESSIVE_SLINGSHOT,
-  PROGRESSIVE_SLINGSHOT,
-  PROGRESSIVE_BOMB_BAG,   //3 progressive bomb bags
-  PROGRESSIVE_BOMB_BAG,
-  PROGRESSIVE_BOMB_BAG,
-  PROGRESSIVE_WALLET, //2 progressive wallets
-  PROGRESSIVE_WALLET,
-  PROGRESSIVE_MAGIC_METER,  //2 progressive magic meters
-  PROGRESSIVE_MAGIC_METER,
-  DOUBLE_DEFENSE,
-  PROGRESSIVE_STICK_UPGRADE, //2 stick upgrades
-  PROGRESSIVE_STICK_UPGRADE,
-  PROGRESSIVE_NUT_UPGRADE,   //2 nut upgrades
-  PROGRESSIVE_NUT_UPGRADE,
-  RECOVERY_HEART,  //6 recovery hearts
-  RECOVERY_HEART,
-  RECOVERY_HEART,
-  RECOVERY_HEART,
-  RECOVERY_HEART,
-  RECOVERY_HEART,
-  BOMBS_5, //2
-  BOMBS_5,
-  BOMBS_10,
-  BOMBS_20,
-  ARROWS_5,
-  ARROWS_10, //5
-  ARROWS_10,
-  ARROWS_10,
-  TREASURE_GAME_HEART,
-};
-const std::array<uint32_t, 44> easyItems = {
-  BIGGORON_SWORD,
-  KOKIRI_SWORD,
-  MASTER_SWORD,
-  BOOMERANG,
-  LENS_OF_TRUTH,
-  MEGATON_HAMMER,
-  IRON_BOOTS,
-  GORON_TUNIC,
-  ZORA_TUNIC,
-  HOVER_BOOTS,
-  MIRROR_SHIELD,
-  FIRE_ARROWS,
-  LIGHT_ARROWS,
-  DINS_FIRE,
-  PROGRESSIVE_HOOKSHOT,
-  PROGRESSIVE_STRENGTH,
-  PROGRESSIVE_SCALE,
-  PROGRESSIVE_WALLET,
-  PROGRESSIVE_MAGIC_METER,
-  PROGRESSIVE_STICK_UPGRADE,
-  PROGRESSIVE_NUT_UPGRADE,
-  PROGRESSIVE_BOW,
-  PROGRESSIVE_SLINGSHOT,
-  PROGRESSIVE_BOMB_BAG,
-  DOUBLE_DEFENSE,
-  HEART_CONTAINER, //16 Heart Containers
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  PIECE_OF_HEART,   //3 heart pieces
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-};
-const std::array<uint32_t, 43> normalItems = {
-  PIECE_OF_HEART,   //35 pieces of heart
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  PIECE_OF_HEART,
-  HEART_CONTAINER, //8 heart containers
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-  HEART_CONTAINER,
-};
-const std::array<uint32_t, 2> DT_Vanilla = {
-  RECOVERY_HEART,
-  RECOVERY_HEART,
-};
-const std::array<uint32_t, 3> DT_MQ = {
-  DEKU_SHIELD,
-  DEKU_SHIELD,
-  PURPLE_RUPEE,
-};
-const std::array<uint32_t, 1> DC_Vanilla = {
-  RED_RUPEE,
-};
-const std::array<uint32_t, 2> DC_MQ = {
-  HYLIAN_SHIELD,
-  BLUE_RUPEE,
-};
-const std::array<uint32_t, 7> JB_MQ = {
-  DEKU_NUTS_5,
-  DEKU_NUTS_5,
-  DEKU_NUTS_5,
-  DEKU_NUTS_5,
-  RECOVERY_HEART,
-  DEKU_SHIELD,
-  DEKU_STICK_1,
-};
-const std::array<uint32_t, 3> FoT_Vanilla = {
-  RECOVERY_HEART,
-  ARROWS_10,
-  ARROWS_30,
-};
-const std::array<uint32_t, 1> FoT_MQ = {
-  ARROWS_5,
-};
-const std::array<uint32_t, 1> FiT_Vanilla = {
-  HUGE_RUPEE,
-};
-const std::array<uint32_t, 2> FiT_MQ = {
-  BOMBS_20,
-  HYLIAN_SHIELD,
-};
-const std::array<uint32_t, 4> SpT_Vanilla = {
-  DEKU_SHIELD,
-  DEKU_SHIELD,
-  RECOVERY_HEART,
-  BOMBS_20,
-};
-const std::array<uint32_t, 3> SpT_MQ = {
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  ARROWS_30,
-};
-const std::array<uint32_t, 1> ShT_Vanilla = {
-  ARROWS_30,
-};
-const std::array<uint32_t, 3> ShT_MQ = {
-  ARROWS_5,
-  ARROWS_5,
-  RED_RUPEE,
-};
-const std::array<uint32_t, 7> BW_Vanilla = {
-  RECOVERY_HEART,
-  BOMBS_10,
-  HUGE_RUPEE,
-  DEKU_NUTS_5,
-  DEKU_NUTS_10,
-  DEKU_SHIELD,
-  HYLIAN_SHIELD,
-};
-const std::array<uint32_t, 4> GTG_Vanilla = {
-  ARROWS_30,
-  ARROWS_30,
-  ARROWS_30,
-  HUGE_RUPEE,
-};
-const std::array<uint32_t, 5> GTG_MQ = {
-  TREASURE_GAME_GREEN_RUPEE,
-  TREASURE_GAME_GREEN_RUPEE,
-  ARROWS_10,
-  GREEN_RUPEE,
-  PURPLE_RUPEE,
-};
-const std::array<uint32_t, 4> GC_Vanilla = {
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  ARROWS_30,
-};
-const std::array<uint32_t, 5> GC_MQ = {
-  ARROWS_10,
-  ARROWS_10,
-  BOMBS_5,
-  RED_RUPEE,
-  RECOVERY_HEART,
-};
-const std::array<uint32_t, 11> normalBottles = {
-  EMPTY_BOTTLE,
-  BOTTLE_WITH_MILK,
-  BOTTLE_WITH_RED_POTION,
-  BOTTLE_WITH_GREEN_POTION,
-  BOTTLE_WITH_BLUE_POTION,
-  BOTTLE_WITH_FAIRY,
-  BOTTLE_WITH_FISH,
-  BOTTLE_WITH_BUGS,
-  BOTTLE_WITH_POE,
-  BOTTLE_WITH_BIG_POE,
-  BOTTLE_WITH_BLUE_FIRE,
-};
-const std::array<uint32_t, 28> normalRupees = {
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  RED_RUPEE,
-  RED_RUPEE,
-  RED_RUPEE,
-  RED_RUPEE,
-  RED_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  HUGE_RUPEE,
-  HUGE_RUPEE,
-  HUGE_RUPEE,
-};
-const std::array<uint32_t, 28> shopsanityRupees = {
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  RED_RUPEE,
-  RED_RUPEE,
-  RED_RUPEE,
-  RED_RUPEE,
-  RED_RUPEE,
-  RED_RUPEE,
-  RED_RUPEE,
-  RED_RUPEE,
-  RED_RUPEE,
-  RED_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  PURPLE_RUPEE,
-  HUGE_RUPEE,
-  HUGE_RUPEE,
-  HUGE_RUPEE,
-  HUGE_RUPEE,
-  HUGE_RUPEE,
-  PROGRESSIVE_WALLET,
-};
-const std::array<uint32_t, 19> dekuScrubItems = {
-  DEKU_NUTS_5,
-  DEKU_NUTS_5,
-  DEKU_NUTS_5,
-  DEKU_NUTS_5,
-  DEKU_NUTS_5,
-  DEKU_STICK_1,
-  BOMBS_5,
-  BOMBS_5,
-  BOMBS_5,
-  BOMBS_5,
-  BOMBS_5,
-  RECOVERY_HEART,
-  RECOVERY_HEART,
-  RECOVERY_HEART,
-  RECOVERY_HEART,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-  BLUE_RUPEE,
-};
-const std::array<uint32_t, 12> songList = {
-  ZELDAS_LULLABY,
-  EPONAS_SONG,
-  SUNS_SONG,
-  SARIAS_SONG,
-  SONG_OF_TIME,
-  SONG_OF_STORMS,
-  MINUET_OF_FOREST,
-  PRELUDE_OF_LIGHT,
-  BOLERO_OF_FIRE,
-  SERENADE_OF_WATER,
-  NOCTURNE_OF_SHADOW,
-  REQUIEM_OF_SPIRIT,
-};
-const std::array<uint32_t, 10> tradeItems = {
-  POCKET_EGG,
-  //POCKET_CUCCO,
-  COJIRO,
-  ODD_MUSHROOM,
-  POACHERS_SAW,
-  BROKEN_SWORD,
-  PRESCRIPTION,
-  EYEBALL_FROG,
-  EYEDROPS,
-  CLAIM_CHECK,
+// RANDOTODO should probably check the same thing as check matches contents at some point
+const std::map<RandomizerGet, std::vector<RandomizerGet>*> poolForItem = {
+    { RG_BOMBS_5, &junkPool },         { RG_BOMBS_10, &junkPool },     { RG_BOMBS_20, &junkPool },
+    { RG_DEKU_NUTS_5, &junkPool },     { RG_DEKU_STICK_1, &junkPool }, { RG_DEKU_SEEDS_30, &junkPool },
+    { RG_RECOVERY_HEART, &junkPool },  { RG_ARROWS_5, &junkPool },     { RG_ARROWS_10, &junkPool },
+    { RG_ARROWS_30, &junkPool },       { RG_GREEN_RUPEE, &junkPool },  { RG_BLUE_RUPEE, &junkPool },
+    { RG_RED_RUPEE, &junkPool },       { RG_DEKU_NUTS_10, &junkPool }, { RG_TREASURE_GAME_GREEN_RUPEE, &junkPool },
+    { RG_PURPLE_RUPEE, &lesserPool },  { RG_HUGE_RUPEE, &lesserPool }, { RG_DEKU_SHIELD, &lesserPool },
+    { RG_HYLIAN_SHIELD, &lesserPool }, { RG_BOMBCHU_5, &lesserPool },  { RG_BOMBCHU_10, &lesserPool },
+    { RG_BOMBCHU_20, &lesserPool }
 };
 
-void AddItemToPool(std::vector<uint32_t>& pool, uint32_t item, size_t count /*= 1*/) {
-  pool.insert(pool.end(), count, item);
-}
-
-template <typename FromPool>
-static void AddItemsToPool(std::vector<uint32_t>& toPool, const FromPool& fromPool) {
-  AddElementsToPool(toPool, fromPool);
-}
-
-static void AddItemToMainPool(const uint32_t item, size_t count = 1) {
-  ItemPool.insert(ItemPool.end(), count, item);
-}
-
-static void AddRandomBottle(std::vector<uint32_t>& bottlePool) {
-  AddItemToMainPool(RandomElement(bottlePool, true));
-}
-
-uint32_t GetJunkItem() {
-  if (IceTrapValue.Is(ICETRAPS_MAYHEM) || IceTrapValue.Is(ICETRAPS_ONSLAUGHT)) {
-    return ICE_TRAP;
-  } else if (IceTrapValue.Is(ICETRAPS_EXTRA)) {
-      return RandomElement(JunkPoolItems);
-  }
-  //Ice Trap is the last item in JunkPoolItems, so subtract 1 to never hit that index
-  uint8_t idx = Random(0, JunkPoolItems.size() - 1);
-  return JunkPoolItems[idx];
-}
-
-static uint32_t GetPendingJunkItem() {
-  if (PendingJunkPool.empty()) {
-    return GetJunkItem();
-  }
-
-  return RandomElement(PendingJunkPool, true);
-}
-
-//Replace junk items in the pool with pending junk
-static void ReplaceMaxItem(const uint32_t itemToReplace, int max) {
-  int itemCount = 0;
-  for (size_t i = 0; i < ItemPool.size(); i++) {
-    if (ItemPool[i] == itemToReplace) {
-      if (itemCount >= max) {
-        ItemPool[i] = GetJunkItem();
-      }
-      itemCount++;
+void AddItemToPool(RandomizerGet item, int plentifulCount, size_t balancedCount, size_t scarceCount = 1,
+                   size_t minimalCount = 1, bool iceTrapModel = true) {
+    int count = static_cast<int>(balancedCount);
+    switch (ctx->GetOption(RSK_ITEM_POOL).Get()) {
+        case RO_ITEM_POOL_SCARCE:
+            count = static_cast<int>(scarceCount);
+            break;
+        case RO_ITEM_POOL_MINIMAL:
+            count = static_cast<int>(minimalCount);
+            break;
+        default:
+            break;
     }
-  }
-}
-
-void PlaceJunkInExcludedLocation(const uint32_t il) {
-  //place a non-advancement item in this location
-  for (size_t i = 0; i < ItemPool.size(); i++) {
-    if (!ItemTable(ItemPool[i]).IsAdvancement()) {
-      PlaceItemInLocation(il, ItemPool[i]);
-      ItemPool.erase(ItemPool.begin() + i);
-      return;
-    }
-  }
-  printf("ERROR: No Junk to Place!!!\n");
-}
-
-static void PlaceVanillaDekuScrubItems() {
-    PlaceItemInLocation(ZR_DEKU_SCRUB_GROTTO_REAR,             RED_POTION_REFILL, false, true);
-    PlaceItemInLocation(ZR_DEKU_SCRUB_GROTTO_FRONT,            GREEN_POTION_REFILL, false, true);
-    PlaceItemInLocation(SFM_DEKU_SCRUB_GROTTO_REAR,            RED_POTION_REFILL, false, true);
-    PlaceItemInLocation(SFM_DEKU_SCRUB_GROTTO_FRONT,           GREEN_POTION_REFILL, false, true);
-    PlaceItemInLocation(LH_DEKU_SCRUB_GROTTO_LEFT,             DEKU_NUTS_5, false, true);
-    PlaceItemInLocation(LH_DEKU_SCRUB_GROTTO_RIGHT,            BOMBS_5, false, true);
-    PlaceItemInLocation(LH_DEKU_SCRUB_GROTTO_CENTER,           DEKU_SEEDS_30, false, true);
-    PlaceItemInLocation(GV_DEKU_SCRUB_GROTTO_REAR,             RED_POTION_REFILL, false, true);
-    PlaceItemInLocation(GV_DEKU_SCRUB_GROTTO_FRONT,            GREEN_POTION_REFILL, false, true);
-    PlaceItemInLocation(LW_DEKU_SCRUB_NEAR_DEKU_THEATER_RIGHT, DEKU_NUTS_5, false, true);
-    PlaceItemInLocation(LW_DEKU_SCRUB_NEAR_DEKU_THEATER_LEFT,  DEKU_STICK_1, false, true);
-    PlaceItemInLocation(LW_DEKU_SCRUB_GROTTO_REAR,             DEKU_SEEDS_30, false, true);
-    PlaceItemInLocation(COLOSSUS_DEKU_SCRUB_GROTTO_REAR,       RED_POTION_REFILL, false, true);
-    PlaceItemInLocation(COLOSSUS_DEKU_SCRUB_GROTTO_FRONT,      GREEN_POTION_REFILL, false, true);
-    PlaceItemInLocation(DMC_DEKU_SCRUB,                        BOMBS_5, false, true);
-    PlaceItemInLocation(DMC_DEKU_SCRUB_GROTTO_LEFT,            DEKU_NUTS_5, false, true);
-    PlaceItemInLocation(DMC_DEKU_SCRUB_GROTTO_RIGHT,           BOMBS_5, false, true);
-    PlaceItemInLocation(DMC_DEKU_SCRUB_GROTTO_CENTER,          DEKU_SEEDS_30, false, true);
-    PlaceItemInLocation(GC_DEKU_SCRUB_GROTTO_LEFT,             DEKU_NUTS_5, false, true);
-    PlaceItemInLocation(GC_DEKU_SCRUB_GROTTO_RIGHT,            BOMBS_5, false, true);
-    PlaceItemInLocation(GC_DEKU_SCRUB_GROTTO_CENTER,           DEKU_SEEDS_30, false, true);
-    PlaceItemInLocation(LLR_DEKU_SCRUB_GROTTO_LEFT,            DEKU_NUTS_5, false, true);
-    PlaceItemInLocation(LLR_DEKU_SCRUB_GROTTO_RIGHT,           BOMBS_5, false, true);
-    PlaceItemInLocation(LLR_DEKU_SCRUB_GROTTO_CENTER,          DEKU_SEEDS_30, false, true);
-
-    //Dungeon Scrubs
-    if (DekuTree.IsMQ()) {
-      PlaceItemInLocation(DEKU_TREE_MQ_DEKU_SCRUB, DEKU_SHIELD, false, true);
-    }
-    if (DodongosCavern.IsMQ()) {
-      PlaceItemInLocation(DODONGOS_CAVERN_MQ_DEKU_SCRUB_LOBBY_REAR,                    DEKU_STICK_1, false, true);
-      PlaceItemInLocation(DODONGOS_CAVERN_MQ_DEKU_SCRUB_LOBBY_FRONT,                   DEKU_SEEDS_30, false, true);
-      PlaceItemInLocation(DODONGOS_CAVERN_MQ_DEKU_SCRUB_STAIRCASE,                     DEKU_SHIELD, false, true);
-      PlaceItemInLocation(DODONGOS_CAVERN_MQ_DEKU_SCRUB_SIDE_ROOM_NEAR_LOWER_LIZALFOS, RED_POTION_REFILL, false, true);
+    if (!poolForItem.contains(item)) {
+        itemPool.insert(itemPool.end(), count, item);
+        if (ctx->GetOption(RSK_ITEM_POOL).Is(RO_ITEM_POOL_PLENTIFUL)) {
+            plentifulPool.insert(plentifulPool.end(), plentifulCount - count, item);
+        }
+        if (iceTrapModel && count > 0 && item != RG_ICE_TRAP) {
+            ctx->possibleIceTrapModels.insert(item);
+        }
     } else {
-      PlaceItemInLocation(DODONGOS_CAVERN_DEKU_SCRUB_NEAR_BOMB_BAG_LEFT,      DEKU_NUTS_5, false, true);
-      PlaceItemInLocation(DODONGOS_CAVERN_DEKU_SCRUB_SIDE_ROOM_NEAR_DODONGOS, DEKU_STICK_1, false, true);
-      PlaceItemInLocation(DODONGOS_CAVERN_DEKU_SCRUB_NEAR_BOMB_BAG_RIGHT,     DEKU_SEEDS_30, false, true);
-      PlaceItemInLocation(DODONGOS_CAVERN_DEKU_SCRUB_LOBBY,                   DEKU_SHIELD, false, true);
+        poolForItem.at(item)->insert(poolForItem.at(item)->end(), count, item);
     }
-    if (JabuJabusBelly.IsVanilla()) {
-      PlaceItemInLocation(JABU_JABUS_BELLY_DEKU_SCRUB, DEKU_NUTS_5);
-    }
-    if (GanonsCastle.IsMQ()) {
-      PlaceItemInLocation(GANONS_CASTLE_MQ_DEKU_SCRUB_LEFT,         GREEN_POTION_REFILL, false, true);
-      PlaceItemInLocation(GANONS_CASTLE_MQ_DEKU_SCRUB_CENTER_LEFT,  BOMBS_5, false, true);
-      PlaceItemInLocation(GANONS_CASTLE_MQ_DEKU_SCRUB_CENTER,       ARROWS_30, false, true);
-      PlaceItemInLocation(GANONS_CASTLE_MQ_DEKU_SCRUB_CENTER_RIGHT, RED_POTION_REFILL, false, true);
-      PlaceItemInLocation(GANONS_CASTLE_MQ_DEKU_SCRUB_RIGHT,        DEKU_NUTS_5, false, true);
+}
+
+void AddFixedItemToPool(RandomizerGet item, int count = 1, bool iceTrapModel = true) {
+    if (!poolForItem.contains(item)) {
+        itemPool.insert(itemPool.end(), count, item);
+        if (iceTrapModel && count > 0 && item != RG_ICE_TRAP) {
+            ctx->possibleIceTrapModels.insert(item);
+        }
     } else {
-      PlaceItemInLocation(GANONS_CASTLE_DEKU_SCRUB_CENTER_LEFT,  BOMBS_5, false, true);
-      PlaceItemInLocation(GANONS_CASTLE_DEKU_SCRUB_CENTER_RIGHT, DEKU_SEEDS_30, false, true);
-      PlaceItemInLocation(GANONS_CASTLE_DEKU_SCRUB_RIGHT,        RED_POTION_REFILL, false, true);
-      PlaceItemInLocation(GANONS_CASTLE_DEKU_SCRUB_LEFT,         GREEN_POTION_REFILL, false, true);
+        poolForItem.at(item)->insert(poolForItem.at(item)->end(), count, item);
+    }
+}
+
+RandomizerGet GetJunkItem() {
+    if (Rando::Traps::ShouldJunkItemBeTrap()) {
+        return RG_ICE_TRAP;
     }
 
+    return RandomElement(JunkPoolItems);
+}
 
+// Replace junk items in the pool with pending junk
+static void ReplaceMaxItem(const RandomizerGet itemToReplace, int max) {
+    int itemCount = 0;
+    for (size_t i = 0; i < itemPool.size(); i++) {
+        if (itemPool[i] == itemToReplace) {
+            if (itemCount >= max) {
+                itemPool[i] = RG_NONE;
+            }
+            itemCount++;
+        }
+    }
 }
 
 static void PlaceVanillaMapsAndCompasses() {
-  for (auto dungeon : dungeonList) {
-    dungeon->PlaceVanillaMap();
-    dungeon->PlaceVanillaCompass();
-  }
+    auto ctx = Rando::Context::GetInstance();
+    for (auto dungeon : ctx->GetDungeons()->GetDungeonList()) {
+        dungeon->PlaceVanillaMap();
+        dungeon->PlaceVanillaCompass();
+    }
 }
 
 static void PlaceVanillaSmallKeys() {
-  for (auto dungeon : dungeonList) {
-    dungeon->PlaceVanillaSmallKeys();
-  }
+    auto ctx = Rando::Context::GetInstance();
+    for (auto dungeon : ctx->GetDungeons()->GetDungeonList()) {
+        dungeon->PlaceVanillaSmallKeys();
+    }
 }
 
 static void PlaceVanillaBossKeys() {
-  for (auto dungeon : dungeonList) {
-    dungeon->PlaceVanillaBossKey();
-  }
+    auto ctx = Rando::Context::GetInstance();
+    for (auto dungeon : ctx->GetDungeons()->GetDungeonList()) {
+        dungeon->PlaceVanillaBossKey();
+    }
 }
 
-static void PlaceVanillaCowMilk() {
-  PlaceItemInLocation(KF_LINKS_HOUSE_COW,    MILK, false, true);
-  PlaceItemInLocation(HF_COW_GROTTO_COW,     MILK, false, true);
-  PlaceItemInLocation(GV_COW,                MILK, false, true);
-  PlaceItemInLocation(KAK_IMPAS_HOUSE_COW,   MILK, false, true);
-  PlaceItemInLocation(DMT_COW_GROTTO_COW,    MILK, false, true);
-  PlaceItemInLocation(LLR_STABLES_LEFT_COW,  MILK, false, true);
-  PlaceItemInLocation(LLR_STABLES_RIGHT_COW, MILK, false, true);
-  PlaceItemInLocation(LLR_TOWER_LEFT_COW,    MILK, false, true);
-  PlaceItemInLocation(LLR_TOWER_RIGHT_COW,   MILK, false, true);
+static void PlaceItemsForType(RandomizerCheckType rctype, bool overworldActive = true, bool dungeonActive = true) {
+    if (!(overworldActive || dungeonActive)) {
+        return;
+    }
+    for (RandomizerCheck rc : ctx->GetLocations(ctx->allLocations, rctype)) {
+        auto loc = Rando::StaticData::GetLocation(rc);
 
-  if (JabuJabusBelly.IsMQ()) {
-    PlaceItemInLocation(JABU_JABUS_BELLY_MQ_COW, MILK, false, true);
-  }
-}
+        // If item is in the overworld and shuffled, add its item to the pool
+        if (loc->IsOverworld()) {
+            if (overworldActive) {
+                AddFixedItemToPool(loc->GetVanillaItem(), 1, false);
+            }
+        } else {
+            if (dungeonActive) {
+                // If the same in MQ and vanilla, add.
+                RandomizerCheckQuest currentQuest = loc->GetQuest();
+                if (currentQuest == RCQUEST_BOTH) {
+                    AddFixedItemToPool(loc->GetVanillaItem(), 1, false);
+                } else {
+                    // Check if current item's dungeon is vanilla or MQ, and only add if quest corresponds to it.
+                    SceneID itemScene = loc->GetScene();
 
-static void SetScarceItemPool() {
-  ReplaceMaxItem(PROGRESSIVE_BOMBCHUS, 3);
-  ReplaceMaxItem(BOMBCHU_5, 1);
-  ReplaceMaxItem(BOMBCHU_10, 2);
-  ReplaceMaxItem(BOMBCHU_20, 0);
-  ReplaceMaxItem(PROGRESSIVE_MAGIC_METER, 1);
-  ReplaceMaxItem(DOUBLE_DEFENSE, 0);
-  ReplaceMaxItem(PROGRESSIVE_STICK_UPGRADE, 1);
-  ReplaceMaxItem(PROGRESSIVE_NUT_UPGRADE, 1);
-  ReplaceMaxItem(PROGRESSIVE_BOW, 2);
-  ReplaceMaxItem(PROGRESSIVE_SLINGSHOT, 2);
-  ReplaceMaxItem(PROGRESSIVE_BOMB_BAG, 2);
-  ReplaceMaxItem(HEART_CONTAINER, 0);
-}
+                    if (itemScene >= SCENE_DEKU_TREE && itemScene <= SCENE_GERUDO_TRAINING_GROUND) {
+                        bool isMQ = ctx->GetDungeon(itemScene)->IsMQ();
 
-static void SetMinimalItemPool() {
-  ReplaceMaxItem(PROGRESSIVE_BOMBCHUS, 1);
-  ReplaceMaxItem(BOMBCHU_5, 1);
-  ReplaceMaxItem(BOMBCHU_10, 0);
-  ReplaceMaxItem(BOMBCHU_20, 0);
-  ReplaceMaxItem(NAYRUS_LOVE, 0);
-  ReplaceMaxItem(PROGRESSIVE_MAGIC_METER, 1);
-  ReplaceMaxItem(DOUBLE_DEFENSE, 0);
-  ReplaceMaxItem(PROGRESSIVE_STICK_UPGRADE, 0);
-  ReplaceMaxItem(PROGRESSIVE_NUT_UPGRADE, 0);
-  ReplaceMaxItem(PROGRESSIVE_BOW, 1);
-  ReplaceMaxItem(PROGRESSIVE_SLINGSHOT, 1);
-  ReplaceMaxItem(PROGRESSIVE_BOMB_BAG, 1);
-  ReplaceMaxItem(PIECE_OF_HEART, 0);
-  // Need an extra heart container when starting with 1 heart to be able to reach 3 hearts
-  ReplaceMaxItem(HEART_CONTAINER, (StartingHearts.Value<uint8_t>() == 18)? 1 : 0);
+                        if ((isMQ && currentQuest == RCQUEST_MQ) || (!isMQ && currentQuest == RCQUEST_VANILLA)) {
+                            AddFixedItemToPool(loc->GetVanillaItem(), 1, false);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 void GenerateItemPool() {
+    // RANDOTODO proper removal of items not in pool or logically relevant instead of dummy checks.
+    auto ctx = Rando::Context::GetInstance();
+    ctx->possibleIceTrapModels.clear();
+    itemPool.clear();
+    junkPool.clear();
+    plentifulPool.clear();
+    lesserPool.clear();
+    int reservedSlots = 0;
 
-  ItemPool.clear();
-  PendingJunkPool.clear();
-
-  //Initialize ice trap models to always major items
-  IceTrapModels = {
-    GI_SHIELD_MIRROR,
-    GI_BOOMERANG,
-    GI_LENS,
-    GI_HAMMER,
-    GI_BOOTS_IRON,
-    GI_BOOTS_HOVER,
-    GI_STONE_OF_AGONY,
-    GI_DINS_FIRE,
-    GI_FARORES_WIND,
-    GI_NAYRUS_LOVE,
-    GI_ARROW_FIRE,
-    GI_ARROW_ICE,
-    GI_ARROW_LIGHT,
-    0xB8, //Double defense
-    GI_CLAIM_CHECK,
-    0x80, //Progressive hookshot
-    0x81, //Progressive strength
-    0x82, //Progressive bomb bag
-    0x83, //Progressive bow
-    0x84, //Progressive slingshot
-    0x85, //Progressive wallet
-    0x86, //Progressive scale
-    0x8A, //Progressive magic
-  };
-  //Check song shuffle and dungeon reward shuffle just for ice traps
-  if (ShuffleSongs.Is(SONGSHUFFLE_ANYWHERE)) {
-    //Push item ids for songs
-    IceTrapModels.push_back(0xC1);
-    IceTrapModels.push_back(0xC2);
-    IceTrapModels.push_back(0xC3);
-    IceTrapModels.push_back(0xC4);
-    IceTrapModels.push_back(0xC5);
-    IceTrapModels.push_back(0xC6);
-    IceTrapModels.push_back(0xBB);
-    IceTrapModels.push_back(0xBC);
-    IceTrapModels.push_back(0xBD);
-    IceTrapModels.push_back(0xBE);
-    IceTrapModels.push_back(0xBF);
-    IceTrapModels.push_back(0xC0);
-  }
-  if (ShuffleRewards.Is(REWARDSHUFFLE_ANYWHERE)) {
-    //Push item ids for dungeon rewards
-    IceTrapModels.push_back(0xCB);
-    IceTrapModels.push_back(0xCC);
-    IceTrapModels.push_back(0xCD);
-    IceTrapModels.push_back(0xCE);
-    IceTrapModels.push_back(0xCF);
-    IceTrapModels.push_back(0xD0);
-    IceTrapModels.push_back(0xD1);
-    IceTrapModels.push_back(0xD2);
-    IceTrapModels.push_back(0xD3);
-  }
-
-  if (TriforceHunt.Is(TRIFORCE_HUNT_ON)) {
-    IceTrapModels.push_back(0xDF);
-    AddItemToMainPool(TRIFORCE_PIECE, Settings::TriforceHuntTotal.Value<uint8_t>());
-    PlaceItemInLocation(TRIFORCE_COMPLETED, TRIFORCE); // Win condition
-    PlaceItemInLocation(GANON, GetJunkItem(), false, true);
-  } else {
-    PlaceItemInLocation(GANON, TRIFORCE); // Win condition
-  }
-
-  //Fixed item locations
-  PlaceItemInLocation(HC_ZELDAS_LETTER, ZELDAS_LETTER);
-  PlaceItemInLocation(MARKET_BOMBCHU_BOWLING_BOMBCHUS, BOMBCHU_DROP);
-
-  if (ShuffleKokiriSword) {
-    AddItemToMainPool(KOKIRI_SWORD);
-    IceTrapModels.push_back(GI_SWORD_KOKIRI);
-  } else {
-    PlaceItemInLocation(KF_KOKIRI_SWORD_CHEST, KOKIRI_SWORD, false, true);
-  }
-
-  if (ShuffleMasterSword) {
-    AddItemToMainPool(MASTER_SWORD);
-    IceTrapModels.push_back(0xE0); //Master Sword without the GI enum
-  } else {
-    PlaceItemInLocation(TOT_MASTER_SWORD, MASTER_SWORD, false, true);
-  }
-
-  if (ShuffleWeirdEgg) {
-    AddItemToMainPool(WEIRD_EGG);
-    IceTrapModels.push_back(GI_WEIRD_EGG);
-  } else {
-    PlaceItemInLocation(HC_MALON_EGG, WEIRD_EGG, false, true);
-  }
-
-  if (ShuffleOcarinas) {
-    AddItemToMainPool(PROGRESSIVE_OCARINA, 2);
-    if (ItemPoolValue.Is(ITEMPOOL_PLENTIFUL)) {
-      AddItemToPool(PendingJunkPool, PROGRESSIVE_OCARINA);
+    // clang-format off
+    // Items the player can start with are removed from the pool so a started copy isn't also shuffled.
+    if (!ctx->GetOption(RSK_STARTING_BOOMERANG))     AddItemToPool(RG_BOOMERANG, 2, 1, 1, 1);
+    if (!ctx->GetOption(RSK_STARTING_LENS_OF_TRUTH)) AddItemToPool(RG_LENS_OF_TRUTH, 2, 1, 1, 1);
+    if (!ctx->GetOption(RSK_STARTING_MEGATON_HAMMER)) AddItemToPool(RG_MEGATON_HAMMER, 2, 1, 1, 1);
+    if (!ctx->GetOption(RSK_STARTING_IRON_BOOTS))    AddItemToPool(RG_IRON_BOOTS, 2, 1, 1, 1);
+    if (!ctx->GetOption(RSK_STARTING_GORON_TUNIC))   AddItemToPool(RG_GORON_TUNIC, 2, 1, 1, 1);
+    if (!ctx->GetOption(RSK_STARTING_ZORA_TUNIC))    AddItemToPool(RG_ZORA_TUNIC, 2, 1, 1, 1);
+    if (!ctx->GetOption(RSK_STARTING_HOVER_BOOTS))   AddItemToPool(RG_HOVER_BOOTS, 2, 1, 1, 1);
+    if (!ctx->GetOption(RSK_STARTING_MIRROR_SHIELD)) AddItemToPool(RG_MIRROR_SHIELD, 2, 1, 1, 1);
+    if (!ctx->GetOption(RSK_STARTING_STONE_OF_AGONY)) AddItemToPool(RG_STONE_OF_AGONY, 2, 1, 1, 1);
+    if (!ctx->GetOption(RSK_STARTING_FIRE_ARROWS))   AddItemToPool(RG_FIRE_ARROWS, 2, 1, 1, 1);
+    if (!ctx->GetOption(RSK_STARTING_ICE_ARROWS))    AddItemToPool(RG_ICE_ARROWS, 2, 1, 1, 1);
+    if (!ctx->GetOption(RSK_STARTING_LIGHT_ARROWS))  AddItemToPool(RG_LIGHT_ARROWS, 2, 1, 1, 1);
+    if (!ctx->GetOption(RSK_STARTING_DINS_FIRE))     AddItemToPool(RG_DINS_FIRE, 2, 1, 1, 1);
+    if (!ctx->GetOption(RSK_STARTING_FARORES_WIND))  AddItemToPool(RG_FARORES_WIND, 2, 1, 1, 0);
+    if (!ctx->GetOption(RSK_STARTING_NAYRUS_LOVE))   AddItemToPool(RG_NAYRUS_LOVE, 2, 1, 1, 0);
+    AddItemToPool(RG_GREG_RUPEE, 1, 1, 1, 1);
+    AddFixedItemToPool(RG_PROGRESSIVE_HOOKSHOT, 2 - ctx->GetOption(RSK_STARTING_HOOKSHOT).Get());
+    if (!ctx->GetOption(RSK_STARTING_HYLIAN_SHIELD)) AddItemToPool(RG_HYLIAN_SHIELD, 1, 1, 1, 1);
+    AddItemToPool(RG_DOUBLE_DEFENSE, 2, 1, 0, 0);
+    if (ctx->GetOption(RSK_STARTING_BIGGORON_SWORD).IsNot(RO_STARTING_BGS_BIGGORON_SWORD)) {
+        AddItemToPool(RG_BIGGORON_SWORD, 2, 1, 1, 0);
     }
-    IceTrapModels.push_back(0x8B); //Progressive ocarina
-  } else {
-    PlaceItemInLocation(LW_GIFT_FROM_SARIA, PROGRESSIVE_OCARINA, false, true);
-    PlaceItemInLocation(HF_OCARINA_OF_TIME_ITEM, PROGRESSIVE_OCARINA, false, true);
-  }
+    bool isScrubs = ctx->GetOption(RSK_SHUFFLE_SCRUBS).Is(RO_SCRUBS_ALL);
+    AddFixedItemToPool(RG_DEKU_SHIELD, isScrubs ? 1 : 2);
+    AddFixedItemToPool(RG_RECOVERY_HEART, isScrubs ? 6 : 11);
+    AddFixedItemToPool(RG_BOMBS_5, isScrubs ? 2 : 8);
+    AddFixedItemToPool(RG_DEKU_STICK_1, isScrubs ? 0 : 2);
+    AddFixedItemToPool(RG_BOMBS_10, 1);
+    AddFixedItemToPool(RG_BOMBS_20, 1);
+    AddFixedItemToPool(RG_ARROWS_5, 1);
+    AddFixedItemToPool(RG_ARROWS_10, 3);
 
-  if (ShuffleCows) {
-    //9 total cow locations
-    for (uint8_t i = 0; i < 9; i++) {
-      AddItemToMainPool(GetJunkItem());
-    }
-    //extra location for Jabu MQ
-    if (JabuJabusBelly.IsMQ()) {
-      AddItemToMainPool(GetJunkItem());
-    }
-  } else {
-    PlaceVanillaCowMilk();
-  }
-
-  if (ShuffleMagicBeans) {
-    AddItemToMainPool(MAGIC_BEAN_PACK);
-    if (ItemPoolValue.Is(ITEMPOOL_PLENTIFUL)) {
-      AddItemToPool(PendingJunkPool, MAGIC_BEAN_PACK);
-    }
-    IceTrapModels.push_back(0xC9); //Magic bean pack
-  } else {
-    PlaceItemInLocation(ZR_MAGIC_BEAN_SALESMAN, MAGIC_BEAN, false, true);
-  }
-
-  if (ShuffleMerchants.IsNot(SHUFFLEMERCHANTS_OFF)) {
-    if (!ProgressiveGoronSword) {
-      AddItemToMainPool(GIANTS_KNIFE);
-    }
-    if (BombchusInLogic) {
-      AddItemToMainPool(PROGRESSIVE_BOMBCHUS);
-    } else {
-      AddItemToMainPool(BOMBCHU_10);
-    }
-  } else {
-    PlaceItemInLocation(KAK_GRANNYS_SHOP, BLUE_POTION_REFILL, false, true);
-    PlaceItemInLocation(GC_MEDIGORON, GIANTS_KNIFE, false, true);
-    PlaceItemInLocation(WASTELAND_BOMBCHU_SALESMAN, BOMBCHU_10, false, true);
-  }
-
-  if (ShuffleFrogSongRupees) {
-    AddItemToMainPool(PURPLE_RUPEE, 5);
-  } else {
-    PlaceItemInLocation(ZR_FROGS_ZELDAS_LULLABY, PURPLE_RUPEE, false, true);
-    PlaceItemInLocation(ZR_FROGS_EPONAS_SONG, PURPLE_RUPEE, false, true);
-    PlaceItemInLocation(ZR_FROGS_SARIAS_SONG, PURPLE_RUPEE, false, true);
-    PlaceItemInLocation(ZR_FROGS_SUNS_SONG, PURPLE_RUPEE, false, true);
-    PlaceItemInLocation(ZR_FROGS_SONG_OF_TIME, PURPLE_RUPEE, false, true);
-  }
-
-  if (ShuffleAdultTradeQuest) {
-    AddItemToMainPool(POCKET_EGG);
-    AddItemToMainPool(COJIRO);
-    AddItemToMainPool(ODD_MUSHROOM);
-    AddItemToMainPool(ODD_POTION);
-    AddItemToMainPool(POACHERS_SAW);
-    AddItemToMainPool(BROKEN_SWORD);
-    AddItemToMainPool(PRESCRIPTION);
-    AddItemToMainPool(EYEBALL_FROG);
-    AddItemToMainPool(EYEDROPS);
-  } else {
-    PlaceItemInLocation(KAK_TRADE_POCKET_CUCCO, COJIRO, false, true);
-    PlaceItemInLocation(LW_TRADE_COJIRO, ODD_MUSHROOM, false, true);
-    PlaceItemInLocation(KAK_TRADE_ODD_MUSHROOM, ODD_POTION, false, true);
-    PlaceItemInLocation(LW_TRADE_ODD_POTION, POACHERS_SAW, false, true);
-    PlaceItemInLocation(GV_TRADE_SAW, BROKEN_SWORD, false, true);
-    PlaceItemInLocation(DMT_TRADE_BROKEN_SWORD, PRESCRIPTION, false, true);
-    PlaceItemInLocation(ZD_TRADE_PRESCRIPTION, EYEBALL_FROG, false, true);
-    PlaceItemInLocation(LH_TRADE_FROG, EYEDROPS, false, true);
-    PlaceItemInLocation(DMT_TRADE_EYEDROPS, CLAIM_CHECK, false, true);
-  }
-  AddItemToMainPool(CLAIM_CHECK);
-
-  if (ShuffleChestMinigame.Is(SHUFFLECHESTMINIGAME_SINGLE_KEYS)) {
-    AddItemToMainPool(TREASURE_GAME_SMALL_KEY, 6); // 6 individual keys
-  } else if (ShuffleChestMinigame.Is(SHUFFLECHESTMINIGAME_PACK)) {
-    AddItemToMainPool(TREASURE_GAME_SMALL_KEY); // 1 key which will behave as a pack of 6
-  } else {
-    PlaceItemInLocation(MARKET_TREASURE_CHEST_GAME_ITEM_1, TREASURE_GAME_SMALL_KEY, false, true);
-    PlaceItemInLocation(MARKET_TREASURE_CHEST_GAME_ITEM_2, TREASURE_GAME_SMALL_KEY, false, true);
-    PlaceItemInLocation(MARKET_TREASURE_CHEST_GAME_ITEM_3, TREASURE_GAME_SMALL_KEY, false, true);
-    PlaceItemInLocation(MARKET_TREASURE_CHEST_GAME_ITEM_4, TREASURE_GAME_SMALL_KEY, false, true);
-    PlaceItemInLocation(MARKET_TREASURE_CHEST_GAME_ITEM_5, TREASURE_GAME_SMALL_KEY, false, true);
-  };
-
-  if (Tokensanity.Is(TOKENSANITY_OFF)) {
-    for (uint32_t loc : GetLocations(allLocations, Category::cSkulltula)) {
-      PlaceItemInLocation(loc, GOLD_SKULLTULA_TOKEN, false, true);
-    }
-  } else if (Tokensanity.Is(TOKENSANITY_DUNGEONS)) {
-    for (uint32_t loc : GetLocations(allLocations, Category::cSkulltula)) {
-      if (Location(loc)->IsOverworld()) {
-        PlaceItemInLocation(loc, GOLD_SKULLTULA_TOKEN, false, true);
-      } else {
-        AddItemToMainPool(GOLD_SKULLTULA_TOKEN);
-      }
-    }
-  } else if (Tokensanity.Is(TOKENSANITY_OVERWORLD)) {
-    for (uint32_t loc : GetLocations(allLocations, Category::cSkulltula)) {
-      if (Location(loc)->IsDungeon()) {
-        PlaceItemInLocation(loc, GOLD_SKULLTULA_TOKEN, false, true);
-      } else {
-        AddItemToMainPool(GOLD_SKULLTULA_TOKEN);
-      }
-    }
-  } else {
-    AddItemToMainPool(GOLD_SKULLTULA_TOKEN, 100);
-  }
-
-  if (Shuffle100GSReward) {
-    if (Tokensanity.IsNot(TOKENSANITY_OFF) && ItemPoolValue.Is(ITEMPOOL_PLENTIFUL)) {
-      AddItemToPool(PendingJunkPool, GOLD_SKULLTULA_TOKEN, 10);
-    }
-    AddItemToMainPool(HUGE_RUPEE);
-  } else {
-    PlaceItemInLocation(KAK_100_GOLD_SKULLTULA_REWARD, HUGE_RUPEE, false, true);
-  }
-
-  if (BombchusInLogic) {
-    AddItemToMainPool(PROGRESSIVE_BOMBCHUS, 5);
-  } else {
-    AddItemToMainPool(BOMBCHU_5);
-    AddItemToMainPool(BOMBCHU_10, 3);
-    AddItemToMainPool(BOMBCHU_20);
-  }
-
-  //Ice Traps
-  AddItemToMainPool(ICE_TRAP);
-  if (GerudoTrainingGrounds.IsVanilla()) {
-    AddItemToMainPool(ICE_TRAP);
-  }
-  if (GanonsCastle.IsVanilla()) {
-    AddItemToMainPool(ICE_TRAP, 4);
-  }
-
-  //Gerudo Fortress
-  if (GerudoFortress.Is(GERUDOFORTRESS_OPEN)) {
-    PlaceItemInLocation(GF_NORTH_F1_CARPENTER, RECOVERY_HEART, false, true);
-    PlaceItemInLocation(GF_NORTH_F2_CARPENTER, RECOVERY_HEART, false, true);
-    PlaceItemInLocation(GF_SOUTH_F1_CARPENTER, RECOVERY_HEART, false, true);
-    PlaceItemInLocation(GF_SOUTH_F2_CARPENTER, RECOVERY_HEART, false, true);
-  } else if (GerudoKeys.IsNot(GERUDOKEYS_VANILLA)) {
-    if (GerudoFortress.Is(GERUDOFORTRESS_FAST)) {
-      AddItemToMainPool(GERUDO_FORTRESS_SMALL_KEY);
-      PlaceItemInLocation(GF_NORTH_F2_CARPENTER, RECOVERY_HEART, false, true);
-      PlaceItemInLocation(GF_SOUTH_F1_CARPENTER, RECOVERY_HEART, false, true);
-      PlaceItemInLocation(GF_SOUTH_F2_CARPENTER, RECOVERY_HEART, false, true);
-    } else {
-      //Only add key ring if 4 Fortress keys necessary
-      if (RingFortress) {
-        AddItemToMainPool(GERUDO_FORTRESS_KEY_RING);
-        //Add junk to make up for missing keys
-        for (uint8_t i = 0; i < 3; i++) {
-          AddItemToMainPool(GetJunkItem());
+    if (isScrubs) {
+        AddFixedItemToPool(RG_DEKU_NUTS_5, ctx->GetDungeon(Rando::JABU_JABUS_BELLY)->IsVanilla() ? 5 : 6);
+        // Scrubs which sell seeds or arrows sell it based on age, this randomly assigns them
+        for (uint8_t i = 0; i < 7; i++) {
+            if (Random(0, 2)) {
+                AddFixedItemToPool(RG_ARROWS_30);
+            } else {
+                AddFixedItemToPool(RG_DEKU_SEEDS_30);
+            }
         }
-      } else {
-        AddItemToMainPool(GERUDO_FORTRESS_SMALL_KEY, 4);
-      }
     }
-    if (ItemPoolValue.Is(ITEMPOOL_PLENTIFUL)) {
-      if (RingFortress && GerudoFortress.Is(GERUDOFORTRESS_NORMAL)) {
-        AddItemToPool(PendingJunkPool, GERUDO_FORTRESS_KEY_RING);
-      } else {
-        AddItemToPool(PendingJunkPool, GERUDO_FORTRESS_SMALL_KEY);
-      }
-    }
-  } else {
-    if (GerudoFortress.Is(GERUDOFORTRESS_FAST)) {
-      PlaceItemInLocation(GF_NORTH_F1_CARPENTER, GERUDO_FORTRESS_SMALL_KEY, false, true);
-      PlaceItemInLocation(GF_NORTH_F2_CARPENTER, RECOVERY_HEART, false, true);
-      PlaceItemInLocation(GF_SOUTH_F1_CARPENTER, RECOVERY_HEART, false, true);
-      PlaceItemInLocation(GF_SOUTH_F2_CARPENTER, RECOVERY_HEART, false, true);
+
+    // Progressive items the player starts with are removed from the pool, subtracting the starting
+    // tier from each count (clamped to 0 so smaller pools don't underflow).
+    int infiniteProgressive = ctx->GetOption(RSK_INFINITE_UPGRADES).Is(RO_INF_UPGRADES_PROGRESSIVE) ? 1 : 0;
+    int startBow = ctx->GetOption(RSK_STARTING_BOW).Get();
+    AddItemToPool(RG_PROGRESSIVE_BOW, std::max(0, 4 + infiniteProgressive - startBow),
+                                      std::max(0, 3 + infiniteProgressive - startBow),
+                                      std::max(0, 2 + infiniteProgressive - startBow),
+                                      std::max(0, 1 + infiniteProgressive - startBow));
+    int startSlingshot = ctx->GetOption(RSK_STARTING_SLINGSHOT).Get();
+    AddItemToPool(RG_PROGRESSIVE_SLINGSHOT, std::max(0, 4 + infiniteProgressive - startSlingshot),
+                                            std::max(0, 3 + infiniteProgressive - startSlingshot),
+                                            std::max(0, 2 + infiniteProgressive - startSlingshot),
+                                            std::max(0, 1 + infiniteProgressive - startSlingshot));
+    int startBombBag = ctx->GetOption(RSK_STARTING_BOMB_BAG).Get();
+    AddItemToPool(RG_PROGRESSIVE_BOMB_BAG,  std::max(0, 4 + infiniteProgressive - startBombBag),
+                                            std::max(0, 3 + infiniteProgressive - startBombBag),
+                                            std::max(0, 2 + infiniteProgressive - startBombBag),
+                                            std::max(0, 1 + infiniteProgressive - startBombBag));
+    int startMagic = ctx->GetOption(RSK_STARTING_MAGIC_METER).Get();
+    AddItemToPool(RG_PROGRESSIVE_MAGIC_METER, std::max(0, 3 + infiniteProgressive - startMagic),
+                                              std::max(0, 2 + infiniteProgressive - startMagic),
+                                              std::max(0, 1 + infiniteProgressive - startMagic),
+                                              std::max(0, 1 + infiniteProgressive - startMagic));
+    //clang-format on
+
+    int extraWallets =(ctx->GetOption(RSK_SHUFFLE_CHILD_WALLET) ? 1 : 0) + (ctx->GetOption(RSK_INCLUDE_TYCOON_WALLET) ? 1 : 0);
+    int startWallet = ctx->GetOption(RSK_STARTING_WALLET).Get();
+    AddItemToPool(RG_PROGRESSIVE_WALLET, std::max(0, 3 + infiniteProgressive + extraWallets - startWallet),
+                                         std::max(0, 2 + infiniteProgressive + extraWallets - startWallet),
+                                         std::max(0, 2 + infiniteProgressive + extraWallets - startWallet),
+                                         std::max(0, 2 + infiniteProgressive + extraWallets - startWallet));
+
+    int stickShuffle = ctx->GetOption(RSK_SHUFFLE_DEKU_STICK_BAG) ? 1 : 0;
+    AddItemToPool(RG_PROGRESSIVE_STICK_UPGRADE, 3 + infiniteProgressive + stickShuffle,
+                                                2 + infiniteProgressive + stickShuffle,
+                                                1 + infiniteProgressive + stickShuffle,
+                                                0 + infiniteProgressive + stickShuffle);
+
+    int nutShuffle = ctx->GetOption(RSK_SHUFFLE_DEKU_NUT_BAG) ? 1 : 0;
+    AddItemToPool(RG_PROGRESSIVE_NUT_UPGRADE, 3 + infiniteProgressive + nutShuffle,
+                                              2 + infiniteProgressive + nutShuffle,
+                                              1 + infiniteProgressive + nutShuffle,
+                                              0 + infiniteProgressive + nutShuffle);
+
+    int startBombchu = ctx->GetOption(RSK_STARTING_BOMBCHU_BAG).Get();
+    if (ctx->GetOption(RSK_BOMBCHU_BAG).Is(RO_BOMBCHU_BAG_SINGLE)) {
+        // Single mode has only one bag; starting with it removes one copy from the pool.
+        int startSingle = startBombchu > 0 ? 1 : 0;
+        AddItemToPool(RG_PROGRESSIVE_BOMBCHU_BAG, std::max(0, 6 - startSingle), std::max(0, 5 - startSingle),
+                                                  std::max(0, 3 - startSingle), std::max(0, 1 - startSingle));
+    } else if (ctx->GetOption(RSK_BOMBCHU_BAG).Is(RO_BOMBCHU_BAG_PROGRESSIVE)) {
+        AddItemToPool(RG_PROGRESSIVE_BOMBCHU_BAG,  std::max(0, 4 + infiniteProgressive - startBombchu),
+                                                   std::max(0, 3 + infiniteProgressive - startBombchu),
+                                                   std::max(0, 2 + infiniteProgressive - startBombchu),
+                                                   std::max(0, 1 + infiniteProgressive - startBombchu));
     } else {
-      PlaceItemInLocation(GF_NORTH_F1_CARPENTER, GERUDO_FORTRESS_SMALL_KEY, false, true);
-      PlaceItemInLocation(GF_NORTH_F2_CARPENTER, GERUDO_FORTRESS_SMALL_KEY, false, true);
-      PlaceItemInLocation(GF_SOUTH_F1_CARPENTER, GERUDO_FORTRESS_SMALL_KEY, false, true);
-      PlaceItemInLocation(GF_SOUTH_F2_CARPENTER, GERUDO_FORTRESS_SMALL_KEY, false, true);
-    }
-  }
-
-  //Gerudo Membership Card
-  if (ShuffleGerudoToken && GerudoFortress.IsNot(GERUDOFORTRESS_OPEN)) {
-    AddItemToMainPool(GERUDO_MEMBERSHIP_CARD);
-    IceTrapModels.push_back(GI_GERUDO_CARD);
-  } else if (ShuffleGerudoToken) {
-    AddItemToPool(PendingJunkPool, GERUDO_MEMBERSHIP_CARD);
-    PlaceItemInLocation(GF_GERUDO_MEMBERSHIP_CARD, ICE_TRAP, false, true);
-  } else {
-    PlaceItemInLocation(GF_GERUDO_MEMBERSHIP_CARD, GERUDO_MEMBERSHIP_CARD, false, true);
-  }
-
-  //Keys
-
-  //For key rings, need to add as many junk items as "missing" keys
-  if (KeyRings.IsNot(KEYRINGS_OFF)) {
-    uint8_t ringJunkAmt = 0;
-    for (auto dungeon : dungeonList) {
-      if (dungeon->HasKeyRing()) {
-        ringJunkAmt += dungeon->GetSmallKeyCount() - 1;
-      }
-    }
-    for (uint8_t i = 0; i < ringJunkAmt; i++) {
-        AddItemToMainPool(GetJunkItem());
-    }
-  }
-
-  if (ItemPoolValue.Is(ITEMPOOL_PLENTIFUL)) {
-    if (ShuffleGerudoToken) {
-      AddItemToPool(PendingJunkPool, GERUDO_MEMBERSHIP_CARD);
+        AddItemToPool(RG_BOMBCHU_20, 2, 1, 0, 0);
+        AddItemToPool(RG_BOMBCHU_10, 3, 3, 2, 0);
+        AddItemToPool(RG_BOMBCHU_5, 1, 1, 1, 1);
     }
 
-    //Plentiful small keys
-    if (Keysanity.Is(KEYSANITY_ANYWHERE) || Keysanity.Is(KEYSANITY_ANY_DUNGEON) || Keysanity.Is(KEYSANITY_OVERWORLD)) {
-      if (BottomOfTheWell.HasKeyRing()) {
-        AddItemToPool(PendingJunkPool, BOTTOM_OF_THE_WELL_KEY_RING);
-      } else {
-        AddItemToPool(PendingJunkPool, BOTTOM_OF_THE_WELL_SMALL_KEY);
-      }
-      if (ForestTemple.HasKeyRing()) {
-        AddItemToPool(PendingJunkPool, FOREST_TEMPLE_KEY_RING);
-      } else {
-        AddItemToPool(PendingJunkPool, FOREST_TEMPLE_SMALL_KEY);
-      }
-      if (FireTemple.HasKeyRing()) {
-        AddItemToPool(PendingJunkPool, FIRE_TEMPLE_KEY_RING);
-      } else {
-        AddItemToPool(PendingJunkPool, FIRE_TEMPLE_SMALL_KEY);
-      }
-      if (WaterTemple.HasKeyRing()) {
-        AddItemToPool(PendingJunkPool, WATER_TEMPLE_KEY_RING);
-      } else {
-        AddItemToPool(PendingJunkPool, WATER_TEMPLE_SMALL_KEY);
-      }
-      if (SpiritTemple.HasKeyRing()) {
-        AddItemToPool(PendingJunkPool, SPIRIT_TEMPLE_KEY_RING);
-      } else {
-        AddItemToPool(PendingJunkPool, SPIRIT_TEMPLE_SMALL_KEY);
-      }
-      if (ShadowTemple.HasKeyRing()) {
-        AddItemToPool(PendingJunkPool, SHADOW_TEMPLE_KEY_RING);
-      } else {
-        AddItemToPool(PendingJunkPool, SHADOW_TEMPLE_SMALL_KEY);
-      }
-      if (GerudoTrainingGrounds.HasKeyRing()) {
-        AddItemToPool(PendingJunkPool, GERUDO_TRAINING_GROUNDS_KEY_RING);
-      } else {
-        AddItemToPool(PendingJunkPool, GERUDO_TRAINING_GROUNDS_SMALL_KEY);
-      }
-      if (GanonsCastle.HasKeyRing()) {
-        AddItemToPool(PendingJunkPool, GANONS_CASTLE_KEY_RING);
-      } else {
-        AddItemToPool(PendingJunkPool, GANONS_CASTLE_SMALL_KEY);
-      } 
-    }
-
-    if (BossKeysanity.Is(BOSSKEYSANITY_ANYWHERE) || BossKeysanity.Is(BOSSKEYSANITY_ANY_DUNGEON) || BossKeysanity.Is(BOSSKEYSANITY_OVERWORLD)) {
-      AddItemToPool(PendingJunkPool, FOREST_TEMPLE_BOSS_KEY);
-      AddItemToPool(PendingJunkPool, FIRE_TEMPLE_BOSS_KEY);
-      AddItemToPool(PendingJunkPool, WATER_TEMPLE_BOSS_KEY);
-      AddItemToPool(PendingJunkPool, SPIRIT_TEMPLE_BOSS_KEY);
-      AddItemToPool(PendingJunkPool, SHADOW_TEMPLE_BOSS_KEY);
-    }
-
-    if (GanonsBossKey.Is(GANONSBOSSKEY_ANYWHERE) || GanonsBossKey.Is(GANONSBOSSKEY_ANY_DUNGEON) || GanonsBossKey.Is(GANONSBOSSKEY_OVERWORLD)) {
-      AddItemToPool(PendingJunkPool, GANONS_CASTLE_BOSS_KEY);
-    }
-  }
-
-  //Shopsanity
-  if (Settings::Shopsanity.Is(SHOPSANITY_OFF) || Settings::Shopsanity.Is(SHOPSANITY_ZERO)) {
-    AddItemsToPool(ItemPool, normalRupees);
-  } else { //Shopsanity 1-4, random
-    AddItemsToPool(ItemPool, shopsanityRupees); //Shopsanity gets extra large rupees
-  }
-
-  //Scrubsanity
-  if (Settings::Scrubsanity.IsNot(SCRUBSANITY_OFF)) {
-    //Deku Tree
-    if (DekuTree.IsMQ()) {
-      AddItemToMainPool(DEKU_SHIELD);
-    }
-
-    //Dodongos Cavern
-    AddItemToMainPool(DEKU_STICK_1);
-    AddItemToMainPool(DEKU_SHIELD);
-    if (DodongosCavern.IsMQ()) {
-      AddItemToMainPool(RECOVERY_HEART);
-    } else {
-      AddItemToMainPool(DEKU_NUTS_5);
-    }
-
-    //Jabu Jabus Belly
-    if (JabuJabusBelly.IsVanilla()) {
-      AddItemToMainPool(DEKU_NUTS_5);
-    }
-
-    //Ganons Castle
-    AddItemToMainPool(BOMBS_5);
-    AddItemToMainPool(RECOVERY_HEART);
-    AddItemToMainPool(BLUE_RUPEE);
-    if (GanonsCastle.IsMQ()) {
-      AddItemToMainPool(DEKU_NUTS_5);
-    }
-
-    //Overworld Scrubs
-    AddItemsToPool(ItemPool, dekuScrubItems);
-
-    //I'm not sure what this is for, but it was in ootr so I copied it
-    for (uint8_t i = 0; i < 7; i++) {
-      if (Random(0, 3)) {
-        AddItemToMainPool(ARROWS_30);
-      } else {
-        AddItemToMainPool(DEKU_SEEDS_30);
-      }
-    }
-  } else {
-    PlaceVanillaDekuScrubItems();
-  }
-
-  AddItemsToPool(ItemPool, alwaysItems);
-  AddItemsToPool(ItemPool, dungeonRewards);
-
-  //Dungeon pools
-  if (DekuTree.IsMQ()) {
-    AddItemsToPool(ItemPool, DT_MQ);
-  } else {
-    AddItemsToPool(ItemPool, DT_Vanilla);
-  }
-  if (DodongosCavern.IsMQ()) {
-    AddItemsToPool(ItemPool, DC_MQ);
-  } else {
-    AddItemsToPool(ItemPool, DC_Vanilla);
-  }
-  if (JabuJabusBelly.IsMQ()) {
-    AddItemsToPool(ItemPool, JB_MQ);
-  }
-  if (ForestTemple.IsMQ()) {
-    AddItemsToPool(ItemPool, FoT_MQ);
-  } else {
-    AddItemsToPool(ItemPool, FoT_Vanilla);
-  }
-  if (FireTemple.IsMQ()) {
-    AddItemsToPool(ItemPool, FiT_MQ);
-  } else {
-    AddItemsToPool(ItemPool, FiT_Vanilla);
-  }
-  if (SpiritTemple.IsMQ()) {
-    AddItemsToPool(ItemPool, SpT_MQ);
-  } else {
-    AddItemsToPool(ItemPool, SpT_Vanilla);
-  }
-  if (ShadowTemple.IsMQ()) {
-    AddItemsToPool(ItemPool, ShT_MQ);
-  } else {
-    AddItemsToPool(ItemPool, ShT_Vanilla);
-  }
-  if (BottomOfTheWell.IsVanilla()) {
-    AddItemsToPool(ItemPool, BW_Vanilla);
-  }
-  if (GerudoTrainingGrounds.IsMQ()) {
-    AddItemsToPool(ItemPool, GTG_MQ);
-  } else {
-    AddItemsToPool(ItemPool, GTG_Vanilla);
-  }
-  if (GanonsCastle.IsMQ()) {
-    AddItemsToPool(ItemPool, GC_MQ);
-  } else {
-    AddItemsToPool(ItemPool, GC_Vanilla);
-  }
-
-  uint8_t rutoBottles = 1;
-  if (ZorasFountain.Is(ZORASFOUNTAIN_OPEN)) {
-    rutoBottles = 0;
-  }
-
-  //Add 4 total bottles
-  uint8_t bottleCount = 4;
-  std::vector<uint32_t> bottles;
-  bottles.assign(normalBottles.begin(), normalBottles.end());
-  IceTrapModels.push_back(ItemTable(RandomElement(bottles)).GetItemID()); //Get one random bottle type for ice traps
-  for (uint8_t i = 0; i < bottleCount; i++) {
-    if (i >= rutoBottles) {
-      if ((i == bottleCount - 1) && ShuffleMerchants.IsNot(SHUFFLEMERCHANTS_OFF)) {
-        AddItemToMainPool(BOTTLE_WITH_BLUE_POTION);
-      } else {
-        AddRandomBottle(bottles);
-      }
-    } else {
-      AddItemToMainPool(RUTOS_LETTER);
-    }
-  }
-
-  //add extra songs only if song shuffle is anywhere
-  AddItemsToPool(ItemPool, songList);
-  if (ShuffleSongs.Is(SONGSHUFFLE_ANYWHERE) && ItemPoolValue.Is(ITEMPOOL_PLENTIFUL)) {
-    AddItemsToPool(PendingJunkPool, songList);
-  }
-
-  /*For item pool generation, dungeon items are either placed in their vanilla
-  | location, or added to the pool now and filtered out later depending on when
-  | they need to get placed or removed in fill.cpp. These items are kept in the
-  | pool until removal because the filling algorithm needs to know all of the
-  | advancement items that haven't been placed yet for placing higher priority
-  | items like stones/medallions.*/
-
-  if (MapsAndCompasses.Is(MAPSANDCOMPASSES_VANILLA)) {
-    PlaceVanillaMapsAndCompasses();
-  } else  {
-    for (auto dungeon : dungeonList) {
-      if (dungeon->GetMap() != NONE) {
-        AddItemToMainPool(dungeon->GetMap());
-      }
-
-      if (dungeon->GetCompass() != NONE) {
-        AddItemToMainPool(dungeon->GetCompass());
-      }
-    }
-  }
-
-  if (Keysanity.Is(KEYSANITY_VANILLA)) {
-    PlaceVanillaSmallKeys();
-  } else {
-    for (auto dungeon : dungeonList) {
-      if (dungeon->HasKeyRing() && Keysanity.IsNot(KEYSANITY_START_WITH)) {
-        AddItemToMainPool(dungeon->GetKeyRing());
-      } else {
-        if (dungeon->GetSmallKeyCount() > 0) {
-          AddItemToMainPool(dungeon->GetSmallKey(), dungeon->GetSmallKeyCount());
+    // add extra songs only if song shuffle is anywhere
+    if (ctx->GetOption(RSK_SHUFFLE_SONGS).IsNot(RO_SONG_SHUFFLE_OFF)) {
+        bool songAnywhere = ctx->GetOption(RSK_SHUFFLE_SONGS).Is(RO_SONG_SHUFFLE_ANYWHERE);
+        if (!ctx->GetOption(RSK_STARTING_ZELDAS_LULLABY).Get()) {
+            AddItemToPool(RG_ZELDAS_LULLABY, songAnywhere ? 2 : 1, 1, 1, 1, songAnywhere);
         }
-      }
-    }
-  }
-
-  if (BossKeysanity.Is(BOSSKEYSANITY_VANILLA)) {
-    PlaceVanillaBossKeys();
-  } else {
-    AddItemToMainPool(FOREST_TEMPLE_BOSS_KEY);
-    AddItemToMainPool(FIRE_TEMPLE_BOSS_KEY);
-    AddItemToMainPool(WATER_TEMPLE_BOSS_KEY);
-    AddItemToMainPool(SPIRIT_TEMPLE_BOSS_KEY);
-    AddItemToMainPool(SHADOW_TEMPLE_BOSS_KEY);
-  }
-
-  if (GanonsBossKey.Is(GANONSBOSSKEY_FINAL_GS_REWARD)) {
-    PlaceItemInLocation(KAK_100_GOLD_SKULLTULA_REWARD, GANONS_CASTLE_BOSS_KEY);
-  } else if (GanonsBossKey.Value<uint8_t>() >= GANONSBOSSKEY_LACS_VANILLA && GanonsBossKey.IsNot(GANONSBOSSKEY_TRIFORCE_HUNT)) {
-    PlaceItemInLocation(TOT_LIGHT_ARROWS_CUTSCENE, GANONS_CASTLE_BOSS_KEY);
-  } else if (GanonsBossKey.Is(GANONSBOSSKEY_VANILLA)) {
-    PlaceItemInLocation(GANONS_TOWER_BOSS_KEY_CHEST, GANONS_CASTLE_BOSS_KEY);
-  } else {
-    AddItemToMainPool(GANONS_CASTLE_BOSS_KEY);
-  }
-
-  if (ItemPoolValue.Is(ITEMPOOL_PLENTIFUL)) {
-    AddItemsToPool(ItemPool, easyItems);
-  } else {
-    AddItemsToPool(ItemPool, normalItems);
-  }
-
-  if (!ShuffleKokiriSword) {
-    ReplaceMaxItem(KOKIRI_SWORD, 0);
-  }
-
-  if (!ShuffleMasterSword) {
-    ReplaceMaxItem(MASTER_SWORD, 0);
-  }
-
-  if (ProgressiveGoronSword) {
-    ReplaceMaxItem(BIGGORON_SWORD, 0);
-    AddItemToMainPool(PROGRESSIVE_GORONSWORD, 2);
-    IceTrapModels.push_back(0xD4); // Progressive Goron Sword
-  } else {
-    IceTrapModels.push_back(GI_SWORD_BGS);
-  }
-
-  //Replace ice traps with junk from the pending junk pool if necessary
-  if (IceTrapValue.Is(ICETRAPS_OFF)) {
-    ReplaceMaxItem(ICE_TRAP, 0);
-  }
-  //Replace all junk items with ice traps for onslaught mode
-  else if (IceTrapValue.Is(ICETRAPS_ONSLAUGHT)) {
-    for (uint8_t i = 0; i < JunkPoolItems.size() - 3; i++) { // -3 Omits Huge Rupees and Deku Nuts 10
-      ReplaceMaxItem(JunkPoolItems[i], 0);
-    }
-  }
-
-  if (ItemPoolValue.Is(ITEMPOOL_SCARCE)) {
-    SetScarceItemPool();
-  } else if (ItemPoolValue.Is(ITEMPOOL_MINIMAL)) {
-    SetMinimalItemPool();
-  } else if (RemoveDoubleDefense) {
-    ReplaceMaxItem(DOUBLE_DEFENSE, 0);
-  }
-
-  //this feels ugly and there's probably a better way, but
-  //it replaces random junk with pending junk.
-  bool junkSet;
-  for (uint32_t pendingJunk : PendingJunkPool) {
-    junkSet = false;
-    for (uint32_t& item : ItemPool) {
-      for (uint32_t junk : JunkPoolItems) {
-        if (item == junk && item != HUGE_RUPEE && item != DEKU_NUTS_10) {
-          item = pendingJunk;
-          junkSet = true;
-          break;
+        if (!ctx->GetOption(RSK_STARTING_EPONAS_SONG).Get()) {
+            AddItemToPool(RG_EPONAS_SONG, songAnywhere ? 2 : 1, 1, 1, 1, songAnywhere);
         }
-      }
-      if (junkSet) break;
+        if (!ctx->GetOption(RSK_STARTING_SARIAS_SONG).Get()) {
+            AddItemToPool(RG_SARIAS_SONG, songAnywhere ? 2 : 1, 1, 1, 1, songAnywhere);
+        }
+        if (!ctx->GetOption(RSK_STARTING_SUNS_SONG).Get()) {
+            AddItemToPool(RG_SUNS_SONG, songAnywhere ? 2 : 1, 1, 1, 1, songAnywhere);
+        }
+        if (!ctx->GetOption(RSK_STARTING_SONG_OF_TIME).Get()) {
+            AddItemToPool(RG_SONG_OF_TIME, songAnywhere ? 2 : 1, 1, 1, 1, songAnywhere);
+        }
+        if (!ctx->GetOption(RSK_STARTING_SONG_OF_STORMS).Get()) {
+            AddItemToPool(RG_SONG_OF_STORMS, songAnywhere ? 2 : 1, 1, 1, 1, songAnywhere);
+        }
+        if (!ctx->GetOption(RSK_STARTING_MINUET_OF_FOREST).Get()) {
+            AddItemToPool(RG_MINUET_OF_FOREST, songAnywhere ? 2 : 1, 1, 1, 1, songAnywhere);
+        }
+        if (!ctx->GetOption(RSK_STARTING_BOLERO_OF_FIRE).Get()) {
+            AddItemToPool(RG_BOLERO_OF_FIRE, songAnywhere ? 2 : 1, 1, 1, 1, songAnywhere);
+        }
+        if (!ctx->GetOption(RSK_STARTING_SERENADE_OF_WATER).Get()) {
+            AddItemToPool(RG_SERENADE_OF_WATER, songAnywhere ? 2 : 1, 1, 1, 1, songAnywhere);
+        }
+        if (!ctx->GetOption(RSK_STARTING_REQUIEM_OF_SPIRIT).Get()) {
+            AddItemToPool(RG_REQUIEM_OF_SPIRIT, songAnywhere ? 2 : 1, 1, 1, 1, songAnywhere);
+        }
+        if (!ctx->GetOption(RSK_STARTING_NOCTURNE_OF_SHADOW).Get()) {
+            AddItemToPool(RG_NOCTURNE_OF_SHADOW, songAnywhere ? 2 : 1, 1, 1, 1, songAnywhere);
+        }
+        if (!ctx->GetOption(RSK_STARTING_PRELUDE_OF_LIGHT).Get()) {
+            AddItemToPool(RG_PRELUDE_OF_LIGHT, songAnywhere ? 2 : 1, 1, 1, 1, songAnywhere);
+        }
+    } else {
+        ctx->PlaceItemInLocation(RC_SHEIK_IN_FOREST, RG_MINUET_OF_FOREST, false, true);
+        ctx->PlaceItemInLocation(RC_SHEIK_IN_CRATER, RG_BOLERO_OF_FIRE, false, true);
+        ctx->PlaceItemInLocation(RC_SHEIK_IN_ICE_CAVERN, RG_SERENADE_OF_WATER, false, true);
+        ctx->PlaceItemInLocation(RC_SHEIK_AT_COLOSSUS, RG_REQUIEM_OF_SPIRIT, false, true);
+        ctx->PlaceItemInLocation(RC_SHEIK_IN_KAKARIKO, RG_NOCTURNE_OF_SHADOW, false, true);
+        ctx->PlaceItemInLocation(RC_SHEIK_AT_TEMPLE, RG_PRELUDE_OF_LIGHT, false, true);
+        ctx->PlaceItemInLocation(RC_SONG_FROM_IMPA, RG_ZELDAS_LULLABY, false, true);
+        ctx->PlaceItemInLocation(RC_SONG_FROM_MALON, RG_EPONAS_SONG, false, true);
+        ctx->PlaceItemInLocation(RC_SONG_FROM_SARIA, RG_SARIAS_SONG, false, true);
+        ctx->PlaceItemInLocation(RC_SONG_FROM_ROYAL_FAMILYS_TOMB, RG_SUNS_SONG, false, true);
+        ctx->PlaceItemInLocation(RC_SONG_FROM_OCARINA_OF_TIME, RG_SONG_OF_TIME, false, true);
+        ctx->PlaceItemInLocation(RC_SONG_FROM_WINDMILL, RG_SONG_OF_STORMS, false, true);
     }
-  }
-  PendingJunkPool.clear();
-}
 
-void AddJunk() {
-  SPDLOG_DEBUG("HAD TO PLACE EXTRA JUNK ");
-  AddItemToMainPool(GetPendingJunkItem());
+    bool rewardIceTraps = ctx->GetOption(RSK_SHUFFLE_DUNGEON_REWARDS).Get() >= RO_DUNGEON_REWARDS_OWN_DUNGEON;
+    AddFixedItemToPool(RG_KOKIRI_EMERALD, 1, rewardIceTraps);
+    AddFixedItemToPool(RG_GORON_RUBY, 1, rewardIceTraps);
+    AddFixedItemToPool(RG_ZORA_SAPPHIRE, 1, rewardIceTraps);
+    AddFixedItemToPool(RG_FOREST_MEDALLION, 1, rewardIceTraps);
+    AddFixedItemToPool(RG_FIRE_MEDALLION, 1, rewardIceTraps);
+    AddFixedItemToPool(RG_WATER_MEDALLION, 1, rewardIceTraps);
+    AddFixedItemToPool(RG_SPIRIT_MEDALLION, 1, rewardIceTraps);
+    AddFixedItemToPool(RG_SHADOW_MEDALLION, 1, rewardIceTraps);
+    AddFixedItemToPool(RG_LIGHT_MEDALLION, 1, rewardIceTraps);
+
+    if (ctx->GetOption(RSK_TRIFORCE_HUNT).IsNot(RO_TRIFORCE_HUNT_OFF)) {
+        AddFixedItemToPool(RG_TRIFORCE_PIECE, ctx->GetOption(RSK_TRIFORCE_HUNT_PIECES_TOTAL).Get() + 1, false);
+
+        switch (ctx->GetOption(RSK_TRIFORCE_HUNT).Get()) {
+            case RO_TRIFORCE_HUNT_OFF:
+                break;
+            case RO_TRIFORCE_HUNT_WIN:
+                ctx->PlaceItemInLocation(RC_TRIFORCE_COMPLETED, RG_TRIFORCE); // Win condition
+                ctx->PlaceItemInLocation(RC_GANON, RG_BLUE_RUPEE, false, true);
+                break;
+            case RO_TRIFORCE_HUNT_GBK:
+                ctx->PlaceItemInLocation(RC_TRIFORCE_COMPLETED, RG_GANONS_CASTLE_BOSS_KEY);
+                ctx->PlaceItemInLocation(RC_GANON, RG_TRIFORCE); // Win condition
+                break;
+        }
+    } else {
+        ctx->PlaceItemInLocation(RC_GANON, RG_TRIFORCE); // Win condition
+    }
+
+    // Fixed item locations
+    ctx->PlaceItemInLocation(RC_HC_ZELDAS_LETTER, RG_ZELDAS_LETTER);
+
+    if (!ctx->GetOption(RSK_STARTING_KOKIRI_SWORD)) {
+        if (ctx->GetOption(RSK_SHUFFLE_KOKIRI_SWORD)) {
+            AddItemToPool(RG_KOKIRI_SWORD, 2, 1, 1, 1);
+        } else {
+            ctx->PlaceItemInLocation(RC_KF_KOKIRI_SWORD_CHEST, RG_KOKIRI_SWORD, false, true);
+        }
+    }
+
+    if (!ctx->GetOption(RSK_STARTING_MASTER_SWORD)) {
+        if (ctx->GetOption(RSK_SHUFFLE_MASTER_SWORD)) {
+            AddItemToPool(RG_MASTER_SWORD, 2, 1, 1, 1);
+        } else {
+            ctx->PlaceItemInLocation(RC_TOT_MASTER_SWORD, RG_MASTER_SWORD, false, true);
+        }
+    }
+
+    if (ctx->GetOption(RSK_SHUFFLE_WEIRD_EGG)) {
+        if (!ctx->GetOption(RSK_STARTING_WEIRD_EGG)) {
+            AddItemToPool(RG_WEIRD_EGG, 2, 1, 1, 1);
+        }
+    } else {
+        ctx->PlaceItemInLocation(RC_HC_MALON_EGG, RG_WEIRD_EGG, false, true);
+    }
+
+    if (ctx->GetOption(RSK_SHUFFLE_OCARINA)) {
+        if (ctx->GetOption(RSK_STARTING_OCARINA).IsNot(RO_STARTING_OCARINA_TIME)) {
+            int baseOcarinas = ctx->GetOption(RSK_STARTING_OCARINA).Is(RO_STARTING_OCARINA_OFF) ? 2 : 1;
+            AddItemToPool(RG_PROGRESSIVE_OCARINA, baseOcarinas + 1, baseOcarinas, baseOcarinas, baseOcarinas);
+        }
+    } else {
+        if (ctx->GetOption(RSK_STARTING_OCARINA).Is(RO_STARTING_OCARINA_OFF)) {
+            ctx->PlaceItemInLocation(RC_LW_GIFT_FROM_SARIA, RG_PROGRESSIVE_OCARINA, false, true);
+            ctx->PlaceItemInLocation(RC_HF_OCARINA_OF_TIME_ITEM, RG_PROGRESSIVE_OCARINA, false, true);
+        } else {
+            if (ctx->GetOption(RSK_STARTING_OCARINA).IsNot(RO_STARTING_OCARINA_TIME)) {
+                ctx->PlaceItemInLocation(RC_HF_OCARINA_OF_TIME_ITEM, RG_PROGRESSIVE_OCARINA, false, true);
+            }
+        }
+    }
+
+    if (ctx->GetOption(RSK_SHUFFLE_OCARINA_BUTTONS)) {
+        AddItemToPool(RG_OCARINA_A_BUTTON, 2, 1, 1, 1);
+        AddItemToPool(RG_OCARINA_C_UP_BUTTON, 2, 1, 1, 1);
+        AddItemToPool(RG_OCARINA_C_DOWN_BUTTON, 2, 1, 1, 1);
+        AddItemToPool(RG_OCARINA_C_LEFT_BUTTON, 2, 1, 1, 1);
+        AddItemToPool(RG_OCARINA_C_RIGHT_BUTTON, 2, 1, 1, 1);
+    }
+
+    if (ctx->GetOption(RSK_SKELETON_KEY)) {
+        AddFixedItemToPool(RG_SKELETON_KEY, 1);
+    }
+
+    if (ctx->GetOption(RSK_MASK_QUEST).Is(RO_MASK_QUEST_SHUFFLE)) {
+        AddItemToPool(RG_KEATON_MASK, 2, 1, 1, 1);
+        AddItemToPool(RG_SKULL_MASK, 2, 1, 1, 1);
+        AddItemToPool(RG_SPOOKY_MASK, 2, 1, 1, 1);
+        if (!ctx->GetOption(RSK_STARTING_BUNNY_HOOD)) AddItemToPool(RG_BUNNY_HOOD, 2, 1, 1, 1);
+        AddItemToPool(RG_GORON_MASK, 2, 1, 1, 1);
+        AddItemToPool(RG_ZORA_MASK, 2, 1, 1, 1);
+        AddItemToPool(RG_GERUDO_MASK, 2, 1, 1, 1);
+        AddItemToPool(RG_MASK_OF_TRUTH, 2, 1, 1, 1);
+    }
+
+    if (ctx->GetOption(RSK_ROCS_FEATHER)) {
+        AddItemToPool(RG_ROCS_FEATHER, 2, 1, 1, 1);
+    }
+
+    int bronzeScale = ctx->GetOption(RSK_SHUFFLE_SWIM) ? 1 : 0;
+    int startScale = ctx->GetOption(RSK_STARTING_SCALE).Get();
+    AddItemToPool(RG_PROGRESSIVE_SCALE, std::max(0, 3 + bronzeScale - startScale), std::max(0, 2 + bronzeScale - startScale),
+                                        std::max(0, 2 + bronzeScale - startScale), std::max(0, 2 + bronzeScale - startScale));
+    int powerBracelet = ctx->GetOption(RSK_SHUFFLE_GRAB) ? 1 : 0;
+    int startStrength = ctx->GetOption(RSK_STARTING_STRENGTH).Get();
+    AddItemToPool(RG_PROGRESSIVE_STRENGTH, std::max(0, 4 + powerBracelet - startStrength), std::max(0, 3 + powerBracelet - startStrength),
+                                           std::max(0, 3 + powerBracelet - startStrength), std::max(0, 3 + powerBracelet - startStrength));
+
+    if (ctx->GetOption(RSK_SHUFFLE_CLIMB)) {
+        AddItemToPool(RG_CLIMB, 2, 1, 1, 1);
+    }
+    if (ctx->GetOption(RSK_SHUFFLE_CRAWL)) {
+        AddItemToPool(RG_CRAWL, 2, 1, 1, 1);
+    }
+    if (ctx->GetOption(RSK_SHUFFLE_OPEN_CHEST)) {
+        AddItemToPool(RG_OPEN_CHEST, 2, 1, 1, 1);
+    }
+
+    if (ctx->GetOption(RSK_SHUFFLE_SPEAK)) {
+        AddItemToPool(RG_SPEAK_DEKU, 2, 1, 1, 1);
+        AddItemToPool(RG_SPEAK_GERUDO, 2, 1, 1, 1);
+        AddItemToPool(RG_SPEAK_GORON, 2, 1, 1, 1);
+        AddItemToPool(RG_SPEAK_HYLIAN, 2, 1, 1, 1);
+        AddItemToPool(RG_SPEAK_KOKIRI, 2, 1, 1, 1);
+        AddItemToPool(RG_SPEAK_ZORA, 2, 1, 1, 1);
+    }
+
+    if (ctx->GetOption(RSK_SHUFFLE_BEEHIVES)) {
+        PlaceItemsForType(RCTYPE_BEEHIVE, true, true);
+    }
+
+    // Shuffle Pots
+    bool overworldPotsActive = ctx->GetOption(RSK_SHUFFLE_POTS).Is(RO_SHUFFLE_POTS_OVERWORLD) ||
+                               ctx->GetOption(RSK_SHUFFLE_POTS).Is(RO_SHUFFLE_POTS_ALL);
+    bool dungeonPotsActive = ctx->GetOption(RSK_SHUFFLE_POTS).Is(RO_SHUFFLE_POTS_DUNGEONS) ||
+                             ctx->GetOption(RSK_SHUFFLE_POTS).Is(RO_SHUFFLE_POTS_ALL);
+    PlaceItemsForType(RCTYPE_POT, overworldPotsActive, dungeonPotsActive);
+
+    // Shuffle Crates
+    bool overworldCratesActive = ctx->GetOption(RSK_SHUFFLE_CRATES).Is(RO_SHUFFLE_CRATES_OVERWORLD) ||
+                                 ctx->GetOption(RSK_SHUFFLE_CRATES).Is(RO_SHUFFLE_CRATES_ALL);
+    bool dungeonCratesActive = ctx->GetOption(RSK_SHUFFLE_CRATES).Is(RO_SHUFFLE_CRATES_DUNGEONS) ||
+                               ctx->GetOption(RSK_SHUFFLE_CRATES).Is(RO_SHUFFLE_CRATES_ALL);
+    PlaceItemsForType(RCTYPE_CRATE, overworldCratesActive, dungeonCratesActive);
+    PlaceItemsForType(RCTYPE_NLCRATE, ctx->GetOption(RSK_LOGIC_RULES).Is(RO_LOGIC_NO_LOGIC) && overworldCratesActive,
+                      ctx->GetOption(RSK_LOGIC_RULES).Is(RO_LOGIC_NO_LOGIC) && dungeonCratesActive);
+    PlaceItemsForType(RCTYPE_SMALL_CRATE, overworldCratesActive, dungeonCratesActive);
+
+    // Shuffle Rocks
+    bool rocksActive = ctx->GetOption(RSK_SHUFFLE_ROCKS).Get();
+    PlaceItemsForType(RCTYPE_ROCK, rocksActive, rocksActive);
+
+    // Shuffle Boulders
+    bool overworldBouldersActive = ctx->GetOption(RSK_SHUFFLE_BOULDERS).Is(RO_SHUFFLE_BOULDERS_OVERWORLD) ||
+                                   ctx->GetOption(RSK_SHUFFLE_BOULDERS).Is(RO_SHUFFLE_BOULDERS_ALL);
+    bool dungeonBouldersActive = ctx->GetOption(RSK_SHUFFLE_BOULDERS).Is(RO_SHUFFLE_BOULDERS_DUNGEONS) ||
+                                 ctx->GetOption(RSK_SHUFFLE_BOULDERS).Is(RO_SHUFFLE_BOULDERS_ALL);
+    PlaceItemsForType(RCTYPE_BOULDER, overworldBouldersActive, dungeonBouldersActive);
+
+    // Shuffle Trees
+    bool treesActive = (bool)ctx->GetOption(RSK_SHUFFLE_TREES);
+    PlaceItemsForType(RCTYPE_TREE, treesActive, false);
+    if (ctx->GetOption(RSK_LOGIC_RULES).Is(RO_LOGIC_NO_LOGIC)) {
+        PlaceItemsForType(RCTYPE_NLTREE, treesActive, false);
+    }
+
+    // Shuffle Bushes
+    bool bushesActive = (bool)ctx->GetOption(RSK_SHUFFLE_BUSHES);
+    PlaceItemsForType(RCTYPE_BUSH, bushesActive, false);
+
+    // Shuffle Wonder Items
+    bool overworldWonderItemsActive = ctx->GetOption(RSK_SHUFFLE_WONDER_ITEMS).Is(RO_SHUFFLE_WONDER_ITEMS_OVERWORLD) ||
+                               ctx->GetOption(RSK_SHUFFLE_WONDER_ITEMS).Is(RO_SHUFFLE_WONDER_ITEMS_ALL);
+    bool dungeonWonderItemsActive = ctx->GetOption(RSK_SHUFFLE_WONDER_ITEMS).Is(RO_SHUFFLE_WONDER_ITEMS_DUNGEONS) ||
+                             ctx->GetOption(RSK_SHUFFLE_WONDER_ITEMS).Is(RO_SHUFFLE_WONDER_ITEMS_ALL);
+    PlaceItemsForType(RCTYPE_WONDER_ITEM, overworldWonderItemsActive, dungeonWonderItemsActive);
+
+    if (ctx->GetOption(RSK_FISHSANITY).Is(RO_FISHSANITY_HYRULE_LOACH)) {
+        AddFixedItemToPool(RG_PURPLE_RUPEE, 1);
+    } else {
+        ctx->PlaceItemInLocation(RC_LH_HYRULE_LOACH, RG_PURPLE_RUPEE, false, true);
+    }
+
+    if (ctx->GetOption(RSK_SHUFFLE_FISHING_POLE)) {
+        AddItemToPool(RG_FISHING_POLE, 2, 1, 1, 1);
+    }
+    // if beans unshuffled, put on bean guy, otherwise if not starting with beans, add to pool
+    if (ctx->GetOption(RSK_SHUFFLE_MERCHANTS).IsNot(RO_SHUFFLE_MERCHANTS_BEANS_ONLY) &&
+        ctx->GetOption(RSK_SHUFFLE_MERCHANTS).IsNot(RO_SHUFFLE_MERCHANTS_ALL)) {
+        ctx->PlaceItemInLocation(RC_ZR_MAGIC_BEAN_SALESMAN, RG_MAGIC_BEAN, false, true);
+    } else if (!ctx->GetOption(RSK_STARTING_BEANS)) {
+        AddItemToPool(RG_MAGIC_BEAN_PACK, 2, 1, 1, 1);
+    }
+
+    if (ctx->GetOption(RSK_SHUFFLE_MERCHANTS).Is(RO_SHUFFLE_MERCHANTS_ALL_BUT_BEANS) ||
+        ctx->GetOption(RSK_SHUFFLE_MERCHANTS).Is(RO_SHUFFLE_MERCHANTS_ALL)) {
+        if (/*!ProgressiveGoronSword TODO: Implement Progressive Goron Sword*/
+            ctx->GetOption(RSK_STARTING_BIGGORON_SWORD).Is(RO_STARTING_BGS_OFF)) {
+            AddFixedItemToPool(RG_GIANTS_KNIFE, 1);
+        }
+        if (ctx->GetOption(RSK_BOMBCHU_BAG).Is(RO_BOMBCHU_BAG_SINGLE)) {
+            AddFixedItemToPool(RG_PROGRESSIVE_BOMBCHU_BAG, 1);
+        } else if (ctx->GetOption(RSK_BOMBCHU_BAG).Is(RO_BOMBCHU_BAG_NONE)) {
+            AddFixedItemToPool(RG_BOMBCHU_10, 1);
+        }
+    } else {
+        ctx->PlaceItemInLocation(RC_KAK_GRANNYS_SHOP, RG_BLUE_POTION_REFILL, false, true);
+        ctx->PlaceItemInLocation(RC_GC_MEDIGORON, RG_GIANTS_KNIFE, false, true);
+        ctx->PlaceItemInLocation(RC_WASTELAND_BOMBCHU_SALESMAN, RG_BOMBCHU_10, false, true);
+    }
+
+    // Shuffle Beggar
+    bool beggarActive = (bool)ctx->GetOption(RSK_SHUFFLE_BEGGAR);
+    PlaceItemsForType(RCTYPE_BEGGAR, beggarActive, false);
+
+    if (ctx->GetOption(RSK_SHUFFLE_FROG_SONG_RUPEES)) {
+        AddFixedItemToPool(RG_PURPLE_RUPEE, 5);
+    } else {
+        ctx->PlaceItemInLocation(RC_ZR_FROGS_ZELDAS_LULLABY, RG_PURPLE_RUPEE, false, true);
+        ctx->PlaceItemInLocation(RC_ZR_FROGS_EPONAS_SONG, RG_PURPLE_RUPEE, false, true);
+        ctx->PlaceItemInLocation(RC_ZR_FROGS_SARIAS_SONG, RG_PURPLE_RUPEE, false, true);
+        ctx->PlaceItemInLocation(RC_ZR_FROGS_SUNS_SONG, RG_PURPLE_RUPEE, false, true);
+        ctx->PlaceItemInLocation(RC_ZR_FROGS_SONG_OF_TIME, RG_PURPLE_RUPEE, false, true);
+    }
+
+    if (ctx->GetOption(RSK_SHUFFLE_ADULT_TRADE)) {
+        AddItemToPool(RG_POCKET_EGG, 2, 1, 1, 1);
+        AddItemToPool(RG_COJIRO, 2, 1, 1, 1);
+        AddItemToPool(RG_ODD_MUSHROOM, 2, 1, 1, 1);
+        AddItemToPool(RG_ODD_POTION, 2, 1, 1, 1);
+        AddItemToPool(RG_POACHERS_SAW, 2, 1, 1, 1);
+        AddItemToPool(RG_BROKEN_SWORD, 2, 1, 1, 1);
+        AddItemToPool(RG_PRESCRIPTION, 2, 1, 1, 1);
+        AddItemToPool(RG_EYEBALL_FROG, 2, 1, 1, 1);
+        AddItemToPool(RG_EYEDROPS, 2, 1, 1, 1);
+    }
+    if (!ctx->GetOption(RSK_STARTING_CLAIM_CHECK)) {
+        AddItemToPool(RG_CLAIM_CHECK, 2, 1, 1, 1);
+    }
+
+    if (ctx->GetOption(RSK_SHUFFLE_CHEST_MINIGAME).Is(RO_CHEST_GAME_SINGLE_KEYS)) {
+        AddItemToPool(RG_TREASURE_GAME_SMALL_KEY, 7, 6, 6, 6);
+    } else if (ctx->GetOption(RSK_SHUFFLE_CHEST_MINIGAME).Is(RO_CHEST_GAME_PACK)) {
+        AddItemToPool(RG_TREASURE_GAME_KEY_RING, 2, 1, 1, 1);
+    }
+
+    int tokensToAdd = 0;
+    if (ctx->GetOption(RSK_SHUFFLE_TOKENS).Is(RO_TOKENSANITY_OFF)) {
+        for (RandomizerCheck loc : ctx->GetLocations(ctx->allLocations, RCTYPE_SKULL_TOKEN)) {
+            ctx->PlaceItemInLocation(loc, RG_GOLD_SKULLTULA_TOKEN, false, true);
+        }
+    } else if (ctx->GetOption(RSK_SHUFFLE_TOKENS).Is(RO_TOKENSANITY_DUNGEONS)) {
+        for (RandomizerCheck loc : ctx->GetLocations(ctx->allLocations, RCTYPE_SKULL_TOKEN)) {
+            if (Rando::StaticData::GetLocation(loc)->IsOverworld()) {
+                ctx->PlaceItemInLocation((RandomizerCheck)loc, RG_GOLD_SKULLTULA_TOKEN, false, true);
+            } else {
+                tokensToAdd++;
+            }
+        }
+    } else if (ctx->GetOption(RSK_SHUFFLE_TOKENS).Is(RO_TOKENSANITY_OVERWORLD)) {
+        for (RandomizerCheck loc : ctx->GetLocations(ctx->allLocations, RCTYPE_SKULL_TOKEN)) {
+            if (Rando::StaticData::GetLocation(loc)->IsDungeon()) {
+                ctx->PlaceItemInLocation((RandomizerCheck)loc, RG_GOLD_SKULLTULA_TOKEN, false, true);
+            } else {
+                tokensToAdd++;
+            }
+        }
+    } else {
+        tokensToAdd = 100;
+    }
+
+    if (ctx->GetOption(RSK_SHUFFLE_100_GS_REWARD)) {
+        AddFixedItemToPool(RG_HUGE_RUPEE, 1);
+    } else {
+        ctx->PlaceItemInLocation(RC_KAK_100_GOLD_SKULLTULA_REWARD, RG_HUGE_RUPEE, false, true);
+    }
+
+    if (ctx->GetOption(RSK_SHUFFLE_BEAN_SOULS)) {
+        ctx->possibleIceTrapModels.insert(RG_DEATH_MOUNTAIN_CRATER_BEAN_SOUL); // ice traps reroll this into a random bean soul in Rando::Traps::GetTrapTrickModel
+        AddItemToPool(RG_DEATH_MOUNTAIN_CRATER_BEAN_SOUL, 2, 1, 1, 1, false);
+        AddItemToPool(RG_DEATH_MOUNTAIN_TRAIL_BEAN_SOUL, 2, 1, 1, 1, false);
+        AddItemToPool(RG_DESERT_COLOSSUS_BEAN_SOUL, 2, 1, 1, 1, false);
+        AddItemToPool(RG_GERUDO_VALLEY_BEAN_SOUL, 2, 1, 1, 1, false);
+        AddItemToPool(RG_GRAVEYARD_BEAN_SOUL, 2, 1, 1, 1, false);
+        AddItemToPool(RG_KOKIRI_FOREST_BEAN_SOUL, 2, 1, 1, 1, false);
+        AddItemToPool(RG_LAKE_HYLIA_BEAN_SOUL, 2, 1, 1, 1, false);
+        AddItemToPool(RG_LOST_WOODS_BRIDGE_BEAN_SOUL, 2, 1, 1, 1, false);
+        AddItemToPool(RG_LOST_WOODS_BEAN_SOUL, 2, 1, 1, 1, false);
+        AddItemToPool(RG_ZORAS_RIVER_BEAN_SOUL, 2, 1, 1, 1, false);
+    }
+
+    if (ctx->GetOption(RSK_SHUFFLE_TOKENS).IsNot(RO_TOKENSANITY_OFF) &&
+        ctx->GetOption(RSK_ITEM_POOL).Is(RO_ITEM_POOL_PLENTIFUL)) {
+        tokensToAdd += 10;
+    }
+
+    if (ctx->GetOption(RSK_STARTING_SKULLTULA_TOKEN).Get() < tokensToAdd) {
+        AddFixedItemToPool(RG_GOLD_SKULLTULA_TOKEN, tokensToAdd - ctx->GetOption(RSK_STARTING_SKULLTULA_TOKEN).Get());
+    }
+
+    if (ctx->GetOption(RSK_SHUFFLE_BOSS_SOULS)) {
+        AddItemToPool(RG_GOHMA_SOUL, 2, 1, 1, 1);
+        AddItemToPool(RG_KING_DODONGO_SOUL, 2, 1, 1, 1);
+        AddItemToPool(RG_BARINADE_SOUL, 2, 1, 1, 1);
+        AddItemToPool(RG_PHANTOM_GANON_SOUL, 2, 1, 1, 1);
+        AddItemToPool(RG_VOLVAGIA_SOUL, 2, 1, 1, 1);
+        AddItemToPool(RG_MORPHA_SOUL, 2, 1, 1, 1);
+        AddItemToPool(RG_BONGO_BONGO_SOUL, 2, 1, 1, 1);
+        AddItemToPool(RG_TWINROVA_SOUL, 2, 1, 1, 1);
+        if (ctx->GetOption(RSK_SHUFFLE_BOSS_SOULS).Is(RO_BOSS_SOULS_ON_PLUS_GANON)) {
+            AddItemToPool(RG_GANON_SOUL, 2, 1, 1, 1);
+        }
+    }
+
+    // Gerudo Fortress
+    if (ctx->GetOption(RSK_GERUDO_FORTRESS).Is(RO_GF_CARPENTERS_FREE)) {
+        ctx->PlaceItemInLocation(RC_TH_1_TORCH_CARPENTER, RG_RECOVERY_HEART, false, true);
+        ctx->PlaceItemInLocation(RC_TH_DEAD_END_CARPENTER, RG_RECOVERY_HEART, false, true);
+        ctx->PlaceItemInLocation(RC_TH_DOUBLE_CELL_CARPENTER, RG_RECOVERY_HEART, false, true);
+        ctx->PlaceItemInLocation(RC_TH_STEEP_SLOPE_CARPENTER, RG_RECOVERY_HEART, false, true);
+        ctx->PlaceItemInLocation(RC_TH_FREED_CARPENTERS, RG_BLUE_RUPEE, false, true);
+    } else if (ctx->GetOption(RSK_GERUDO_KEYS).IsNot(RO_GERUDO_KEYS_VANILLA)) {
+        if (ctx->GetOption(RSK_GERUDO_FORTRESS).Is(RO_GF_CARPENTERS_FAST)) {
+            AddItemToPool(RG_GERUDO_FORTRESS_SMALL_KEY, 2, 1, 1, 1);
+            ctx->PlaceItemInLocation(RC_TH_DEAD_END_CARPENTER, RG_RECOVERY_HEART, false, true);
+            ctx->PlaceItemInLocation(RC_TH_DOUBLE_CELL_CARPENTER, RG_RECOVERY_HEART, false, true);
+            ctx->PlaceItemInLocation(RC_TH_STEEP_SLOPE_CARPENTER, RG_RECOVERY_HEART, false, true);
+        } else {
+            // Only add key ring if 4 Fortress keys necessary
+            if (ctx->GetOption(RSK_KEYRINGS_GERUDO_FORTRESS) && ctx->GetOption(RSK_KEYRINGS)) {
+                AddItemToPool(RG_GERUDO_FORTRESS_KEY_RING, 2, 1, 1, 1);
+            } else {
+                AddItemToPool(RG_GERUDO_FORTRESS_SMALL_KEY, 5, 4, 4, 4);
+            }
+        }
+    } else {
+        if (ctx->GetOption(RSK_GERUDO_FORTRESS).Is(RO_GF_CARPENTERS_FAST)) {
+            ctx->PlaceItemInLocation(RC_TH_1_TORCH_CARPENTER, RG_GERUDO_FORTRESS_SMALL_KEY, false, true);
+            ctx->PlaceItemInLocation(RC_TH_DEAD_END_CARPENTER, RG_RECOVERY_HEART, false, true);
+            ctx->PlaceItemInLocation(RC_TH_DOUBLE_CELL_CARPENTER, RG_RECOVERY_HEART, false, true);
+            ctx->PlaceItemInLocation(RC_TH_STEEP_SLOPE_CARPENTER, RG_RECOVERY_HEART, false, true);
+        } else {
+            ctx->PlaceItemInLocation(RC_TH_1_TORCH_CARPENTER, RG_GERUDO_FORTRESS_SMALL_KEY, false, true);
+            ctx->PlaceItemInLocation(RC_TH_DEAD_END_CARPENTER, RG_GERUDO_FORTRESS_SMALL_KEY, false, true);
+            ctx->PlaceItemInLocation(RC_TH_DOUBLE_CELL_CARPENTER, RG_GERUDO_FORTRESS_SMALL_KEY, false, true);
+            ctx->PlaceItemInLocation(RC_TH_STEEP_SLOPE_CARPENTER, RG_GERUDO_FORTRESS_SMALL_KEY, false, true);
+        }
+    }
+
+    // Gerudo Membership Card
+    if (ctx->GetOption(RSK_SHUFFLE_GERUDO_MEMBERSHIP_CARD)) {
+        if (!ctx->GetOption(RSK_STARTING_GERUDO_CARD)) {
+            AddItemToPool(RG_GERUDO_MEMBERSHIP_CARD, 2, 1, 1, 1);
+        }
+    } else {
+        ctx->PlaceItemInLocation(RC_TH_FREED_CARPENTERS, RG_GERUDO_MEMBERSHIP_CARD, false, true);
+    }
+
+    // Keys
+    if (ctx->GetOption(RSK_LOCK_OVERWORLD_DOORS)) {
+        // only 1 is added to the ice trap pool, to avoid the pool being filled with them.
+        // a random one is chosen in Rando::Traps::GetTrapTrickModel
+        AddItemToPool(RG_GUARD_HOUSE_KEY, 2, 1, 1, 1);
+        AddItemToPool(RG_MARKET_BAZAAR_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_MARKET_POTION_SHOP_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_MASK_SHOP_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_MARKET_SHOOTING_GALLERY_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_BOMBCHU_BOWLING_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_TREASURE_CHEST_GAME_BUILDING_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_BOMBCHU_SHOP_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_RICHARDS_HOUSE_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_ALLEY_HOUSE_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_KAK_BAZAAR_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_KAK_POTION_SHOP_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_BOSS_HOUSE_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_GRANNYS_POTION_SHOP_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_SKULLTULA_HOUSE_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_IMPAS_HOUSE_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_WINDMILL_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_KAK_SHOOTING_GALLERY_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_DAMPES_HUT_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_TALONS_HOUSE_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_STABLES_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_BACK_TOWER_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_HYLIA_LAB_KEY, 2, 1, 1, 1, false);
+        AddItemToPool(RG_FISHING_HOLE_KEY, 2, 1, 1, 1, false);
+    }
+
+    if (ctx->GetOption(RSK_KEYSANITY).Is(RO_DUNGEON_ITEM_LOC_VANILLA)) {
+        PlaceVanillaSmallKeys();
+    } else if (ctx->GetOption(RSK_KEYSANITY).IsNot(RO_DUNGEON_ITEM_LOC_STARTWITH)) {
+        for (auto dungeon : ctx->GetDungeons()->GetDungeonList()) {
+            if (dungeon->HasKeyRing()) {
+                AddItemToPool(dungeon->GetKeyRing(), 2, 1, 1, 1);
+            } else if (dungeon->GetSmallKeyCount() > 0) {
+                int smallKeys = dungeon->GetSmallKeyCount();
+                AddItemToPool(dungeon->GetSmallKey(), smallKeys + 1, smallKeys, smallKeys, smallKeys);
+            }
+        }
+    }
+
+    if (ctx->GetOption(RSK_BOSS_KEYSANITY).Is(RO_DUNGEON_ITEM_LOC_VANILLA)) {
+        PlaceVanillaBossKeys();
+    } else if (ctx->GetOption(RSK_BOSS_KEYSANITY).IsNot(RO_DUNGEON_ITEM_LOC_STARTWITH)) {
+        AddItemToPool(RG_FOREST_TEMPLE_BOSS_KEY, 2, 1, 1, 1);
+        AddItemToPool(RG_FIRE_TEMPLE_BOSS_KEY, 2, 1, 1, 1);
+        AddItemToPool(RG_WATER_TEMPLE_BOSS_KEY, 2, 1, 1, 1);
+        AddItemToPool(RG_SPIRIT_TEMPLE_BOSS_KEY, 2, 1, 1, 1);
+        AddItemToPool(RG_SHADOW_TEMPLE_BOSS_KEY, 2, 1, 1, 1);
+    }
+
+    // Don't add GBK to the pool at all for Triforce Hunt or if we start with it.
+    if (!(ctx->GetOption(RSK_GANONS_BOSS_KEY).Is(RO_GANON_BOSS_KEY_STARTWITH) || ctx->GetOption(RSK_TRIFORCE_HUNT))) {
+        if (ctx->GetOption(RSK_GANONS_BOSS_KEY).Is(RO_GANON_BOSS_KEY_KAK_TOKENS)) {
+            ctx->PlaceItemInLocation(RC_KAK_100_GOLD_SKULLTULA_REWARD, RG_GANONS_CASTLE_BOSS_KEY);
+        } else if (ctx->GetOption(RSK_GANONS_BOSS_KEY).Get() >= RO_GANON_BOSS_KEY_LACS_VANILLA) {
+            ctx->PlaceItemInLocation(RC_TOT_LIGHT_ARROWS_CUTSCENE, RG_GANONS_CASTLE_BOSS_KEY);
+        } else if (ctx->GetOption(RSK_GANONS_BOSS_KEY).Is(RO_GANON_BOSS_KEY_VANILLA)) {
+            ctx->PlaceItemInLocation(RC_GANONS_TOWER_BOSS_KEY_CHEST, RG_GANONS_CASTLE_BOSS_KEY);
+        } else {
+            AddItemToPool(RG_GANONS_CASTLE_BOSS_KEY, 2, 1, 1, 1);
+        }
+    }
+
+    // Shopsanity
+    if (ctx->GetOption(RSK_SHOPSANITY).Is(RO_SHOPSANITY_OFF) ||
+        (ctx->GetOption(RSK_SHOPSANITY).Is(RO_SHOPSANITY_SPECIFIC_COUNT) &&
+         ctx->GetOption(RSK_SHOPSANITY_COUNT).Is(RO_SHOPSANITY_COUNT_ZERO_ITEMS))) {
+        AddFixedItemToPool(RG_BLUE_RUPEE, 13);
+        AddFixedItemToPool(RG_RED_RUPEE, 5);
+        AddFixedItemToPool(RG_PURPLE_RUPEE, 7);
+        AddFixedItemToPool(RG_HUGE_RUPEE, 3);
+    } else {
+        // Shopsanity gets extra large rupees
+        AddFixedItemToPool(RG_BLUE_RUPEE, 2);
+        AddFixedItemToPool(RG_RED_RUPEE, 10);
+        AddFixedItemToPool(RG_PURPLE_RUPEE, 10);
+        AddFixedItemToPool(RG_HUGE_RUPEE, 6);
+    }
+
+    bool overworldFreeStandingActive = ctx->GetOption(RSK_SHUFFLE_FREESTANDING).Is(RO_SHUFFLE_FREESTANDING_OVERWORLD) ||
+                                       ctx->GetOption(RSK_SHUFFLE_FREESTANDING).Is(RO_SHUFFLE_FREESTANDING_ALL);
+    bool dungeonFreeStandingActive = ctx->GetOption(RSK_SHUFFLE_FREESTANDING).Is(RO_SHUFFLE_FREESTANDING_DUNGEONS) ||
+                                     ctx->GetOption(RSK_SHUFFLE_FREESTANDING).Is(RO_SHUFFLE_FREESTANDING_ALL);
+    PlaceItemsForType(RCTYPE_FREESTANDING, overworldFreeStandingActive, dungeonFreeStandingActive);
+
+    // Dungeon pools
+    if (ctx->GetDungeon(Rando::DEKU_TREE)->IsMQ()) {
+        AddFixedItemToPool(RG_PURPLE_RUPEE);
+        if (ctx->GetOption(RSK_SHUFFLE_SCRUBS).Is(RO_SCRUBS_ALL)) {
+            AddFixedItemToPool(RG_DEKU_SHIELD, 3);
+        } else {
+            AddFixedItemToPool(RG_DEKU_SHIELD, 2);
+        }
+    } else {
+        AddFixedItemToPool(RG_RECOVERY_HEART, 2);
+    }
+    if (ctx->GetDungeon(Rando::DODONGOS_CAVERN)->IsMQ()) {
+        AddFixedItemToPool(RG_HYLIAN_SHIELD);
+        AddFixedItemToPool(RG_BLUE_RUPEE);
+        if (ctx->GetOption(RSK_SHUFFLE_SCRUBS).Is(RO_SCRUBS_ALL)) {
+            AddFixedItemToPool(RG_RECOVERY_HEART);
+        }
+    } else {
+        AddFixedItemToPool(RG_RED_RUPEE);
+        if (ctx->GetOption(RSK_SHUFFLE_SCRUBS).Is(RO_SCRUBS_ALL)) {
+            AddFixedItemToPool(RG_DEKU_NUTS_5);
+        }
+    }
+    if (ctx->GetDungeon(Rando::JABU_JABUS_BELLY)->IsMQ()) {
+        AddFixedItemToPool(RG_DEKU_NUTS_5, 4);
+        AddFixedItemToPool(RG_RECOVERY_HEART);
+        AddFixedItemToPool(RG_DEKU_STICK_1);
+        AddFixedItemToPool(RG_DEKU_SHIELD);
+    }
+    if (ctx->GetDungeon(Rando::FOREST_TEMPLE)->IsMQ()) {
+        AddFixedItemToPool(RG_ARROWS_5);
+    } else {
+        AddFixedItemToPool(RG_RECOVERY_HEART);
+        AddFixedItemToPool(RG_ARROWS_10);
+        AddFixedItemToPool(RG_ARROWS_30);
+    }
+    if (ctx->GetDungeon(Rando::FIRE_TEMPLE)->IsMQ()) {
+        AddFixedItemToPool(RG_HYLIAN_SHIELD);
+        AddFixedItemToPool(RG_BOMBS_20);
+    } else {
+        AddFixedItemToPool(RG_HUGE_RUPEE);
+    }
+    if (ctx->GetDungeon(Rando::SPIRIT_TEMPLE)->IsMQ()) {
+        AddFixedItemToPool(RG_PURPLE_RUPEE, 2);
+        AddFixedItemToPool(RG_ARROWS_30);
+    } else {
+        AddFixedItemToPool(RG_DEKU_SHIELD, 2);
+        AddFixedItemToPool(RG_BOMBS_20);
+        AddFixedItemToPool(RG_RECOVERY_HEART, 2);
+    }
+    if (ctx->GetDungeon(Rando::SHADOW_TEMPLE)->IsMQ()) {
+        AddFixedItemToPool(RG_ARROWS_5, 2);
+        AddFixedItemToPool(RG_RED_RUPEE);
+    } else {
+        AddFixedItemToPool(RG_ARROWS_30);
+    }
+    if (ctx->GetDungeon(Rando::BOTTOM_OF_THE_WELL)->IsVanilla()) {
+        AddFixedItemToPool(RG_DEKU_NUTS_5);
+        AddFixedItemToPool(RG_DEKU_NUTS_10);
+        AddFixedItemToPool(RG_RECOVERY_HEART);
+        AddFixedItemToPool(RG_BOMBS_10);
+        AddFixedItemToPool(RG_DEKU_SHIELD);
+        AddFixedItemToPool(RG_HYLIAN_SHIELD);
+        AddFixedItemToPool(RG_HUGE_RUPEE);
+    }
+    if (ctx->GetDungeon(Rando::GERUDO_TRAINING_GROUND)->IsMQ()) {
+        AddFixedItemToPool(RG_TREASURE_GAME_GREEN_RUPEE, 2);
+        AddFixedItemToPool(RG_ARROWS_10);
+        AddFixedItemToPool(RG_GREEN_RUPEE);
+        AddFixedItemToPool(RG_PURPLE_RUPEE);
+    } else {
+        AddFixedItemToPool(RG_HUGE_RUPEE);
+        AddFixedItemToPool(RG_ARROWS_30, 3);
+    }
+    if (ctx->GetDungeon(Rando::GANONS_CASTLE)->IsMQ()) {
+        AddFixedItemToPool(RG_ARROWS_10, 2);
+        AddFixedItemToPool(RG_BOMBS_5);
+        AddFixedItemToPool(RG_RED_RUPEE);
+        AddFixedItemToPool(RG_RECOVERY_HEART);
+        if (ctx->GetOption(RSK_SHUFFLE_SCRUBS).Is(RO_SCRUBS_ALL)) {
+            AddFixedItemToPool(RG_DEKU_NUTS_5);
+        }
+    } else {
+        AddFixedItemToPool(RG_BLUE_RUPEE, 3);
+        AddFixedItemToPool(RG_ARROWS_30);
+    }
+
+    // Add 4 total bottles
+    uint8_t bottleCount = 4;
+    if (ctx->GetOption(RSK_ZORAS_FOUNTAIN).IsNot(RO_ZF_OPEN)) {
+        // When the letter is started with, a normal bottle takes its pool slot instead.
+        if (ctx->GetOption(RSK_STARTING_BOTTLE_1).IsNot(RO_STARTING_BOTTLE_RUTOS_LETTER)) {
+            AddFixedItemToPool(RG_RUTOS_LETTER);
+            bottleCount--;
+        }
+    }
+    // Bottles the player starts with are removed from the pool.
+    for (RandomizerSettingKey bottleKey :
+         { RSK_STARTING_BOTTLE_1, RSK_STARTING_BOTTLE_2, RSK_STARTING_BOTTLE_3, RSK_STARTING_BOTTLE_4 }) {
+        if (bottleCount > 0 && ctx->GetOption(bottleKey).IsNot(RO_STARTING_BOTTLE_OFF)) {
+            bottleCount--;
+        }
+    }
+
+    if ((ctx->GetOption(RSK_SHUFFLE_MERCHANTS).Is(RO_SHUFFLE_MERCHANTS_ALL_BUT_BEANS) ||
+         ctx->GetOption(RSK_SHUFFLE_MERCHANTS).Is(RO_SHUFFLE_MERCHANTS_ALL)) && bottleCount > 0) {
+        AddFixedItemToPool(RG_BOTTLE_WITH_BLUE_POTION);
+        bottleCount--;
+    }
+    ctx->possibleIceTrapModels.insert(RG_EMPTY_BOTTLE); // ice traps reroll this into a random normal bottle in Rando::Traps::GetTrapTrickModel
+    for (uint8_t i = 0; i < bottleCount; i++) {
+        AddFixedItemToPool(RandomElement(Rando::StaticData::normalBottles), 1, false);
+    }
+
+    /*For item pool generation, dungeon items are either placed in their vanilla
+    | location, or added to the pool now and filtered out later depending on when
+    | they need to get placed or removed in fill.cpp. These items are kept in the
+    | pool until removal because the filling algorithm needs to know all of the
+    | advancement items that haven't been placed yet for placing higher priority
+    | items like stones/medallions.*/
+
+    if (ctx->GetOption(RSK_SHUFFLE_MAPANDCOMPASS).Is(RO_DUNGEON_ITEM_LOC_VANILLA)) {
+        PlaceVanillaMapsAndCompasses();
+    } else if (ctx->GetOption(RSK_SHUFFLE_MAPANDCOMPASS).IsNot(RO_DUNGEON_ITEM_LOC_STARTWITH)) {
+        for (auto dungeon : ctx->GetDungeons()->GetDungeonList()) {
+            if (dungeon->GetMap() != RG_NONE) {
+                AddFixedItemToPool(dungeon->GetMap(), 1, false);
+            }
+
+            if (dungeon->GetCompass() != RG_NONE) {
+                AddFixedItemToPool(dungeon->GetCompass(), 1, false);
+            }
+        }
+    }
+
+    int maxHearts = 20;
+    switch (ctx->GetOption(RSK_ITEM_POOL).Get()) {
+        case RO_ITEM_POOL_PLENTIFUL:
+        case RO_ITEM_POOL_BALANCED:
+            break;
+        case RO_ITEM_POOL_SCARCE:
+            maxHearts = 12;
+            break;
+        case RO_ITEM_POOL_MINIMAL:
+            maxHearts = 3;
+            break;
+    }
+
+    int startingHearts = ctx->GetOption(RSK_STARTING_HEARTS).Get() + 1;
+    if (startingHearts < maxHearts) {
+        AddFixedItemToPool(RG_TREASURE_GAME_HEART, 1, false);
+        AddFixedItemToPool(RG_PIECE_OF_HEART, 3, false);
+        startingHearts++;
+        if (startingHearts < maxHearts) {
+            switch (ctx->GetOption(RSK_ITEM_POOL).Get()) {
+                case RO_ITEM_POOL_PLENTIFUL:
+                case RO_ITEM_POOL_MINIMAL:
+                    AddFixedItemToPool(RG_HEART_CONTAINER, maxHearts - startingHearts, false);
+                    break;
+                case RO_ITEM_POOL_BALANCED: {
+                    int heartsToPlace = maxHearts - startingHearts;
+                    int halfHearts = heartsToPlace / 2;
+                    AddFixedItemToPool(RG_HEART_CONTAINER, heartsToPlace - halfHearts, false);
+                    AddFixedItemToPool(RG_PIECE_OF_HEART, halfHearts * 4, false);
+                    break;
+                }
+                case RO_ITEM_POOL_SCARCE:
+                    AddFixedItemToPool(RG_PIECE_OF_HEART, (maxHearts - startingHearts) * 4, false);
+                    break;
+            }
+        }
+    }
+
+    std::erase(junkPool, RG_NONE);
+    std::erase(itemPool, RG_NONE);
+    std::erase(lesserPool, RG_NONE);
+    std::erase(plentifulPool, RG_NONE);
+
+    size_t locCount = ctx->CountEmptyLocations(false);
+    assert(itemPool.size() <= locCount);
+    int iceTrapstoAdd = 0;
+    if (itemPool.size() + plentifulPool.size() < locCount) {
+        itemPool.insert(itemPool.end(), plentifulPool.begin(), plentifulPool.end());
+        // Fixed Ice Traps
+        if (ctx->GetOption(RSK_BASE_ICE_TRAPS)) {
+            iceTrapstoAdd++;
+            if (ctx->GetDungeon(Rando::GERUDO_TRAINING_GROUND)->IsVanilla()) {
+                iceTrapstoAdd++;
+            }
+            if (ctx->GetDungeon(Rando::GANONS_CASTLE)->IsVanilla()) {
+                iceTrapstoAdd += 4;
+            }
+        }
+        iceTrapstoAdd += ctx->GetOption(RSK_ADDITIONAL_ICE_TRAPS).Get();
+        AddFixedItemToPool(RG_ICE_TRAP,
+                          itemPool.size() + iceTrapstoAdd < locCount ? iceTrapstoAdd : static_cast<int>(locCount - itemPool.size()), false);
+        if (itemPool.size() + lesserPool.size() < locCount) {
+            itemPool.insert(itemPool.end(), lesserPool.begin(), lesserPool.end());
+        } else {
+            while (itemPool.size() < locCount) {
+                itemPool.insert(itemPool.end(), RandomElement(lesserPool, true));
+            }
+        }
+    } else {
+        while (itemPool.size() < locCount) {
+            itemPool.insert(itemPool.end(), RandomElement(plentifulPool, true));
+        }
+    }
+
+    size_t junkToAdd = locCount - itemPool.size();
+    iceTrapstoAdd = 0;
+    if (junkToAdd > 0) {
+        if (ctx->GetOption(RSK_ICE_TRAP_PERCENT).Is(100)) {
+            iceTrapstoAdd = static_cast<int>(junkToAdd);
+        } else if (ctx->GetOption(RSK_ICE_TRAP_PERCENT).Get() >= 0) {
+            for (size_t count = 0; count < junkToAdd; count++) {
+                if (Random(0, 101) < ctx->GetOption(RSK_ICE_TRAP_PERCENT).Get()) {
+                    iceTrapstoAdd++;
+                }
+            }
+        }
+        AddFixedItemToPool(RG_ICE_TRAP, iceTrapstoAdd, false);
+        junkToAdd -= iceTrapstoAdd;
+        if (junkToAdd > junkPool.size()) {
+            itemPool.insert(itemPool.end(), junkPool.begin(), junkPool.end());
+            while (itemPool.size() < locCount) {
+                itemPool.insert(itemPool.end(), RandomElement(JunkPoolItems));
+            }
+        } else {
+            while (itemPool.size() < locCount) {
+                itemPool.insert(itemPool.end(), RandomElement(junkPool, true));
+            }
+        }
+    }
+
+    assert(itemPool.size() == locCount);
 }

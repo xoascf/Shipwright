@@ -6,8 +6,9 @@
 
 #include "z_oceff_wipe3.h"
 #include "vt.h"
+#include "soh/ResourceManagerHelpers.h"
 
-#define FLAGS (ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_NO_FREEZE_OCARINA)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_UPDATE_DURING_OCARINA)
 
 void OceffWipe3_Init(Actor* thisx, PlayState* play);
 void OceffWipe3_Destroy(Actor* thisx, PlayState* play);
@@ -73,7 +74,7 @@ void OceffWipe3_Draw(Actor* thisx, PlayState* play) {
     eye = GET_ACTIVE_CAM(play)->eye;
     Camera_GetSkyboxOffset(&vec, GET_ACTIVE_CAM(play));
 
-    int fastOcarinaPlayback = (CVarGetInteger("gFastOcarinaPlayback", 0) != 0);
+    int fastOcarinaPlayback = (CVarGetInteger(CVAR_ENHANCEMENT("FastOcarinaPlayback"), 0) != 0);
     if (this->counter < 32) {
         z = Math_SinS(this->counter << 9) * (fastOcarinaPlayback ? 1200.0f : 1330.0f);
     } else {
@@ -100,14 +101,13 @@ void OceffWipe3_Draw(Actor* thisx, PlayState* play) {
     Matrix_ReplaceRotation(&play->billboardMtxF);
     Matrix_Translate(0.0f, 0.0f, -z, MTXMODE_APPLY);
 
-    gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-              G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 
     gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, 255, 255, 170, 255);
     gDPSetEnvColor(POLY_XLU_DISP++, 100, 200, 0, 128);
     gSPDisplayList(POLY_XLU_DISP++, sMaterialDL);
-    gSPDisplayList(POLY_XLU_DISP++, Gfx_TwoTexScroll(play->state.gfxCtx, 0, scroll * 12, scroll * (-12), 64, 64, 1,
-                                                     scroll * 8, scroll * (-8), 64, 64));
+    gSPDisplayList(POLY_XLU_DISP++, Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, scroll * 12, scroll * (-12), 64, 64, 1,
+                                                       scroll * 8, scroll * (-8), 64, 64, 12, -12, 8, -8));
     gSPDisplayList(POLY_XLU_DISP++, sFrustumDL);
 
     CLOSE_DISPS(play->state.gfxCtx);

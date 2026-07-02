@@ -8,8 +8,6 @@
 #ifndef SOHSpeechSynthesizer_h
 #define SOHSpeechSynthesizer_h
 
-#include <stdio.h>
-
 class SpeechSynthesizer {
   public:
     static SpeechSynthesizer* Instance;
@@ -35,4 +33,8 @@ class SpeechSynthesizer {
 #include "SAPISpeechSynthesizer.h"
 #elif defined(__APPLE__)
 #include "DarwinSpeechSynthesizer.h"
+#elif ESPEAK
+#include "ESpeakSpeechSynthesizer.h"
 #endif
+
+#include "SpeechLogger.h"

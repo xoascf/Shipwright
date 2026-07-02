@@ -1,19 +1,30 @@
 #pragma once
 
-#include "Resource.h"
-#include "ResourceFactory.h"
+#include <ship/resource/Resource.h>
+#include <ship/resource/ResourceFactoryBinary.h>
+#include <ship/resource/ResourceFactoryXML.h>
+#include "soh/resource/type/AudioSoundFont.h"
 
-namespace LUS {
-class AudioSoundFontFactory : public ResourceFactory
-{
+namespace SOH {
+class ResourceFactoryBinaryAudioSoundFontV2 final : public Ship::ResourceFactoryBinary {
   public:
-    std::shared_ptr<IResource>
-    ReadResource(std::shared_ptr<ResourceInitData> initData, std::shared_ptr<BinaryReader> reader) override;
+    std::shared_ptr<Ship::IResource> ReadResource(std::shared_ptr<Ship::File> file,
+                                                  std::shared_ptr<Ship::ResourceInitData> initData) override;
 };
 
-class AudioSoundFontFactoryV0 : public ResourceVersionFactory
-{
+class ResourceFactoryXMLSoundFontV0 final : public Ship::ResourceFactoryXML {
   public:
-    void ParseFileBinary(std::shared_ptr<BinaryReader> reader, std::shared_ptr<IResource> resource) override;
+    std::shared_ptr<Ship::IResource> ReadResource(std::shared_ptr<Ship::File> file,
+                                                  std::shared_ptr<Ship::ResourceInitData> initData) override;
+    static int8_t MediumStrToInt(const char* str, const char* file);
+    static int8_t CachePolicyToInt(const char* str, const char* file);
+
+  private:
+    void ParseDrums(AudioSoundFont* soundFont, tinyxml2::XMLElement* element);
+    void ParseInstruments(AudioSoundFont* soundFont, tinyxml2::XMLElement* element);
+    void ParseSfxTable(AudioSoundFont* soundFont, tinyxml2::XMLElement* element);
+    std::vector<AdsrEnvelope> ParseEnvelopes(AudioSoundFont* soundFont, tinyxml2::XMLElement* element,
+                                             unsigned int* count);
 };
-}; // namespace LUS
+
+} // namespace SOH

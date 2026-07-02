@@ -6,7 +6,7 @@
 
 struct EnExItem;
 
-typedef void (*EnExItemActionFunc)(struct EnExItem* this, PlayState* play);
+typedef void (*EnExItemActionFunc)(struct EnExItem* enExItem, PlayState* play);
 typedef void (*EnExItemLightFunc)(Actor*, PlayState*, s32);
 
 typedef struct EnExItem {
@@ -14,7 +14,7 @@ typedef struct EnExItem {
     /* 0x014C */ EnExItemActionFunc actionFunc;
     /* 0x0150 */ s16 getItemObjId;
     /* 0x0152 */ s16 type;
-    /* 0x0152 */ s16 unusedParam;
+    /* 0x0154 */ s16 unusedParam;
     /* 0x0156 */ s16 giDrawId;
     /* 0x0158 */ s16 stopRotate;
     /* 0x015A */ s16 timer;
@@ -27,6 +27,9 @@ typedef struct EnExItem {
     /* 0x0170 */ Vec3f initPos; // unused
     /* 0x017C */ EnExItemLightFunc unk_17C;
     /* 0x0180 */ EnExItemLightFunc unk_180;
+    // #region SOH [Randomizer] Caching the get item entry for the draw function for performance
+    /*        */ GetItemEntry sohItemEntry;
+    // #endregion
 } EnExItem; // size = 0x0184
 
 typedef enum {
@@ -51,6 +54,8 @@ typedef enum {
     /* 18 */ EXITEM_MAGIC_DARK,
     /* 19 */ EXITEM_BULLET_BAG
 } EnExItemType;
+
+void EnExItem_WaitForObject(EnExItem* enExItem, PlayState* play);
 
 #define EXITEM_COUNTER 5
 #define EXITEM_CHEST 10

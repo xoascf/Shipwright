@@ -1,8 +1,10 @@
 #include "z_en_heishi4.h"
 #include "objects/object_sd/object_sd.h"
 #include "vt.h"
+#include "soh/OTRGlobals.h"
+#include "soh/ResourceManagerHelpers.h"
 
-#define FLAGS (ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_FRIENDLY)
+#define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY)
 
 void EnHeishi4_Init(Actor* thisx, PlayState* play);
 void EnHeishi4_Destroy(Actor* thisx, PlayState* play);
@@ -73,8 +75,8 @@ void EnHeishi4_Init(Actor* thisx, PlayState* play) {
     } else {
         this->height = 60.0f;
         ActorShape_Init(&thisx->shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
-        SkelAnime_Init(play, &this->skelAnime, &gEnHeishiSkel, &gEnHeishiIdleAnim, this->jointTable,
-                       this->morphTable, 17);
+        SkelAnime_Init(play, &this->skelAnime, &gEnHeishiSkel, &gEnHeishiIdleAnim, this->jointTable, this->morphTable,
+                       17);
     }
     Collider_InitCylinder(play, &this->collider);
     Collider_SetCylinder(play, &this->collider, thisx, &sCylinderInit);
@@ -266,11 +268,11 @@ void func_80A56900(EnHeishi4* this, PlayState* play) {
 
 void func_80A56994(EnHeishi4* this, PlayState* play) {
     SkelAnime_Update(&this->skelAnime);
-    func_80038290(play, &this->actor, &this->unk_260, &this->unk_266, this->actor.focus.pos);
+    func_80038290(play, &this->actor, &this->headRot, &this->torsoRot, this->actor.focus.pos);
     if ((this->unk_282 == Message_GetState(&play->msgCtx)) && Message_ShouldAdvance(play)) {
         Message_CloseTextbox(play);
         Flags_SetInfTable(INFTABLE_6C);
-        func_8002DF54(play, NULL, 8);
+        Player_SetCsActionWithHaltedActors(play, NULL, 8);
         this->actionFunc = func_80A56A50;
     }
 }
@@ -288,7 +290,7 @@ void func_80A56ACC(EnHeishi4* this, PlayState* play) {
 
     SkelAnime_Update(&this->skelAnime);
     if (this->unk_288 <= currentFrame) {
-        func_8002DF54(play, NULL, 7);
+        Player_SetCsActionWithHaltedActors(play, NULL, 7);
         this->actionFunc = func_80A5673C;
     }
 }
@@ -337,9 +339,9 @@ void func_80A56B40(EnHeishi4* this, PlayState* play) {
             Player* player = GET_PLAYER(play);
             // Only allow sneaking when not wearing a mask as that triggers different dialogue. MM Bunny hood disables
             // these interactions, so bunny hood is fine in that case.
-            if (CVarGetInteger("gMarketSneak", 0) &&
+            if (CVarGetInteger(CVAR_ENHANCEMENT("MarketSneak"), 0) &&
                 (player->currentMask == PLAYER_MASK_NONE ||
-                 (player->currentMask == PLAYER_MASK_BUNNY && CVarGetInteger("gMMBunnyHood", 0)))) {
+                 (player->currentMask == PLAYER_MASK_BUNNY && CVarGetInteger(CVAR_ENHANCEMENT("MMBunnyHood"), 0)))) {
                 this->actionFunc = EnHeishi4_MarketSneak;
             } else {
                 this->actionFunc = func_80A56614;
@@ -356,18 +358,20 @@ at night.
 void EnHeishi4_MarketSneak(EnHeishi4* this, PlayState* play) {
     if (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(play)) {
         switch (play->msgCtx.choiceIndex) {
-            case 0: //yes
-                if (IS_RANDO && Randomizer_GetSettingValue(RSK_SHUFFLE_OVERWORLD_ENTRANCES) != RO_GENERIC_OFF){
-                    play->nextEntranceIndex = Entrance_OverrideNextIndex(0x01FD); // Market Entrance -> HF
+            case 0: // yes
+                if (IS_RANDO && Randomizer_GetSettingValue(RSK_SHUFFLE_OVERWORLD_ENTRANCES) != RO_GENERIC_OFF) {
+                    play->nextEntranceIndex =
+                        Entrance_OverrideNextIndex(ENTR_HYRULE_FIELD_ON_BRIDGE_SPAWN); // Market Entrance -> HF
                 } else {
-                    play->nextEntranceIndex = 0x00CD; // HF Near bridge (OoT cutscene entrance) to not fall in the water
-                } 
-                play->sceneLoadFlag = 0x14;
-                play->fadeTransition = 0x2E;
-                gSaveContext.nextTransitionType = 0x2E;
+                    play->nextEntranceIndex = ENTR_HYRULE_FIELD_PAST_BRIDGE_SPAWN; // HF Near bridge (OoT cutscene
+                                                                                   // entrance) to not fall in the water
+                }
+                play->transitionTrigger = TRANS_TRIGGER_START;
+                play->transitionType = TRANS_TYPE_CIRCLE(TCA_STARBURST, TCC_WHITE, TCS_FAST);
+                gSaveContext.nextTransitionType = TRANS_TYPE_CIRCLE(TCA_STARBURST, TCC_WHITE, TCS_FAST);
                 this->actionFunc = func_80A56614;
                 break;
-            case 1: //no
+            case 1: // no
                 this->actionFunc = func_80A56614;
                 break;
         }
@@ -389,27 +393,26 @@ void EnHeishi4_Update(Actor* thisx, PlayState* play) {
             this->interactInfo.trackPos.y = player->actor.world.pos.y - 10.0f;
         }
         Npc_TrackPoint(thisx, &this->interactInfo, 2, NPC_TRACKING_FULL_BODY);
-        this->unk_260 = this->interactInfo.headRot;
-        this->unk_266 = this->interactInfo.torsoRot;
+        this->headRot = this->interactInfo.headRot;
+        this->torsoRot = this->interactInfo.torsoRot;
     }
     this->unk_27E += 1;
     this->actionFunc(this, play);
-    Actor_MoveForward(thisx);
+    Actor_MoveXZGravity(thisx);
     Actor_UpdateBgCheckInfo(play, thisx, 10.0f, 10.0f, 30.0f, 0x1D);
     Collider_UpdateCylinder(&this->actor, &this->collider);
     CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
 }
 
-s32 EnHeishi_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
-                              void* thisx) {
+s32 EnHeishi_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnHeishi4* this = (EnHeishi4*)thisx;
 
     if (limbIndex == 9) {
-        rot->x += this->unk_266.y;
+        rot->x += this->torsoRot.y;
     }
     if (limbIndex == 16) {
-        rot->x += this->unk_260.y;
-        rot->z += this->unk_260.z;
+        rot->x += this->headRot.y;
+        rot->z += this->headRot.z;
     }
     return false;
 }

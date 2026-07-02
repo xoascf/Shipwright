@@ -6,9 +6,9 @@
 
 #include "z_bg_spot06_objects.h"
 #include "objects/object_spot06_objects/object_spot06_objects.h"
-#include "soh/Enhancements/custom-message/CustomMessageTypes.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 
-#define FLAGS ACTOR_FLAG_HOOKSHOT_DRAGS
+#define FLAGS ACTOR_FLAG_HOOKSHOT_PULLS_ACTOR
 
 typedef enum {
     /* 0x0 */ LHO_WATER_TEMPLE_ENTRACE_GATE,
@@ -47,8 +47,6 @@ void BgSpot06Objects_LockFloat(BgSpot06Objects* this, PlayState* play);
 void BgSpot06Objects_WaterPlaneCutsceneWait(BgSpot06Objects* this, PlayState* play);
 void BgSpot06Objects_WaterPlaneCutsceneRise(BgSpot06Objects* this, PlayState* play);
 void BgSpot06Objects_WaterPlaneCutsceneLower(BgSpot06Objects* this, PlayState* play);
-
-s32 Object_Spawn(ObjectContext* objectCtx, s16 objectId);
 
 const ActorInit Bg_Spot06_Objects_InitVars = {
     ACTOR_BG_SPOT06_OBJECTS,
@@ -154,7 +152,7 @@ void BgSpot06Objects_Init(Actor* thisx, PlayState* play) {
             break;
         case LHO_WATER_PLANE:
             Actor_ProcessInitChain(thisx, sInitChainWaterPlane);
-            thisx->flags = ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED;
+            thisx->flags = ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED;
 
             if (LINK_IS_ADULT && !Flags_GetEventChkInf(EVENTCHKINF_RAISED_LAKE_HYLIA_WATER)) {
                 if (gSaveContext.sceneSetupIndex < 4) {
@@ -193,12 +191,6 @@ void BgSpot06Objects_Init(Actor* thisx, PlayState* play) {
     }
 }
 
-static u8 actionCounter = 0; // Used to perform some actions on subsequent frames
-static s8 waterMovement = 0; // Used to control the water change direction
-static u8 switchPressed = 0; // Used to track when the water fill switch is pressed/depressed
-static u8 prevSwitchState = 0; // Used to track the previous state of the water fill switch
-static Actor* lakeControlFloorSwitch;
-
 void BgSpot06Objects_Destroy(Actor* thisx, PlayState* play) {
     BgSpot06Objects* this = (BgSpot06Objects*)thisx;
 
@@ -216,17 +208,6 @@ void BgSpot06Objects_Destroy(Actor* thisx, PlayState* play) {
 
     // Due to Ships resource caching, the water box collisions for the river have to be manually reset
     play->colCtx.colHeader->waterBoxes[LHWB_GERUDO_VALLEY_RIVER_LOWER].zMin = WATER_LEVEL_RIVER_LOWER_Z;
-
-    if (IS_RANDO && Flags_GetRandomizerInf(RAND_INF_DUNGEONS_DONE_WATER_TEMPLE)) {
-        // For randomizer when leaving lake hylia while the water level is lowered,
-        // reset the "raise lake hylia water" flag back to on if the water temple is cleared
-        Flags_SetEventChkInf(EVENTCHKINF_RAISED_LAKE_HYLIA_WATER);
-    }
-
-    actionCounter = 0;
-    waterMovement = 0;
-    switchPressed = 0;
-    prevSwitchState = 0;
 }
 
 /**
@@ -251,7 +232,7 @@ void BgSpot06Objects_GateSpawnBubbles(BgSpot06Objects* this, PlayState* play) {
 void BgSpot06Objects_GateWaitForSwitch(BgSpot06Objects* this, PlayState* play) {
     s32 i;
 
-    if ((CVarGetInteger("gWaterTempleGateFix", 0) == 0 || LINK_IS_ADULT) && Flags_GetSwitch(play, this->switchFlag)) {
+    if (Flags_GetSwitch(play, this->switchFlag)) {
         this->timer = 100;
         this->dyna.actor.world.pos.y += 3.0f;
         this->actionFunc = BgSpot06Objects_GateWaitToOpen;
@@ -266,7 +247,7 @@ void BgSpot06Objects_GateWaitForSwitch(BgSpot06Objects* this, PlayState* play) {
  * This is where the gate waits a few frames before rising after the switch is set.
  */
 void BgSpot06Objects_GateWaitToOpen(BgSpot06Objects* this, PlayState* play) {
-    if (this->timer != 0) {
+    if (GameInteractor_Should(VB_BG_SPOT06_OBJECTS_GATE_SKIP, this->timer != 0, this)) {
         this->timer--;
     }
 
@@ -304,8 +285,7 @@ void BgSpot06Objects_LockSpawnWaterRipples(BgSpot06Objects* this, PlayState* pla
 
 void BgSpot06Objects_LockSpawnBubbles(BgSpot06Objects* this, PlayState* play, s32 flag) {
     if (!(play->gameplayFrames % 7) || flag) {
-        EffectSsBubble_Spawn(play, &this->dyna.actor.world.pos, 0.0f, 40.0f, 30.0f,
-                             (Rand_ZeroOne() * 0.05f) + 0.175f);
+        EffectSsBubble_Spawn(play, &this->dyna.actor.world.pos, 0.0f, 40.0f, 30.0f, (Rand_ZeroOne() * 0.05f) + 0.175f);
     }
 }
 
@@ -322,7 +302,7 @@ void BgSpot06Objects_LockWait(BgSpot06Objects* this, PlayState* play) {
 
     if (this->collider.base.acFlags & 2) {
         this->timer = 130;
-        this->dyna.actor.flags |= ACTOR_FLAG_UPDATE_WHILE_CULLED;
+        this->dyna.actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
         sin = Math_SinS(this->dyna.actor.world.rot.y);
         cos = Math_CosS(this->dyna.actor.world.rot.y);
         this->dyna.actor.world.pos.x += (3.0f * sin);
@@ -343,7 +323,8 @@ void BgSpot06Objects_LockWait(BgSpot06Objects* this, PlayState* play) {
         EffectSsGSplash_Spawn(play, &this->dyna.actor.world.pos, NULL, NULL, 1, 700);
         this->collider.elements->dim.worldSphere.radius = 45;
         this->actionFunc = BgSpot06Objects_LockPullOutward;
-        Audio_PlaySoundGeneral(NA_SE_SY_CORRECT_CHIME, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+        Audio_PlaySoundGeneral(NA_SE_SY_CORRECT_CHIME, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
+                               &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
         Flags_SetSwitch(play, this->switchFlag);
         OnePointCutscene_Init(play, 4120, 170, &this->dyna.actor, MAIN_CAM);
     } else {
@@ -395,7 +376,7 @@ void BgSpot06Objects_LockSwimToSurface(BgSpot06Objects* this, PlayState* play) {
                 this->dyna.actor.world.pos.z - (Math_CosS(this->dyna.actor.shape.rot.y) * 16.0f);
             this->dyna.actor.world.pos.y = -1993.0f;
             this->timer = 32;
-            this->dyna.actor.flags &= ~ACTOR_FLAG_UPDATE_WHILE_CULLED;
+            this->dyna.actor.flags &= ~ACTOR_FLAG_UPDATE_CULLING_DISABLED;
             this->collider.elements[0].dim.worldSphere.radius = this->collider.elements[0].dim.modelSphere.radius * 2;
             this->actionFunc = BgSpot06Objects_LockFloat;
         }
@@ -449,71 +430,6 @@ void BgSpot06Objects_Update(Actor* thisx, PlayState* play) {
     if (thisx->params == LHO_WATER_TEMPLE_ENTRANCE_LOCK) {
         CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
     }
-
-    // Bail early for water control system for child or non-rando
-    if (LINK_IS_CHILD || !IS_RANDO) {
-        return;
-    }
-
-    // Begin setup for Lake Hylia water control system
-    if (actionCounter == 0) {
-        // Object containing floor switch data (and ice block data)
-        Object_Spawn(&play->objectCtx, OBJECT_GAMEPLAY_DANGEON_KEEP);
-
-        s16 switchParams;
-        if (Flags_GetRandomizerInf(RAND_INF_DUNGEONS_DONE_WATER_TEMPLE)) {
-            // Toggle-able floor switch,
-            // linked to temp_switch 0x1E (room temporary, cleared when room unloads)
-            switchParams = 0x3E10;
-        } else {
-            // Frozen rusty switch, same flag as above. It's glitched and can't be pressed
-            switchParams = 0x3E81;
-        }
-
-        // Spawn a floor switch
-        lakeControlFloorSwitch = Actor_Spawn(&play->actorCtx, play, ACTOR_OBJ_SWITCH, -896.0f, -1243.0f, 6953.0f, 0, 0, 0, switchParams, false);
-        // Spawn a sign
-        Actor_Spawn(&play->actorCtx, play, ACTOR_EN_KANBAN, -970.0f, -1242.0f, 6954.0f, 0, 0, 0,
-            0x0000 | (TEXT_LAKE_HYLIA_WATER_SWITCH_SIGN & 0xFF), false);
-
-        // Spawn a Navi check spot when Water Temple isn't cleared
-        if (!Flags_GetRandomizerInf(RAND_INF_DUNGEONS_DONE_WATER_TEMPLE)) {
-            Actor_Spawn(&play->actorCtx, play, ACTOR_ELF_MSG2, -896.0f, -1243.0f, 6953.0f, 0, 0, 0,
-                0x3D00 | (TEXT_LAKE_HYLIA_WATER_SWITCH_NAVI & 0xFF), false);
-        }
-
-        actionCounter++;
-        return;
-    } else if (actionCounter == 1) {
-        if (!Flags_GetRandomizerInf(RAND_INF_DUNGEONS_DONE_WATER_TEMPLE)) {
-            // Remove the link to ice block so melting it doesn't set the flag
-            lakeControlFloorSwitch->params = 0x3E01;
-        }
-
-        actionCounter++;
-        return;
-    }
-
-    // Detect when the switch is pressed
-    if (prevSwitchState != (Flags_GetSwitch(play, 0x3E) != 0)) {
-        prevSwitchState = !prevSwitchState;
-        switchPressed = 1;
-    }
-
-    // When pressed, assign the corresponding action func to the water plane and water movement direction
-    if (switchPressed == 1 && thisx->params == LHO_WATER_PLANE) {
-        // Lower water
-        if (waterMovement >= 0) {
-            waterMovement = -1;
-            this->actionFunc = BgSpot06Objects_WaterPlaneCutsceneLower;
-        // Raise water
-        } else {
-            waterMovement = 1;
-            this->actionFunc = BgSpot06Objects_WaterPlaneCutsceneRise;
-        }
-
-        switchPressed = 0;
-    }
 }
 
 /**
@@ -527,17 +443,16 @@ void BgSpot06Objects_DrawLakeHyliaWater(BgSpot06Objects* this, PlayState* play) 
 
     Gfx_SetupDL_25Xlu(play->state.gfxCtx);
 
-    gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-              G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 
     gameplayFrames = play->state.frames;
 
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, 0, -gameplayFrames, gameplayFrames, 32, 32, 1, gameplayFrames,
-                                gameplayFrames, 32, 32));
+               Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, -gameplayFrames, gameplayFrames, 32, 32, 1, gameplayFrames,
+                                  gameplayFrames, 32, 32, -1, 1, 1, 1));
     gSPSegment(POLY_XLU_DISP++, 0x09,
-               Gfx_TwoTexScroll(play->state.gfxCtx, 0, -gameplayFrames, gameplayFrames * 6, 32, 32, 1,
-                                gameplayFrames, gameplayFrames * 6, 32, 32));
+               Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, -gameplayFrames, gameplayFrames * 6, 32, 32, 1, gameplayFrames,
+                                  gameplayFrames * 6, 32, 32, -1, 6, 1, 6));
 
     gDPSetEnvColor(POLY_XLU_DISP++, 255, 255, 255, 128);
 
@@ -604,7 +519,7 @@ void BgSpot06Objects_WaterPlaneCutsceneRise(BgSpot06Objects* this, PlayState* pl
             play->roomCtx.unk_74[0] = 0; // Apply the moving under water texture to lake hylia ground
         }
     } else {
-        Math_SmoothStepToF(&this->lakeHyliaWaterLevel, 1.0f, 0.1f, 1.0f, 0.001f);
+        Math_SmoothStepToF(&this->lakeHyliaWaterLevel, 1.0f, 0.1f, IS_RANDO ? 10.0f : 1.0f, 0.001f);
         play->colCtx.colHeader->waterBoxes[LHWB_GERUDO_VALLEY_RIVER_LOWER].ySurface = WATER_LEVEL_RIVER_LOWERED;
         play->colCtx.colHeader->waterBoxes[LHWB_MAIN_1].ySurface = this->dyna.actor.world.pos.y;
         play->colCtx.colHeader->waterBoxes[LHWB_MAIN_2].ySurface = this->dyna.actor.world.pos.y;
@@ -634,7 +549,7 @@ void BgSpot06Objects_WaterPlaneCutsceneLower(BgSpot06Objects* this, PlayState* p
         this->actionFunc = BgSpot06Objects_DoNothing;
     } else {
         // Go slightly beyond -681 so the smoothing doesn't slow down too much (matches the reverse of water rise func)
-        Math_SmoothStepToF(&this->lakeHyliaWaterLevel, -682.0f, 0.1f, 1.0f, 0.001f);
+        Math_SmoothStepToF(&this->lakeHyliaWaterLevel, -682.0f, 0.1f, 10.0f, 0.01f);
         play->colCtx.colHeader->waterBoxes[LHWB_GERUDO_VALLEY_RIVER_LOWER].ySurface = WATER_LEVEL_RIVER_LOWERED;
         play->colCtx.colHeader->waterBoxes[LHWB_GERUDO_VALLEY_RIVER_LOWER].zMin = WATER_LEVEL_RIVER_LOWER_Z - 50;
         play->colCtx.colHeader->waterBoxes[LHWB_MAIN_1].ySurface = yPos;

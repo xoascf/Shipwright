@@ -1,7 +1,9 @@
 #ifndef Z64_AUDIO_H
 #define Z64_AUDIO_H
 
-#include <endianness.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define MK_CMD(b0,b1,b2,b3) ((((b0) & 0xFF) << 0x18) | (((b1) & 0xFF) << 0x10) | (((b2) & 0xFF) << 0x8) | (((b3) & 0xFF) << 0))
 
@@ -24,8 +26,8 @@
 
 //#define MAX_SEQUENCES 0x800
 extern size_t sequenceMapSize;
-
-extern char* fontMap[256];
+extern size_t fontMapSize;
+extern char** fontMap;
 
 #define MAX_AUTHENTIC_SEQID 110
 
@@ -54,7 +56,8 @@ typedef enum {
     /* 2 */ CODEC_S16_INMEMORY,
     /* 3 */ CODEC_SMALL_ADPCM,
     /* 4 */ CODEC_REVERB,
-    /* 5 */ CODEC_S16
+    /* 5 */ CODEC_S16,
+    /* 6 */ CODEC_OPUS,
 } SampleCodec;
 
 typedef enum {
@@ -117,13 +120,14 @@ typedef struct {
     /* 0x2 */ s16 arg;
 } AdsrEnvelope; // size = 0x4
 
-typedef struct {
-    /* 0x00 */ uintptr_t start;
-    /* 0x04 */ uintptr_t end;
-    /* 0x08 */ u32 count;
-    /* 0x0C */ char unk_0C[0x4];
-    /* 0x10 */ s16 state[16]; // only exists if count != 0. 8-byte aligned
-} AdpcmLoop; // size = 0x30 (or 0x10)
+typedef struct AdpcmLoop {
+    /* 0x00 */ u32 start;
+    /* 0x04 */ u32 loopEnd;   // numSamples position into the sample where the loop ends
+    /* 0x08 */ u32 count;     // The number of times the loop is played before the sound completes. Setting count to -1
+    // indicates that the loop should play indefinitely.
+    /* 0x0C */ u32 sampleEnd; // total number of s16-samples in the sample audio clip
+    /* 0x10 */ s16 predictorState[16]; // only exists if count != 0. 8-byte aligned
+} AdpcmLoop;    // size = 0x30 (or 0x10)
 
 typedef struct {
     /* 0x00 */ s32 order;
@@ -131,24 +135,23 @@ typedef struct {
     /* 0x08 */ s16* book; // size 8 * order * npredictors. 8-byte aligned
 } AdpcmBook; // size >= 0x8
 
-typedef struct 
-{
+typedef struct SoundFontSample {
     union {
         struct {
-            /* 0x00 */ u32 codec : 4;
-            /* 0x00 */ u32 medium : 2;
-            /* 0x00 */ u32 unk_bit26 : 1;
-            /* 0x00 */ u32 unk_bit25 : 1; // this has been named isRelocated in zret
-            /* 0x01 */ u32 size : 24;
+            ///* 0x0 */ u32 unk_0 : 1;
+            /* 0x0 */ u32 codec : 4; // The state of compression or decompression, See `SampleCodec`
+            /* 0x0 */ u32 medium : 2; // Medium where sample is currently stored. See `SampleMedium`
+            /* 0x0 */ u32 unk_bit26 : 1;
+            /* 0x0 */ u32 isRelocated : 1; // Has the sample header been relocated (offsets to pointers)
+
         };
         u32 asU32;
     };
-
-    /* 0x04 */ u8* sampleAddr;
-    /* 0x08 */ AdpcmLoop* loop;
-    /* 0x0C */ AdpcmBook* book;
-    u32 sampleRateMagicValue; // For wav samples only...
-    s32 sampleRate;           // For wav samples only...
+    /* 0x1 */ u32 size;  // Size of the sample
+    u32 fileSize;
+    /* 0x4 */ u8* sampleAddr; // Raw sample data. Offset from the start of the sample bank or absolute address to either rom or ram
+    /* 0x8 */ AdpcmLoop* loop; // Adpcm loop parameters used by the sample. Offset from the start of the sound font / pointer to ram
+    /* 0xC */ AdpcmBook* book; // Adpcm book parameters used by the sample. Offset from the start of the sound font / pointer to ram
 } SoundFontSample; // size = 0x10
 
 typedef struct {
@@ -465,6 +468,8 @@ typedef struct {
     /* 0x00F0 */ s16 dummyResampleState[0x10];
 } NoteSynthesisBuffers; // size = 0x110
 
+struct OggOpusFile;
+
 typedef struct {
     /* 0x00 */ u8 restart;
     /* 0x01 */ u8 sampleDmaIndex;
@@ -483,6 +488,7 @@ typedef struct {
     /* 0x1A */ u8 unk_1A;
     /* 0x1C */ u16 unk_1C;
     /* 0x1E */ u16 unk_1E;
+    struct OggOpusFile* opusFile; // Only for streamed opus audio
 } NoteSynthesisState; // size = 0x20
 
 typedef struct {
@@ -917,7 +923,7 @@ typedef struct {
     /* 0x3420 */ AudioPoolSplit3 persistentCommonPoolSplit;
     /* 0x342C */ AudioPoolSplit3 temporaryCommonPoolSplit;
     /* 0x3438 */ u8 sampleFontLoadStatus[0x30];
-    /* 0x3468 */ u8 fontLoadStatus[0x30];
+    /* 0x3468 */ u8* fontLoadStatus;
     /* 0x3498 */ u8* seqLoadStatus;
     /* 0x3518 */ volatile u8 resetStatus;
     /* 0x3519 */ u8 audioResetSpecIdToLoad;
@@ -970,43 +976,43 @@ typedef struct {
 } AudioContextInitSizes; // size = 0xC
 
 typedef struct {
-    /* 0x00 */ f32 unk_00;
-    /* 0x04 */ f32 unk_04;
-    /* 0x08 */ f32 unk_08;
-    /* 0x0C */ u16 unk_0C;
-    /* 0x10 */ f32 unk_10;
-    /* 0x14 */ f32 unk_14;
-    /* 0x18 */ f32 unk_18;
-    /* 0x1C */ u16 unk_1C;
-} unk_50_s; // size = 0x20
+    /* 0x00 */ f32 volCur;
+    /* 0x04 */ f32 volTarget;
+    /* 0x08 */ f32 volStep;
+    /* 0x0C */ u16 volTimer;
+    /* 0x10 */ f32 freqScaleCur;
+    /* 0x14 */ f32 freqScaleTarget;
+    /* 0x18 */ f32 freqScaleStep;
+    /* 0x1C */ u16 freqScaleTimer;
+} ActiveSequenceChannelData; // size = 0x20
 
 typedef struct {
     /* 0x000 */ f32 volCur;
     /* 0x004 */ f32 volTarget;
-    /* 0x008 */ f32 unk_08;
-    /* 0x00C */ u16 unk_0C;
-    /* 0x00E */ u8 volScales[0x4];
+    /* 0x008 */ f32 volStep;
+    /* 0x00C */ u16 volTimer;
+    /* 0x00E */ u8 volScales[4];
     /* 0x012 */ u8 volFadeTimer;
     /* 0x013 */ u8 fadeVolUpdate;
-    /* 0x014 */ u32 unk_14;
-    /* 0x018 */ u16 unk_18;
-    /* 0x01C */ f32 unk_1C;
-    /* 0x020 */ f32 unk_20;
-    /* 0x024 */ f32 unk_24;
-    /* 0x028 */ u16 unk_28;
-    /* 0x02C */ u32 unk_2C[8];
-    /* 0x04C */ u8 unk_4C;
-    /* 0x04D */ u8 unk_4D;
-    /* 0x04E */ u8 unk_4E;
-    /* 0x050 */ unk_50_s unk_50[0x10];
-    /* 0x250 */ u16 unk_250;
-    /* 0x252 */ u16 unk_252;
-    /* 0x254 */ u16 unk_254;
-    /* 0x256 */ u16 unk_256;
-    /* 0x258 */ u16 unk_258;
-    /* 0x25C */ u32 unk_25C;
-    /* 0x260 */ u8 unk_260;
-} unk_D_8016E750; // size = 0x264
+    /* 0x014 */ u32 tempoCmd;
+    /* 0x018 */ u16 tempoOriginal; // stores the original tempo before modifying it (to reset back to)
+    /* 0x01C */ f32 tempoCur;
+    /* 0x020 */ f32 tempoTarget;
+    /* 0x024 */ f32 tempoStep;
+    /* 0x028 */ u16 tempoTimer;
+    /* 0x02C */ u32 setupCmd[8]; // a queue of cmds to execute once the player is disabled
+    /* 0x04C */ u8 setupCmdTimer; // only execute setup commands when the timer is at 0.
+    /* 0x04D */ u8 setupCmdNum; // number of setup commands requested once the player is disabled
+    /* 0x04E */ u8 setupFadeTimer;
+    /* 0x050 */ ActiveSequenceChannelData channelData[16];
+    /* 0x250 */ u16 freqScaleChannelFlags;
+    /* 0x252 */ u16 volChannelFlags;
+    /* 0x254 */ u16 seqId; // active seqId currently playing. Resets when sequence stops
+    /* 0x256 */ u16 prevSeqId; // last seqId played on a player. Does not reset when sequence stops
+    /* 0x258 */ u16 channelPortMask;
+    /* 0x25C */ u32 startSeqCmd; // This name comes from MM
+    /* 0x260 */ u8 isWaitingForFonts; // This name comes from MM
+} ActiveSequence; // size = 0x264
 
 typedef enum {
     /* 0 */ BANK_PLAYER,
@@ -1118,10 +1124,6 @@ typedef struct {
     int32_t numFonts;
     uint8_t fonts[16];
 } SequenceData;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void Audio_SetGameVolume(int player_id, f32 volume);
 float Audio_GetGameVolume(int player_id);

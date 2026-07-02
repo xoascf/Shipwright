@@ -8,9 +8,9 @@
 #include "overlays/effects/ovl_Effect_Ss_Dead_Sound/z_eff_ss_dead_sound.h"
 #include "objects/gameplay_keep/gameplay_keep.h"
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
-#include <stdlib.h>
+#include "soh/ShipUtils.h"
 
-#define FLAGS (ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
 void EnBom_Init(Actor* thisx, PlayState* play);
 void EnBom_Destroy(Actor* thisx, PlayState* play);
@@ -104,14 +104,13 @@ void EnBom_Init(Actor* thisx, PlayState* play) {
     } else {
         // Set random fuse timer with a minimum of 10. Do the sound and scale immediately,
         // otherwise the bomb is invisible until the timer hits the "normal" amount.
-        uint32_t randomTimer = (rand() % 150) + 10;
-        this->timer = randomTimer;
+        this->timer = 10 + (s16)(Rand_ZeroOne() * 150.0f);
         Audio_PlayActorSound2(thisx, NA_SE_PL_TAKE_OUT_SHIELD);
         Actor_SetScale(thisx, 0.01f);
     }
 
-    if (CVarGetFloat("gBombTimerMultiplier", 1.0f) != 1.0f) {
-        this->timer = (s32)(70 * CVarGetFloat("gBombTimerMultiplier", 1.0f));
+    if (CVarGetFloat(CVAR_CHEAT("BombTimerMultiplier"), 1.0f) != 1.0f) {
+        this->timer *= CVarGetFloat(CVAR_CHEAT("BombTimerMultiplier"), 1.0f);
         // Do the sound and scale immediately if GameInteractor hasn't already.
         if (!GameInteractor_GetRandomBombFuseTimerActive()) {
             Audio_PlayActorSound2(thisx, NA_SE_PL_TAKE_OUT_SHIELD);
@@ -125,7 +124,7 @@ void EnBom_Init(Actor* thisx, PlayState* play) {
     Collider_SetCylinder(play, &this->bombCollider, thisx, &sCylinderInit);
     Collider_SetJntSph(play, &this->explosionCollider, thisx, &sJntSphInit, &this->explosionColliderItems[0]);
     this->explosionColliderItems[0].info.toucher.damage += (thisx->shape.rot.z & 0xFF00) >> 8;
-    if (CVarGetInteger("gNutsExplodeBombs", 0)) {
+    if (CVarGetInteger(CVAR_ENHANCEMENT("NutsExplodeBombs"), 0)) {
         this->bombCollider.info.bumper.dmgFlags |= 1;
     }
 
@@ -162,7 +161,7 @@ void EnBom_Move(EnBom* this, PlayState* play) {
             this->actor.world.rot.y = ((this->actor.wallYaw - this->actor.world.rot.y) + this->actor.wallYaw) - 0x8000;
         }
         Audio_PlayActorSound2(&this->actor, NA_SE_EV_BOMB_BOUND);
-        Actor_MoveForward(&this->actor);
+        Actor_MoveXZGravity(&this->actor);
         this->actor.speedXZ *= 0.7f;
         this->actor.bgCheckFlags &= ~8;
     }
@@ -176,11 +175,11 @@ void EnBom_Move(EnBom* this, PlayState* play) {
             this->actor.velocity.y *= -0.3f;
             this->actor.bgCheckFlags &= ~2;
         } else if (this->timer >= 4) {
-            func_8002F580(&this->actor, play);
+            Actor_OfferCarry(&this->actor, play);
         }
     }
 
-    Actor_MoveForward(&this->actor);
+    Actor_MoveXZGravity(&this->actor);
 }
 
 void EnBom_WaitForRelease(EnBom* this, PlayState* play) {
@@ -195,17 +194,16 @@ void EnBom_Explode(EnBom* this, PlayState* play) {
     Player* player;
 
     if (this->explosionCollider.elements[0].dim.modelSphere.radius == 0) {
-        this->actor.flags |= ACTOR_FLAG_DRAW_WHILE_CULLED;
+        this->actor.flags |= ACTOR_FLAG_DRAW_CULLING_DISABLED;
         func_800AA000(this->actor.xzDistToPlayer, 0xFF, 0x14, 0x96);
     }
 
-    if (CVarGetInteger("gStaticExplosionRadius", 0)) {
-        //72 is the maximum radius of an OoT bomb explosion
+    if (CVarGetInteger(CVAR_ENHANCEMENT("StaticExplosionRadius"), 0)) {
+        // 72 is the maximum radius of an OoT bomb explosion
         this->explosionCollider.elements[0].dim.worldSphere.radius = 72;
     } else {
         this->explosionCollider.elements[0].dim.worldSphere.radius += this->actor.shape.rot.z + 8;
     }
-        
 
     if (this->actor.params == BOMB_EXPLOSION) {
         CollisionCheck_SetAT(play, &play->colChkCtx, &this->explosionCollider.base);
@@ -238,11 +236,11 @@ void EnBom_Explode(EnBom* this, PlayState* play) {
     if (this->timer == 0) {
         player = GET_PLAYER(play);
 
-        if ((player->stateFlags1 & 0x800) && (player->heldActor == &this->actor)) {
+        if ((player->stateFlags1 & PLAYER_STATE1_CARRYING_ACTOR) && (player->heldActor == &this->actor)) {
             player->actor.child = NULL;
             player->heldActor = NULL;
             player->interactRangeActor = NULL;
-            player->stateFlags1 &= ~0x800;
+            player->stateFlags1 &= ~PLAYER_STATE1_CARRYING_ACTOR;
         }
 
         Actor_Kill(&this->actor);
@@ -267,7 +265,8 @@ void EnBom_Update(Actor* thisx, PlayState* play2) {
     }
 
     // With random bomb fuse timer or gBombTimerMultiplier, sound effect and scaling is already done on init.
-    if (this->timer == 67 && !GameInteractor_GetRandomBombFuseTimerActive() && CVarGetFloat("gBombTimerMultiplier", 1.0f) == 1.0f) {
+    if (this->timer == 67 && !GameInteractor_GetRandomBombFuseTimerActive() &&
+        CVarGetFloat(CVAR_CHEAT("BombTimerMultiplier"), 1.0f) == 1.0f) {
         Audio_PlayActorSound2(thisx, NA_SE_PL_TAKE_OUT_SHIELD);
         Actor_SetScale(thisx, 0.01f);
     }
@@ -281,7 +280,7 @@ void EnBom_Update(Actor* thisx, PlayState* play2) {
     Actor_UpdateBgCheckInfo(play, thisx, 5.0f, 10.0f, 15.0f, 0x1F);
 
     if (thisx->params == BOMB_BODY) {
-        float timerMultiplier = CVarGetFloat("gBombTimerMultiplier", 1.0f);
+        float timerMultiplier = CVarGetFloat(CVAR_CHEAT("BombTimerMultiplier"), 1.0f);
         if (this->timer < (timerMultiplier == 1.0f ? 63 : (s32)(70 * timerMultiplier - 7))) {
             dustAccel.y = 0.2f;
 
@@ -338,8 +337,7 @@ void EnBom_Update(Actor* thisx, PlayState* play2) {
                 effPos.y += 30.0f;
             }
 
-            EffectSsBomb2_SpawnLayered(play, &effPos, &effVelocity, &bomb2Accel, 100,
-                                       (thisx->shape.rot.z * 6) + 19);
+            EffectSsBomb2_SpawnLayered(play, &effPos, &effVelocity, &bomb2Accel, 100, (thisx->shape.rot.z * 6) + 19);
 
             effPos.y = thisx->floorHeight;
             if (thisx->floorHeight > BGCHECK_Y_MIN) {
@@ -348,16 +346,14 @@ void EnBom_Update(Actor* thisx, PlayState* play2) {
 
             Audio_PlayActorSound2(thisx, NA_SE_IT_BOMB_EXPLOSION);
 
-            play->envCtx.adjLight1Color[0] = play->envCtx.adjLight1Color[1] =
-                play->envCtx.adjLight1Color[2] = 250;
+            play->envCtx.adjLight1Color[0] = play->envCtx.adjLight1Color[1] = play->envCtx.adjLight1Color[2] = 250;
 
-            play->envCtx.adjAmbientColor[0] = play->envCtx.adjAmbientColor[1] =
-                play->envCtx.adjAmbientColor[2] = 250;
+            play->envCtx.adjAmbientColor[0] = play->envCtx.adjAmbientColor[1] = play->envCtx.adjAmbientColor[2] = 250;
 
             Camera_AddQuake(&play->mainCamera, 2, 0xB, 8);
             thisx->params = BOMB_EXPLOSION;
             this->timer = 10;
-            thisx->flags |= ACTOR_FLAG_DRAW_WHILE_CULLED;
+            thisx->flags |= ACTOR_FLAG_DRAW_CULLING_DISABLED;
             EnBom_SetupAction(this, EnBom_Explode);
         }
     }
@@ -397,7 +393,7 @@ void EnBom_Draw(Actor* thisx, PlayState* play) {
 
     if (thisx->params == BOMB_BODY) {
         Gfx_SetupDL_25Opa(play->state.gfxCtx);
-        if (!CVarGetInteger("gDisableBombBillboarding", 0)) {
+        if (!CVarGetInteger(CVAR_ENHANCEMENT("DisableBombBillboarding"), 0)) {
             Matrix_ReplaceRotation(&play->billboardMtxF);
         }
         func_8002EBCC(thisx, play, 0);

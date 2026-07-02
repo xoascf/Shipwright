@@ -6,6 +6,8 @@
 
 #include "z_bg_po_event.h"
 #include "objects/object_po_sisters/object_po_sisters.h"
+#include "soh/Enhancements/game-interactor/GameInteractor.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 
 #define FLAGS 0
 
@@ -156,7 +158,7 @@ void BgPoEvent_InitBlocks(BgPoEvent* this, PlayState* play) {
     CollisionHeader* colHeader = NULL;
     s32 bgId;
 
-    this->dyna.actor.flags |= ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED;
+    this->dyna.actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED;
     CollisionHeader_GetVirtual(&gPoSistersAmyBlockCol, &colHeader);
     this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
     if ((this->type == 0) && (this->index != 3)) {
@@ -227,8 +229,8 @@ void BgPoEvent_Destroy(Actor* thisx, PlayState* play) {
         Collider_DestroyTris(play, &this->collider);
     } else {
         DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
-        if ((this->type == 1) && (gSaveContext.timer1Value > 0)) {
-            gSaveContext.timer1State = 0xA;
+        if ((this->type == 1) && (gSaveContext.timerSeconds > 0)) {
+            gSaveContext.timerState = TIMER_STATE_STOP;
         }
     }
 }
@@ -309,7 +311,7 @@ void BgPoEvent_BlockFall(BgPoEvent* this, PlayState* play) {
 
     this->dyna.actor.velocity.y++;
     if (Math_StepToF(&this->dyna.actor.world.pos.y, 433.0f, this->dyna.actor.velocity.y)) {
-        this->dyna.actor.flags &= ~ACTOR_FLAG_DRAW_WHILE_CULLED;
+        this->dyna.actor.flags &= ~ACTOR_FLAG_DRAW_CULLING_DISABLED;
         this->dyna.actor.velocity.y = 0.0f;
         sBgPoEventBlocksAtRest++;
         if (this->type != 1) {
@@ -317,11 +319,11 @@ void BgPoEvent_BlockFall(BgPoEvent* this, PlayState* play) {
         } else {
             Audio_PlayActorSound2(&this->dyna.actor, NA_SE_EV_STONE_BOUND);
             func_80033E88(&this->dyna.actor, play, 5, 5);
-            func_80088B34(this->timer);
+            Interface_SetTimer(this->timer);
             if (firstFall == 0) {
                 firstFall = 1;
             } else {
-                func_8002DF54(play, &GET_PLAYER(play)->actor, 7);
+                Player_SetCsActionWithHaltedActors(play, &GET_PLAYER(play)->actor, 7);
             }
         }
         this->direction = 0;
@@ -333,22 +335,21 @@ void BgPoEvent_BlockIdle(BgPoEvent* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     Actor* amy;
 
-    if (sBgPoEventPuzzleState == 0xF) {
+    if (GameInteractor_Should(VB_AMY_SOLVE, sBgPoEventPuzzleState == 0xF)) {
         this->actionFunc = BgPoEvent_BlockSolved;
         if ((this->type == 0) && (this->index == 0)) {
-            amy =
-                Actor_Spawn(&play->actorCtx, play, ACTOR_EN_PO_SISTERS, this->dyna.actor.world.pos.x + 30.0f,
-                            this->dyna.actor.world.pos.y - 30.0f, this->dyna.actor.world.pos.z + 30.0f, 0,
-                            this->dyna.actor.shape.rot.y, 0, this->dyna.actor.params + 0x300, true);
+            amy = Actor_Spawn(&play->actorCtx, play, ACTOR_EN_PO_SISTERS, this->dyna.actor.world.pos.x + 30.0f,
+                              this->dyna.actor.world.pos.y - 30.0f, this->dyna.actor.world.pos.z + 30.0f, 0,
+                              this->dyna.actor.shape.rot.y, 0, this->dyna.actor.params + 0x300);
             if (amy != NULL) {
                 OnePointCutscene_Init(play, 3170, 30, amy, MAIN_CAM);
             }
-            func_80078884(NA_SE_SY_CORRECT_CHIME);
-            gSaveContext.timer1State = 0xA;
+            Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
+            gSaveContext.timerState = TIMER_STATE_STOP;
         }
     } else {
-        if ((gSaveContext.timer1Value == 0) && (sBgPoEventBlocksAtRest == 5)) {
-            player->stateFlags2 &= ~0x10;
+        if ((gSaveContext.timerSeconds == 0) && (sBgPoEventBlocksAtRest == 5)) {
+            player->stateFlags2 &= ~PLAYER_STATE2_MOVING_DYNAPOLY;
             sBgPoEventPuzzleState = 0x10;
             sBgPoEventBlocksAtRest = 0;
         }
@@ -358,7 +359,7 @@ void BgPoEvent_BlockIdle(BgPoEvent* this, PlayState* play) {
             if (sBgPoEventPuzzleState == 0x10) {
                 sBgPoEventPuzzleState = 0x40;
                 Audio_PlayActorSound2(&this->dyna.actor, NA_SE_EV_BLOCK_RISING);
-                func_8002DF54(play, &player->actor, 8);
+                Player_SetCsActionWithHaltedActors(play, &player->actor, 8);
             }
         } else if (this->dyna.unk_150 != 0.0f) {
             if (this->direction == 0) {
@@ -367,11 +368,11 @@ void BgPoEvent_BlockIdle(BgPoEvent* this, PlayState* play) {
                     this->direction = (this->dyna.unk_150 >= 0.0f) ? 1.0f : -1.0f;
                     this->actionFunc = BgPoEvent_BlockPush;
                 } else {
-                    player->stateFlags2 &= ~0x10;
+                    player->stateFlags2 &= ~PLAYER_STATE2_MOVING_DYNAPOLY;
                     this->dyna.unk_150 = 0.0f;
                 }
             } else {
-                player->stateFlags2 &= ~0x10;
+                player->stateFlags2 &= ~PLAYER_STATE2_MOVING_DYNAPOLY;
                 this->dyna.unk_150 = 0.0f;
                 DECR(this->direction);
             }
@@ -387,14 +388,16 @@ void BgPoEvent_BlockPush(BgPoEvent* this, PlayState* play) {
     s32 blockStop;
     Player* player = GET_PLAYER(play);
 
-    this->dyna.actor.speedXZ = this->dyna.actor.speedXZ + (CVarGetInteger("gFasterBlockPush", 0) * 0.3) + 0.5f;
-    this->dyna.actor.speedXZ = CLAMP_MAX(this->dyna.actor.speedXZ, 2.0f + (CVarGetInteger("gFasterBlockPush", 0) * 0.5));
+    this->dyna.actor.speedXZ =
+        this->dyna.actor.speedXZ + (CVarGetInteger(CVAR_ENHANCEMENT("FasterBlockPush"), 0) * 0.3) + 0.5f;
+    this->dyna.actor.speedXZ =
+        CLAMP_MAX(this->dyna.actor.speedXZ, 2.0f + (CVarGetInteger(CVAR_ENHANCEMENT("FasterBlockPush"), 0) * 0.5));
     blockStop = Math_StepToF(&sBgPoEventblockPushDist, 20.0f, this->dyna.actor.speedXZ);
     displacement = this->direction * sBgPoEventblockPushDist;
     this->dyna.actor.world.pos.x = (Math_SinS(this->dyna.unk_158) * displacement) + this->dyna.actor.home.pos.x;
     this->dyna.actor.world.pos.z = (Math_CosS(this->dyna.unk_158) * displacement) + this->dyna.actor.home.pos.z;
     if (blockStop) {
-        player->stateFlags2 &= ~0x10;
+        player->stateFlags2 &= ~PLAYER_STATE2_MOVING_DYNAPOLY;
         if ((this->dyna.unk_150 > 0.0f) && (func_800435D8(play, &this->dyna, 0x1E, 0x32, -0x14) == 0)) {
             Audio_PlayActorSound2(&this->dyna.actor, NA_SE_EV_BLOCK_BOUND);
         }
@@ -403,7 +406,7 @@ void BgPoEvent_BlockPush(BgPoEvent* this, PlayState* play) {
         this->dyna.actor.home.pos.z = this->dyna.actor.world.pos.z;
         sBgPoEventblockPushDist = 0.0f;
         this->dyna.actor.speedXZ = 0.0f;
-        this->direction = 5 - ((CVarGetInteger("gFasterBlockPush", 0) * 3) / 5);
+        this->direction = 5 - ((CVarGetInteger(CVAR_ENHANCEMENT("FasterBlockPush"), 0) * 3) / 5);
         sBgPoEventBlocksAtRest++;
         this->actionFunc = BgPoEvent_BlockIdle;
         if (this->type == 1) {
@@ -419,7 +422,7 @@ void BgPoEvent_BlockReset(BgPoEvent* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if (this->dyna.unk_150 != 0.0f) {
-        player->stateFlags2 &= ~0x10;
+        player->stateFlags2 &= ~PLAYER_STATE2_MOVING_DYNAPOLY;
         this->dyna.unk_150 = 0.0f;
     }
     if (Math_StepToF(&this->dyna.actor.world.pos.y, 493.0f, 1.0f) &&
@@ -439,7 +442,7 @@ void BgPoEvent_BlockSolved(BgPoEvent* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if (this->dyna.unk_150 != 0.0f) {
-        player->stateFlags2 &= ~0x10;
+        player->stateFlags2 &= ~PLAYER_STATE2_MOVING_DYNAPOLY;
     }
     if (Math_StepToF(&this->dyna.actor.world.pos.y, 369.0f, 2.0f)) {
         sBgPoEventPuzzleState = 0x20;
@@ -534,11 +537,10 @@ void BgPoEvent_PaintingPresent(BgPoEvent* this, PlayState* play) {
         this->actionFunc = BgPoEvent_PaintingVanish;
     } else if (this->collider.base.acFlags & AC_HIT) {
         if (!BgPoEvent_NextPainting(this)) {
-            Actor_Spawn(&play->actorCtx, play, ACTOR_EN_PO_SISTERS, thisx->world.pos.x,
-                        thisx->world.pos.y - 40.0f, thisx->world.pos.z, 0, thisx->shape.rot.y, 0,
-                        thisx->params + ((this->type - 1) << 8), true);
+            Actor_Spawn(&play->actorCtx, play, ACTOR_EN_PO_SISTERS, thisx->world.pos.x, thisx->world.pos.y - 40.0f,
+                        thisx->world.pos.z, 0, thisx->shape.rot.y, 0, thisx->params + ((this->type - 1) << 8));
             OnePointCutscene_Init(play, 3160, 80, thisx, MAIN_CAM);
-            func_80078884(NA_SE_SY_CORRECT_CHIME);
+            Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
 
         } else {
             Audio_PlayActorSound2(thisx, NA_SE_EN_PO_LAUGH2);
@@ -566,8 +568,7 @@ void BgPoEvent_PaintingBurn(BgPoEvent* this, PlayState* play) {
     sp54.z = Rand_CenteredFloat(50.0f) + this->dyna.actor.world.pos.z;
     if (this->timer >= 0) {
         if (this->type == 2) {
-            EffectSsDeadDb_Spawn(play, &sp54, &sZeroVec, &sZeroVec, 100, 0, 255, 255, 150, 170, 255, 0, 0, 1, 9,
-                                 true);
+            EffectSsDeadDb_Spawn(play, &sp54, &sZeroVec, &sZeroVec, 100, 0, 255, 255, 150, 170, 255, 0, 0, 1, 9, true);
         } else {
             EffectSsDeadDb_Spawn(play, &sp54, &sZeroVec, &sZeroVec, 100, 0, 200, 255, 255, 170, 50, 100, 255, 1, 9,
                                  true);
@@ -616,8 +617,7 @@ void BgPoEvent_Draw(Actor* thisx, PlayState* play) {
         }
         gDPSetEnvColor(POLY_OPA_DISP++, 255, 255, 255, alpha);
     }
-    gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-              G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
     gSPDisplayList(POLY_OPA_DISP++, displayLists[this->type]);
     CLOSE_DISPS(play->state.gfxCtx);
 

@@ -7,10 +7,12 @@
 #include "z_en_ishi.h"
 #include "overlays/effects/ovl_Effect_Ss_Kakera/z_eff_ss_kakera.h"
 #include "objects/gameplay_field_keep/gameplay_field_keep.h"
+#include "soh/OTRGlobals.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 
 #include "vt.h"
 
-#define FLAGS ACTOR_FLAG_ALWAYS_THROWN
+#define FLAGS ACTOR_FLAG_THROW_ONLY
 
 void EnIshi_Init(Actor* thisx, PlayState* play);
 void EnIshi_Destroy(Actor* thisx, PlayState* play);
@@ -210,8 +212,8 @@ void EnIshi_SpawnFragmentsLarge(EnIshi* this, PlayState* play) {
             phi_v0 = 69;
             phi_v1 = -320;
         }
-        EffectSsKakera_Spawn(play, &pos, &velocity, &this->actor.world.pos, phi_v1, phi_v0, 30, 5, 0, scales[i], 5,
-                             2, 70, KAKERA_COLOR_WHITE, OBJECT_GAMEPLAY_FIELD_KEEP, gSilverRockFragmentsDL);
+        EffectSsKakera_Spawn(play, &pos, &velocity, &this->actor.world.pos, phi_v1, phi_v0, 30, 5, 0, scales[i], 5, 2,
+                             70, KAKERA_COLOR_WHITE, OBJECT_GAMEPLAY_FIELD_KEEP, gSilverRockFragmentsDL);
     }
 }
 
@@ -250,7 +252,7 @@ void EnIshi_SpawnDustLarge(EnIshi* this, PlayState* play) {
 void EnIshi_DropCollectible(EnIshi* this, PlayState* play) {
     s16 dropParams;
 
-    if ((this->actor.params & 1) == ROCK_SMALL) {
+    if (GameInteractor_Should(VB_ROCK_DROP_ITEM, (this->actor.params & 1) == ROCK_SMALL, this)) {
         dropParams = (this->actor.params >> 8) & 0xF;
 
         if (dropParams >= 0xD) {
@@ -281,7 +283,7 @@ void EnIshi_SpawnBugs(EnIshi* this, PlayState* play) {
 
     for (i = 0; i < 3; i++) {
         Actor* bug = Actor_Spawn(&play->actorCtx, play, ACTOR_EN_INSECT, this->actor.world.pos.x,
-                                 this->actor.world.pos.y, this->actor.world.pos.z, 0, Rand_ZeroOne() * 0xFFFF, 0, 1, true);
+                                 this->actor.world.pos.y, this->actor.world.pos.z, 0, Rand_ZeroOne() * 0xFFFF, 0, 1);
 
         if (bug == NULL) {
             break;
@@ -334,7 +336,7 @@ void EnIshi_Init(Actor* thisx, PlayState* play) {
     // block child Link from reaching the Fire Temple entrance.
     if (type == ROCK_LARGE && IS_RANDO &&
         Randomizer_GetSettingValue(RSK_SHUFFLE_DUNGEON_ENTRANCES) != RO_DUNGEON_ENTRANCE_SHUFFLE_OFF &&
-        play->sceneNum == 0x061) { // Death Mountain Creater
+        play->sceneNum == SCENE_DEATH_MOUNTAIN_CRATER) { // Death Mountain Creater
         Actor_Kill(&this->actor);
     }
     EnIshi_SetupWait(this);
@@ -379,9 +381,9 @@ void EnIshi_Wait(EnIshi* this, PlayState* play) {
             if (this->actor.xzDistToPlayer < 90.0f) {
                 // GI_NONE in these cases allows the player to lift the actor
                 if (type == ROCK_LARGE) {
-                    func_8002F434(&this->actor, play, GI_NONE, 80.0f, 20.0f);
+                    Actor_OfferGetItem(&this->actor, play, GI_NONE, 80.0f, 20.0f);
                 } else {
-                    func_8002F434(&this->actor, play, GI_NONE, 50.0f, 10.0f);
+                    Actor_OfferGetItem(&this->actor, play, GI_NONE, 50.0f, 10.0f);
                 }
             }
         }
@@ -391,7 +393,7 @@ void EnIshi_Wait(EnIshi* this, PlayState* play) {
 void EnIshi_SetupLiftedUp(EnIshi* this) {
     this->actionFunc = EnIshi_LiftedUp;
     this->actor.room = -1;
-    this->actor.flags |= ACTOR_FLAG_UPDATE_WHILE_CULLED;
+    this->actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
 }
 
 void EnIshi_LiftedUp(EnIshi* this, PlayState* play) {
@@ -403,7 +405,7 @@ void EnIshi_LiftedUp(EnIshi* this, PlayState* play) {
         EnIshi_SetupFly(this);
         EnIshi_Fall(this);
         func_80A7ED94(&this->actor.velocity, D_80A7FA28[this->actor.params & 1]);
-        func_8002D7EC(&this->actor);
+        Actor_UpdatePos(&this->actor);
         Actor_UpdateBgCheckInfo(play, &this->actor, 7.5f, 35.0f, 0.0f, 0xC5);
     }
 }
@@ -470,7 +472,7 @@ void EnIshi_Fly(EnIshi* this, PlayState* play) {
     Math_StepToF(&this->actor.shape.yOffset, 0.0f, 2.0f);
     EnIshi_Fall(this);
     func_80A7ED94(&this->actor.velocity, D_80A7FA28[type]);
-    func_8002D7EC(&this->actor);
+    Actor_UpdatePos(&this->actor);
     this->actor.shape.rot.x += sRockRotSpeedX;
     this->actor.shape.rot.y += sRockRotSpeedY;
     Actor_UpdateBgCheckInfo(play, &this->actor, 7.5f, 35.0f, 0.0f, 0xC5);
@@ -492,8 +494,7 @@ void EnIshi_DrawLarge(EnIshi* this, PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx);
 
     Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-              G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
     gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, 255, 255, 255, 255);
     gSPDisplayList(POLY_OPA_DISP++, gSilverRockDL);
 

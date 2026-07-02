@@ -1,12 +1,10 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
+#include <stdint.h>
 #include <memory>
-#include "Resource.h"
-#include <libultraship/libultra/types.h>
+#include <ship/resource/Resource.h>
 
-namespace LUS {
+namespace SOH {
 
 enum class SceneCommandID : uint8_t {
     SetStartPositionList = 0x00,
@@ -47,10 +45,11 @@ enum class SceneCommandID : uint8_t {
     Error = 0xFF
 };
 
-class ISceneCommand : public IResource {
-public:
+class ISceneCommand : public Ship::IResource {
+  public:
     using IResource::IResource;
-    ISceneCommand() : IResource(std::shared_ptr<ResourceInitData>()) {}
+    ISceneCommand() : IResource(std::shared_ptr<Ship::ResourceInitData>()) {
+    }
     SceneCommandID cmdId;
 };
 
@@ -63,4 +62,4 @@ template <class T> class SceneCommand : public ISceneCommand {
     }
 };
 
-}; // namespace LUS
+}; // namespace SOH

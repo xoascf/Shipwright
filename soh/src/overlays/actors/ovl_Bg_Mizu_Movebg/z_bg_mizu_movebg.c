@@ -1,14 +1,14 @@
 /*
  * File: z_bg_mizu_movebg.c
  * Overlay: ovl_Bg_Mizu_Movebg
- * Description: Kakariko Village Well Water
+ * Description: Water Temple Moving Objects
  */
 
 #include "z_bg_mizu_movebg.h"
 #include "overlays/actors/ovl_Bg_Mizu_Water/z_bg_mizu_water.h"
 #include "objects/object_mizu_objects/object_mizu_objects.h"
 
-#define FLAGS ACTOR_FLAG_UPDATE_WHILE_CULLED
+#define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
 #define MOVEBG_TYPE(params) (((u16)(params) >> 0xC) & 0xF)
 #define MOVEBG_FLAGS(params) ((u16)(params)&0x3F)
@@ -21,9 +21,9 @@ void BgMizuMovebg_Destroy(Actor* thisx, PlayState* play);
 void BgMizuMovebg_Update(Actor* thisx, PlayState* play);
 void BgMizuMovebg_Draw(Actor* thisx, PlayState* play);
 
-void func_8089E318(BgMizuMovebg* this, PlayState* play);
-void func_8089E650(BgMizuMovebg* this, PlayState* play);
-s32 func_8089E108(Path* pathList, Vec3f* pos, s32 pathId, s32 pointId);
+void BgMizuMovebg_UpdateMain(BgMizuMovebg* this, PlayState* play);
+void BgMizuMovebg_UpdateHookshotPlatform(BgMizuMovebg* this, PlayState* play);
+s32 BgMizuMovebg_SetPosFromPath(Path* pathList, Vec3f* pos, s32 pathId, s32 pointId);
 
 const ActorInit Bg_Mizu_Movebg_InitVars = {
     ACTOR_BG_MIZU_MOVEBG,
@@ -64,7 +64,7 @@ static Vec3f D_8089EBAC = { 0.0f, 80.0f, 23.0f };
 
 static u8 D_8089EE40;
 
-s32 func_8089DC30(PlayState* play) {
+s32 BgMizuMovebg_GetDragonStatueBossRoomOffsetIndex(PlayState* play) {
     s32 result;
 
     if (Flags_GetSwitch(play, WATER_TEMPLE_WATER_F1_FLAG)) {
@@ -103,7 +103,7 @@ void BgMizuMovebg_Init(Actor* thisx, PlayState* play) {
             } else {
                 thisx->world.pos.y = temp;
             }
-            ((BgMizuMovebg*)thisx)->actionFunc = func_8089E318;
+            ((BgMizuMovebg*)thisx)->actionFunc = BgMizuMovebg_UpdateMain;
             break;
         case 1:
             temp = waterBoxes[2].ySurface + 15.0f;
@@ -112,7 +112,7 @@ void BgMizuMovebg_Init(Actor* thisx, PlayState* play) {
             } else {
                 thisx->world.pos.y = temp;
             }
-            ((BgMizuMovebg*)thisx)->actionFunc = func_8089E318;
+            ((BgMizuMovebg*)thisx)->actionFunc = BgMizuMovebg_UpdateMain;
             break;
         case 2:
             temp = waterBoxes[2].ySurface + 15.0f;
@@ -121,11 +121,12 @@ void BgMizuMovebg_Init(Actor* thisx, PlayState* play) {
             } else {
                 thisx->world.pos.y = temp;
             }
-            ((BgMizuMovebg*)thisx)->actionFunc = func_8089E318;
+            ((BgMizuMovebg*)thisx)->actionFunc = BgMizuMovebg_UpdateMain;
             break;
         case 3:
-            thisx->world.pos.y = ((BgMizuMovebg*)thisx)->homeY + D_8089EB40[func_8089DC30(play)];
-            ((BgMizuMovebg*)thisx)->actionFunc = func_8089E318;
+            thisx->world.pos.y =
+                ((BgMizuMovebg*)thisx)->homeY + D_8089EB40[BgMizuMovebg_GetDragonStatueBossRoomOffsetIndex(play)];
+            ((BgMizuMovebg*)thisx)->actionFunc = BgMizuMovebg_UpdateMain;
             break;
         case 4:
         case 5:
@@ -135,7 +136,7 @@ void BgMizuMovebg_Init(Actor* thisx, PlayState* play) {
             } else {
                 thisx->world.pos.y = ((BgMizuMovebg*)thisx)->homeY;
             }
-            ((BgMizuMovebg*)thisx)->actionFunc = func_8089E318;
+            ((BgMizuMovebg*)thisx)->actionFunc = BgMizuMovebg_UpdateMain;
             break;
         case 7:
             ((BgMizuMovebg*)thisx)->scrollAlpha1 = 160;
@@ -144,8 +145,9 @@ void BgMizuMovebg_Init(Actor* thisx, PlayState* play) {
             ((BgMizuMovebg*)thisx)->scrollAlpha4 = 160;
             waypointId = MOVEBG_POINT_ID(thisx->params);
             ((BgMizuMovebg*)thisx)->waypointId = waypointId;
-            func_8089E108(play->setupPathList, &thisx->world.pos, MOVEBG_PATH_ID(thisx->params), waypointId);
-            ((BgMizuMovebg*)thisx)->actionFunc = func_8089E650;
+            BgMizuMovebg_SetPosFromPath(play->setupPathList, &thisx->world.pos, MOVEBG_PATH_ID(thisx->params),
+                                        waypointId);
+            ((BgMizuMovebg*)thisx)->actionFunc = BgMizuMovebg_UpdateHookshotPlatform;
             break;
     }
 
@@ -158,10 +160,9 @@ void BgMizuMovebg_Init(Actor* thisx, PlayState* play) {
             Matrix_RotateY(thisx->world.rot.y * (M_PI / 32768), MTXMODE_NEW);
             Matrix_MultVec3f(&D_8089EBA0, &sp48);
 
-            if (Actor_SpawnAsChild(&play->actorCtx, thisx, play, ACTOR_OBJ_HSBLOCK,
-                                   thisx->world.pos.x + sp48.x, thisx->world.pos.y + sp48.y,
-                                   thisx->world.pos.z + sp48.z, thisx->world.rot.x, thisx->world.rot.y,
-                                   thisx->world.rot.z, 2) == NULL) {
+            if (Actor_SpawnAsChild(&play->actorCtx, thisx, play, ACTOR_OBJ_HSBLOCK, thisx->world.pos.x + sp48.x,
+                                   thisx->world.pos.y + sp48.y, thisx->world.pos.z + sp48.z, thisx->world.rot.x,
+                                   thisx->world.rot.y, thisx->world.rot.z, 2) == NULL) {
                 Actor_Kill(thisx);
             }
             break;
@@ -189,7 +190,7 @@ void BgMizuMovebg_Destroy(Actor* thisx, PlayState* play) {
     }
 }
 
-s32 func_8089E108(Path* pathList, Vec3f* pos, s32 pathId, s32 pointId) {
+s32 BgMizuMovebg_SetPosFromPath(Path* pathList, Vec3f* pos, s32 pathId, s32 pointId) {
     Path* path = pathList;
     Vec3s* point;
 
@@ -203,7 +204,7 @@ s32 func_8089E108(Path* pathList, Vec3f* pos, s32 pathId, s32 pointId) {
     return 0;
 }
 
-void func_8089E198(BgMizuMovebg* this, PlayState* play) {
+void BgMizuMovebg_SetScrollAlphas(BgMizuMovebg* this, PlayState* play) {
     f32 waterLevel = play->colCtx.colHeader->waterBoxes[2].ySurface;
 
     if (waterLevel < WATER_TEMPLE_WATER_F1_Y) {
@@ -236,13 +237,13 @@ void func_8089E198(BgMizuMovebg* this, PlayState* play) {
     this->scrollAlpha4 = this->scrollAlpha3;
 }
 
-void func_8089E318(BgMizuMovebg* this, PlayState* play) {
+void BgMizuMovebg_UpdateMain(BgMizuMovebg* this, PlayState* play) {
     WaterBox* waterBoxes = play->colCtx.colHeader->waterBoxes;
     f32 phi_f0;
     s32 type;
     Vec3f sp28;
 
-    func_8089E198(this, play);
+    BgMizuMovebg_SetScrollAlphas(this, play);
 
     type = MOVEBG_TYPE(this->dyna.actor.params);
     switch (type) {
@@ -264,7 +265,7 @@ void func_8089E318(BgMizuMovebg* this, PlayState* play) {
             }
             break;
         case 3:
-            phi_f0 = this->homeY + D_8089EB40[func_8089DC30(play)];
+            phi_f0 = this->homeY + D_8089EB40[BgMizuMovebg_GetDragonStatueBossRoomOffsetIndex(play)];
             if (!Math_StepToF(&this->dyna.actor.world.pos.y, phi_f0, 1.0f)) {
                 if (!(D_8089EE40 & 2) && MOVEBG_SPEED(this->dyna.actor.params) != 0) {
                     D_8089EE40 |= 2;
@@ -311,13 +312,13 @@ void func_8089E318(BgMizuMovebg* this, PlayState* play) {
                 this->dyna.actor.child->world.pos.x = this->dyna.actor.world.pos.x + sp28.x;
                 this->dyna.actor.child->world.pos.y = this->dyna.actor.world.pos.y + sp28.y;
                 this->dyna.actor.child->world.pos.z = this->dyna.actor.world.pos.z + sp28.z;
-                this->dyna.actor.child->flags &= ~ACTOR_FLAG_TARGETABLE;
+                this->dyna.actor.child->flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
             }
             break;
     }
 }
 
-void func_8089E650(BgMizuMovebg* this, PlayState* play) {
+void BgMizuMovebg_UpdateHookshotPlatform(BgMizuMovebg* this, PlayState* play) {
     Vec3f waypoint;
     f32 dist;
     f32 dx;
@@ -325,13 +326,14 @@ void func_8089E650(BgMizuMovebg* this, PlayState* play) {
     f32 dz;
 
     this->dyna.actor.speedXZ = MOVEBG_SPEED(this->dyna.actor.params) * 0.1f;
-    func_8089E108(play->setupPathList, &waypoint, MOVEBG_PATH_ID(this->dyna.actor.params), this->waypointId);
+    BgMizuMovebg_SetPosFromPath(play->setupPathList, &waypoint, MOVEBG_PATH_ID(this->dyna.actor.params),
+                                this->waypointId);
     dist = Actor_WorldDistXYZToPoint(&this->dyna.actor, &waypoint);
     if (dist < this->dyna.actor.speedXZ) {
         this->dyna.actor.speedXZ = dist;
     }
     func_80035844(&this->dyna.actor.world.pos, &waypoint, &this->dyna.actor.world.rot, 1);
-    func_8002D97C(&this->dyna.actor);
+    Actor_MoveXYZ(&this->dyna.actor);
     dx = waypoint.x - this->dyna.actor.world.pos.x;
     dy = waypoint.y - this->dyna.actor.world.pos.y;
     dz = waypoint.z - this->dyna.actor.world.pos.z;
@@ -339,8 +341,8 @@ void func_8089E650(BgMizuMovebg* this, PlayState* play) {
         this->waypointId++;
         if (this->waypointId >= play->setupPathList[MOVEBG_PATH_ID(this->dyna.actor.params)].count) {
             this->waypointId = 0;
-            func_8089E108(play->setupPathList, &this->dyna.actor.world.pos,
-                          MOVEBG_PATH_ID(this->dyna.actor.params), 0);
+            BgMizuMovebg_SetPosFromPath(play->setupPathList, &this->dyna.actor.world.pos,
+                                        MOVEBG_PATH_ID(this->dyna.actor.params), 0);
         }
     }
     if (!(D_8089EE40 & 1) && MOVEBG_SPEED(this->dyna.actor.params) != 0) {
@@ -369,23 +371,22 @@ void BgMizuMovebg_Draw(Actor* thisx, PlayState* play2) {
     Gfx_SetupDL_25Opa(play->state.gfxCtx);
 
     gSPSegment(POLY_OPA_DISP++, 0x08,
-               Gfx_TwoTexScrollEnvColor(play->state.gfxCtx, 0, frames * 1, 0, 32, 32, 1, 0, 0, 32, 32, 0, 0, 0,
-                                        this->scrollAlpha1));
+               Gfx_TwoTexScrollEnvColorEx(play->state.gfxCtx, 0, frames * 1, 0, 32, 32, 1, 0, 0, 32, 32, 0, 0, 0,
+                                          this->scrollAlpha1, 1, 0, 0, 0));
 
     gSPSegment(POLY_OPA_DISP++, 0x09,
-               Gfx_TwoTexScrollEnvColor(play->state.gfxCtx, 0, frames * 1, 0, 32, 32, 1, 0, 0, 32, 32, 0, 0, 0,
-                                        this->scrollAlpha2));
+               Gfx_TwoTexScrollEnvColorEx(play->state.gfxCtx, 0, frames * 1, 0, 32, 32, 1, 0, 0, 32, 32, 0, 0, 0,
+                                          this->scrollAlpha2, 1, 0, 0, 0));
 
     gSPSegment(POLY_OPA_DISP++, 0x0A,
-               Gfx_TwoTexScrollEnvColor(play->state.gfxCtx, 0, frames * 1, 0, 32, 32, 1, 0, 0, 32, 32, 0, 0, 0,
-                                        this->scrollAlpha3));
+               Gfx_TwoTexScrollEnvColorEx(play->state.gfxCtx, 0, frames * 1, 0, 32, 32, 1, 0, 0, 32, 32, 0, 0, 0,
+                                          this->scrollAlpha3, 1, 0, 0, 0));
 
     gSPSegment(POLY_OPA_DISP++, 0x0B,
-               Gfx_TwoTexScrollEnvColor(play->state.gfxCtx, 0, frames * 3, 0, 32, 32, 1, 0, 0, 32, 32, 0, 0, 0,
-                                        this->scrollAlpha4));
+               Gfx_TwoTexScrollEnvColorEx(play->state.gfxCtx, 0, frames * 3, 0, 32, 32, 1, 0, 0, 32, 32, 0, 0, 0,
+                                          this->scrollAlpha4, 3, 0, 0, 0));
 
-    gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-              G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 
     if (this->dlist != NULL) {
         gSPDisplayList(POLY_OPA_DISP++, this->dlist);

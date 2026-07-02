@@ -8,7 +8,7 @@
 #include "vt.h"
 #include "objects/object_fhg/object_fhg.h"
 
-#define FLAGS ACTOR_FLAG_UPDATE_WHILE_CULLED
+#define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
 typedef enum {
     /* 0x00 */ EXT_WAIT,
@@ -45,12 +45,12 @@ void DemoExt_Init(Actor* thisx, PlayState* play) {
 
 void DemoExt_PlayVortexSFX(DemoExt* this) {
     if (this->alphaTimer <= (kREG(35) + 40.0f) - 15.0f) {
-        Audio_PlaySoundGeneral(NA_SE_EV_FANTOM_WARP_L - SFX_FLAG, &this->actor.projectedPos, 4, &D_801333E0,
-                               &D_801333E0, &D_801333E8);
+        Audio_PlaySoundGeneral(NA_SE_EV_FANTOM_WARP_L - SFX_FLAG, &this->actor.projectedPos, 4,
+                               &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
     }
 }
 
-CsCmdActorAction* DemoExt_GetNpcAction(PlayState* play, s32 npcActionIndex) {
+CsCmdActorCue* DemoExt_GetNpcAction(PlayState* play, s32 npcActionIndex) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         return play->csCtx.npcActions[npcActionIndex];
     }
@@ -63,7 +63,7 @@ void DemoExt_SetupWait(DemoExt* this) {
 }
 
 void DemoExt_SetupMaintainVortex(DemoExt* this, PlayState* play) {
-    CsCmdActorAction* npcAction = DemoExt_GetNpcAction(play, 5);
+    CsCmdActorCue* npcAction = DemoExt_GetNpcAction(play, 5);
 
     if (npcAction != NULL) {
         this->actor.world.pos.x = npcAction->startPos.x;
@@ -88,7 +88,7 @@ void DemoExt_FinishClosing(DemoExt* this) {
 }
 
 void DemoExt_CheckCsMode(DemoExt* this, PlayState* play) {
-    CsCmdActorAction* csCmdNPCAction = DemoExt_GetNpcAction(play, 5);
+    CsCmdActorCue* csCmdNPCAction = DemoExt_GetNpcAction(play, 5);
     s32 csAction;
     s32 previousCsAction;
 
@@ -205,9 +205,9 @@ void DemoExt_DrawVortex(Actor* thisx, PlayState* play) {
     gDPSetEnvColor(POLY_XLU_DISP++, kREG(29) + 90, kREG(30) + 50, kREG(31) + 95, this->envAlpha);
 
     curScroll = this->curScroll;
-    gSPSegment(
-        POLY_XLU_DISP++, 0x08,
-        Gfx_TwoTexScroll(gfxCtx, 0, curScroll[0], curScroll[1], 0x40, 0x40, 1, curScroll[2], curScroll[3], 0x40, 0x40));
+    gSPSegment(POLY_XLU_DISP++, 0x08,
+               Gfx_TwoTexScrollEx(gfxCtx, 0, curScroll[0], curScroll[1], 0x40, 0x40, 1, curScroll[2], curScroll[3],
+                                  0x40, 0x40, 25, 40, 5, 30));
 
     gSPMatrix(POLY_XLU_DISP++, mtx, G_MTX_PUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
     gSPDisplayList(POLY_XLU_DISP++, gPhantomWarpDL);

@@ -5,8 +5,9 @@
  */
 
 #include "z_magic_wind.h"
+#include "soh/ResourceManagerHelpers.h"
 
-#define FLAGS (ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_NO_FREEZE_OCARINA)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_UPDATE_DURING_OCARINA)
 
 void MagicWind_Init(Actor* thisx, PlayState* play);
 void MagicWind_Destroy(Actor* thisx, PlayState* play);
@@ -134,8 +135,7 @@ void MagicWind_Shrink(MagicWind* this, PlayState* play) {
 
 void MagicWind_Update(Actor* thisx, PlayState* play) {
     MagicWind* this = (MagicWind*)thisx;
-    if (play->msgCtx.msgMode == MSGMODE_OCARINA_CORRECT_PLAYBACK ||
-        play->msgCtx.msgMode == MSGMODE_SONG_PLAYED) {
+    if (play->msgCtx.msgMode == MSGMODE_OCARINA_CORRECT_PLAYBACK || play->msgCtx.msgMode == MSGMODE_SONG_PLAYED) {
         Actor_Kill(thisx);
         return;
     }
@@ -150,17 +150,17 @@ s32 MagicWind_OverrideLimbDraw(PlayState* play, SkelAnimeCurve* skelCurve, s32 l
 
     if (limbIndex == 1) {
         gSPSegment(POLY_XLU_DISP++, 8,
-                   Gfx_TwoTexScroll(play->state.gfxCtx, 0, (play->state.frames * 9) & 0xFF,
-                                    0xFF - ((play->state.frames * 0xF) & 0xFF), 0x40, 0x40, 1,
-                                    (play->state.frames * 0xF) & 0xFF,
-                                    0xFF - ((play->state.frames * 0x1E) & 0xFF), 0x40, 0x40));
+                   Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, (play->state.frames * 9) & 0xFF,
+                                      0xFF - ((play->state.frames * 0xF) & 0xFF), 0x40, 0x40, 1,
+                                      (play->state.frames * 0xF) & 0xFF, 0xFF - ((play->state.frames * 0x1E) & 0xFF),
+                                      0x40, 0x40, 9, -0xF, 0xF, -0x1E));
 
     } else if (limbIndex == 2) {
         gSPSegment(POLY_XLU_DISP++, 9,
-                   Gfx_TwoTexScroll(play->state.gfxCtx, 0, (play->state.frames * 3) & 0xFF,
-                                    0xFF - ((play->state.frames * 5) & 0xFF), 0x40, 0x40, 1,
-                                    (play->state.frames * 6) & 0xFF,
-                                    0xFF - ((play->state.frames * 0xA) & 0xFF), 0x40, 0x40));
+                   Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, (play->state.frames * 3) & 0xFF,
+                                      0xFF - ((play->state.frames * 5) & 0xFF), 0x40, 0x40, 1,
+                                      (play->state.frames * 6) & 0xFF, 0xFF - ((play->state.frames * 0xA) & 0xFF), 0x40,
+                                      0x40, 3, -5, 6, -0xA));
     }
 
     CLOSE_DISPS(play->state.gfxCtx);

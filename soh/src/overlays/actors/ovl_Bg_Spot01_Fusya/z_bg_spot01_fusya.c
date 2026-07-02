@@ -7,7 +7,7 @@
 #include "z_bg_spot01_fusya.h"
 #include "objects/object_spot01_objects/object_spot01_objects.h"
 
-#define FLAGS ACTOR_FLAG_UPDATE_WHILE_CULLED
+#define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
 void BgSpot01Fusya_Init(Actor* thisx, PlayState* play);
 void BgSpot01Fusya_Destroy(Actor* thisx, PlayState* play);
@@ -60,8 +60,8 @@ void func_808AAA50(BgSpot01Fusya* this, PlayState* play) {
     f32 temp;
     Actor* thisx = &this->actor;
 
-    if (CVarGetInteger("gCosmetics.Kak_Windmill_Speed.Changed", 0)) {
-        this->unk_158 = CVarGetFloat("gCosmetics.Kak_Windmill_Speed.Value", 100.0f);
+    if (CVarGetInteger(CVAR_COSMETIC("Kak.Windmill_Speed.Changed"), 0)) {
+        this->unk_158 = CVarGetFloat(CVAR_COSMETIC("Kak.Windmill_Speed.Value"), 100.0f);
     } else {
         this->unk_158 = 100.0f;
     }
@@ -86,8 +86,7 @@ void BgSpot01Fusya_Draw(Actor* thisx, PlayState* play) {
 
     Gfx_SetupDL_25Opa(play->state.gfxCtx);
 
-    gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-              G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
     gSPDisplayList(POLY_OPA_DISP++, gKakarikoWindmillSailsDL);
 
     CLOSE_DISPS(play->state.gfxCtx);

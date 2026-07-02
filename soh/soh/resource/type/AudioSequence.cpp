@@ -1,6 +1,6 @@
 #include "AudioSequence.h"
 
-namespace LUS {
+namespace SOH {
 
 Sequence* AudioSequence::GetPointer() {
     return &sequence;
@@ -9,4 +9,10 @@ Sequence* AudioSequence::GetPointer() {
 size_t AudioSequence::GetPointerSize() {
     return sizeof(Sequence);
 }
-} // namespace LUS
+
+AudioSequence::~AudioSequence() {
+    delete[] sequence.seqData;
+    sequence.seqData = nullptr;
+}
+
+} // namespace SOH

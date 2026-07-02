@@ -1,13 +1,11 @@
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
 #include <vector>
-#include <memory>
-#include "Resource.h"
 #include "SceneCommand.h"
 #include <libultraship/libultra/types.h>
 
-namespace LUS {
+namespace SOH {
 class SetExitList : public SceneCommand<uint16_t> {
   public:
     using SceneCommand::SceneCommand;
@@ -19,4 +17,4 @@ class SetExitList : public SceneCommand<uint16_t> {
 
     std::vector<uint16_t> exits;
 };
-}; // namespace LUS
+}; // namespace SOH
