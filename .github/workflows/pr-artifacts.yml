@@ -18,11 +18,12 @@ jobs:
           script: |
             const {owner, repo} = context.repo;
             const pullHeadSHA = '${{github.event.workflow_run.head_sha}}';
+            const headRepoFullName = '${{github.event.workflow_run.head_repository.full_name}}';
             const prNumber = await (async () => {
               const pulls = await github.rest.pulls.list({owner, repo});
               for await (const {data} of github.paginate.iterator(pulls)) {
                 for (const pull of data) {
-                  if (pull.head.sha === pullHeadSHA) {
+                  if (pull.head.sha === pullHeadSHA && pull.head.repo.full_name === headRepoFullName) {
                     return pull.number;
                   }
                 }
