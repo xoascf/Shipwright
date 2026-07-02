@@ -45,10 +45,12 @@ extern "C"
 	extern OSViContext* __osViNext;
 	extern OSViMode osViModeFpalLan1;
 	extern u32 __additional_scanline;
-	extern u8 gBuildVersion[];
+	extern const char gBuildVersion[];
 	extern u16 gBuildVersionMajor;
 	extern u16 gBuildVersionMinor;
 	extern u16 gBuildVersionPatch;
+	extern const char gGitBranch[];
+	extern const char gGitCommitHash[];
     extern u8 gBuildTeam[];
 	extern u8 gBuildDate[];
 	extern u8 gBuildMakeOption[];
@@ -224,7 +226,7 @@ extern "C"
 	extern u16 gAudioSfxSwapSource[10];
 	extern u16 gAudioSfxSwapTarget[10];
 	extern u8 gAudioSfxSwapMode[10];
-	extern unk_D_8016E750 D_8016E750[4];
+	extern ActiveSequence gActiveSeqs[4];
 	extern AudioContext gAudioContext;
 	extern void(*D_801755D0)(void);
 
