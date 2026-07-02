@@ -9,7 +9,7 @@ on:
 jobs:
   pr-artifacts:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.event == 'pull_request' }}
+    if: ${{ github.event.workflow_run.event == 'pull_request' || (github.event.workflow_run.pull_requests && github.event.workflow_run.pull_requests[0] != null) }}
     steps:
       - id: 'pr-number'
         uses: actions/github-script@v9
@@ -18,13 +18,13 @@ jobs:
           script: |
             const {owner, repo} = context.repo;
             const pullHeadSHA = '${{github.event.workflow_run.head_sha}}';
-            const pullUserId = ${{github.event.sender.id}};
+            const headRepoFullName = '${{github.event.workflow_run.head_repository.full_name}}';
             const prNumber = await (async () => {
               for await (const { data } of github.paginate.iterator(
                 github.rest.pulls.list, { owner, repo }
               )) {
                 for (const pull of data) {
-                  if (pull.head.sha === pullHeadSHA && pull.user.id === pullUserId) {
+                  if (pull.head.sha === pullHeadSHA && pull.head.repo && pull.head.repo.full_name === headRepoFullName) {
                     return pull.number;
                   }
                 }

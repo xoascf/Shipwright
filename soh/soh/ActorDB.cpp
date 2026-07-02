@@ -4,6 +4,7 @@
 
 ActorDB* ActorDB::Instance;
 
+
 #define DEFINE_ACTOR(name, _1, _2) extern "C" ActorInit name##_InitVars;
 #define DEFINE_ACTOR_INTERNAL(name, _1, _2) extern "C" ActorInit name##_InitVars;
 #define DEFINE_ACTOR_UNSET(_0)
@@ -15,7 +16,7 @@ ActorDB* ActorDB::Instance;
 #undef DEFINE_ACTOR_UNSET
 
 struct AddPair {
-    const char* name;
+    std::string name;
     ActorInit& init;
 };
 
@@ -23,7 +24,7 @@ struct AddPair {
 #define DEFINE_ACTOR(name, _1, allocType) { #name, name##_InitVars },
 #define DEFINE_ACTOR_UNSET(_0)
 
-static constexpr AddPair initialActorTable[] = {
+static const std::vector<AddPair> initialActorTable = {
 #include "tables/actor_table.h"
 };
 
@@ -32,7 +33,7 @@ static constexpr AddPair initialActorTable[] = {
 #undef DEFINE_ACTOR
 
 // https://wiki.cloudmodding.com/oot/Actor_List_(Variables)
-static constexpr std::pair<u16, const char*> actorDescriptionData[] = {
+static std::unordered_map<u16, const char*> actorDescriptions = {
     { ACTOR_PLAYER, "Link" },
     { ACTOR_EN_TEST, "Stalfos" },
     { ACTOR_EN_GIRLA, "Shop Items" },
@@ -73,7 +74,7 @@ static constexpr std::pair<u16, const char*> actorDescriptionData[] = {
     { ACTOR_EN_BUBBLE, "Shabom" },
     { ACTOR_DOOR_SHUTTER, "Shutter Door" },
     { ACTOR_EN_DODOJR, "Baby Dodongo" },
-    { ACTOR_EN_BDFIRE, "King Dodongo's Fire Breath" },
+    { ACTOR_EN_BDFIRE, "Empty" },
     { ACTOR_EN_BOOM, "Boomerang" },
     { ACTOR_EN_TORCH2, "Dark Link" },
     { ACTOR_EN_BILI, "Biri" },
@@ -131,7 +132,7 @@ static constexpr std::pair<u16, const char*> actorDescriptionData[] = {
     { ACTOR_BG_TOKI_HIKARI, "Windows (Temple of Time)" },
     { ACTOR_EN_YUKABYUN, "Flying Floor Tile" },
     { ACTOR_BG_TOKI_SWD, "Master Sword" },
-    { ACTOR_EN_FHG_FIRE, "Phantom Ganon's Lighting Attack" },
+    { ACTOR_EN_FHG_FIRE, "Empty" },
     { ACTOR_BG_MJIN, "Warp Song Pad" },
     { ACTOR_BG_HIDAN_KOUSI, "Sliding Metal Gate" },
     { ACTOR_DOOR_TOKI, "Door of Time Collision" },
@@ -452,7 +453,7 @@ static constexpr std::pair<u16, const char*> actorDescriptionData[] = {
     { ACTOR_EN_KAKASI3, "Bonooru the Scarecrow" },
     { ACTOR_OCEFF_WIPE4, "Scarecrow's Song Ocarina Effect" },
     { ACTOR_EN_EG, "Void-out Trigger (Tower Collapse)" },
-    { ACTOR_BG_MENKURI_NISEKABE, "False Stone Walls (Gerudo Training Ground)" },
+    { ACTOR_BG_MENKURI_NISEKABE, "False Stone Walls (Gerudo Training Grounds)" },
     { ACTOR_EN_ZO, "Zora" },
     { ACTOR_OBJ_MAKEKINSUTA, "Skulltula Sprouting from Bean Spot" },
     { ACTOR_EN_GE3, "Gerudo Fortress Leader" },
@@ -462,9 +463,12 @@ static constexpr std::pair<u16, const char*> actorDescriptionData[] = {
     { ACTOR_EN_MM2, "Running Man (Adult Era)" },
     { ACTOR_BG_JYA_BLOCK, "Silver Block (Child Era)" },
     { ACTOR_OBJ_WARP2BLOCK, "Navi Infospot (Green, Time Block)" },
+        //CUSTOM
+    { ACTOR_EN_GLIDER, "Glider" },
+    { ACTOR_LANTERN_FIRE, "Lantern Fire" },
+    { ACTOR_WIND_ZONE, "Wind Zone" },
+    { ACTOR_CUSTOM_PROJECTILE, "Custom Projectile" },
 };
-static std::unordered_map<u16, const char*> actorDescriptions =
-    std::unordered_map<u16, const char*>(std::begin(actorDescriptionData), std::end(actorDescriptionData));
 
 ActorDB::ActorDB() {
     db.reserve(ACTOR_NUMBER_MAX); // reserve size for all initial entries so we don't do it for each
@@ -475,14 +479,13 @@ ActorDB::ActorDB() {
 
 // Adds an actor at the given index. The name must be unique.
 ActorDB::Entry& ActorDB::AddEntry(const std::string& name, const std::string& desc, size_t index) {
-    assert(!nameTable.contains(name)); // TODO this should maybe throw instead. We'll need to think about error handling
-                                       // for mods that try to declare the same actor.
+    assert(!nameTable.contains(name)); // TODO this should maybe throw instead. We'll need to think about error handling for mods that try to declare the same actor.
 
     if (db.size() < (index + 1)) {
         db.resize(index + 1);
     }
     Entry& newEntry = db.at(index);
-    newEntry.entry.id = static_cast<s32>(index);
+    newEntry.entry.id = index;
 
     assert(!newEntry.entry.valid);
 
@@ -514,8 +517,7 @@ ActorDB::Entry& ActorDB::AddEntry(const std::string& name, const std::string& de
     return entry;
 }
 
-// Adds an actor with the new ActorDBInit struct. The id assigned to the actor is dynamic. Use the return Entry or
-// RetrieveId to get it.
+// Adds an actor with the new ActorDBInit struct. The id assigned to the actor is dynamic. Use the return Entry or RetrieveId to get it.
 ActorDB::Entry& ActorDB::AddEntry(const ActorDBInit& init) {
     Entry& entry = AddEntry(init.name, init.desc, nextFreeId);
 
@@ -549,10 +551,6 @@ int ActorDB::RetrieveId(const std::string& name) {
     }
 
     return entry->second;
-}
-
-int ActorDB::GetEntryCount() {
-    return static_cast<int>(db.size());
 }
 
 ActorDB::Entry::Entry() {
@@ -600,8 +598,7 @@ static ActorDBInit EnPartnerInit = {
     "En_Partner",
     "Ivan",
     ACTORCAT_ITEMACTION,
-    (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED | ACTOR_FLAG_HOOKSHOT_PULLS_PLAYER |
-     ACTOR_FLAG_CAN_PRESS_SWITCHES),
+    (ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED | ACTOR_FLAG_DRAGGED_BY_HOOKSHOT | ACTOR_FLAG_CAN_PRESS_SWITCH),
     OBJECT_GAMEPLAY_KEEP,
     sizeof(EnPartner),
     (ActorFunc)EnPartner_Init,

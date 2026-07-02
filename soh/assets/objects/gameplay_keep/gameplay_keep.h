@@ -21,9 +21,6 @@ static const ALIGN_ASSET(2) char gHilite1Tex[] = dgHilite1Tex;
 #define dgHilite2Tex "__OTR__objects/gameplay_keep/gHilite2Tex"
 static const ALIGN_ASSET(2) char gHilite2Tex[] = dgHilite2Tex;
 
-#define dgHilite2Tex_Overflow "__OTR__objects/gameplay_keep/gHilite2Tex_Overflow"
-static const ALIGN_ASSET(2) char gHilite2Tex_Overflow[] = dgHilite2Tex_Overflow;
-
 #define dgHylianShieldDesignTex "__OTR__objects/gameplay_keep/gHylianShieldDesignTex"
 static const ALIGN_ASSET(2) char gHylianShieldDesignTex[] = dgHylianShieldDesignTex;
 
@@ -2850,61 +2847,37 @@ static const ALIGN_ASSET(2) char gFishSkelLimbsLimb_018FB0DL_018950[] = dgFishSk
 #define dgFishSkelLimbsLimb_018FBCDL_0188B0 "__OTR__objects/gameplay_keep/gFishSkelLimbsLimb_018FBCDL_0188B0"
 static const ALIGN_ASSET(2) char gFishSkelLimbsLimb_018FBCDL_0188B0[] = dgFishSkelLimbsLimb_018FBCDL_0188B0;
 
-// #region NTSC
+//CUSTOM
 
-#define dgameplay_keep_DL_0C8B0 "__OTR__objects/gameplay_keep/gameplay_keep_DL_0C8B0"
-static const ALIGN_ASSET(2) char gameplay_keep_DL_0C8B0[] = dgameplay_keep_DL_0C8B0;
+#define dgGliderDL "__OTR__customitems/glider/gGliderDL" 
+static const ALIGN_ASSET(2) char gGliderDL[] = dgGliderDL;
 
-#define dgameplay_keep_Tex_0CE60 "__OTR__objects/gameplay_keep/gameplay_keep_Tex_0CE60"
-static const ALIGN_ASSET(2) char gameplay_keep_Tex_0CE60[] = dgameplay_keep_Tex_0CE60;
+#define dgLanternDL "__OTR__customitems/lantern/gLanternDL"
+static const ALIGN_ASSET(2) char gLanternDL[] = dgLanternDL;
 
-#define dgameplay_keep_DL_39890 "__OTR__objects/gameplay_keep/gameplay_keep_DL_39890"
-static const ALIGN_ASSET(2) char gameplay_keep_DL_39890[] = dgameplay_keep_DL_39890;
+#define dgFoxMaskDL "__OTR__customitems/foxmask/mask/gFoxMaskDL"
+static const ALIGN_ASSET(2) char gFoxMaskDL[] = dgFoxMaskDL;
 
-#define dgameplay_keep_DL_399B0 "__OTR__objects/gameplay_keep/gameplay_keep_DL_399B0"
-static const ALIGN_ASSET(2) char gameplay_keep_DL_399B0[] = dgameplay_keep_DL_399B0;
+#define dgFoxTailDL "__OTR__customitems/foxmask/tail/gFoxTailDL"
+static const ALIGN_ASSET(2) char gFoxTailDL[] = dgFoxTailDL;
 
-#define dgameplay_keep_DL_39A80 "__OTR__objects/gameplay_keep/gameplay_keep_DL_39A80"
-static const ALIGN_ASSET(2) char gameplay_keep_DL_39A80[] = dgameplay_keep_DL_39A80;
+#define dgReflectorDL "__OTR__customitems/foxmask/reflector/gReflectorDL"
+static const ALIGN_ASSET(2) char gReflectorDL[] = dgReflectorDL;
 
-#define dgameplay_keep_DL_39B50 "__OTR__objects/gameplay_keep/gameplay_keep_DL_39B50"
-static const ALIGN_ASSET(2) char gameplay_keep_DL_39B50[] = dgameplay_keep_DL_39B50;
+#define dgArmcannonChildDL "__OTR__customitems/armcannon/child/gArmcannonChildDL"
+static const ALIGN_ASSET(2) char gArmcannonChildDL[] = dgArmcannonChildDL;
 
-#define dgameplay_keep_DL_3CFD0 "__OTR__objects/gameplay_keep/gameplay_keep_DL_3CFD0"
-static const ALIGN_ASSET(2) char gameplay_keep_DL_3CFD0[] = dgameplay_keep_DL_3CFD0;
+#define dgArmcannonAdultDL "__OTR__customitems/armcannon/adult/gArmcannonAdultDL"
+static const ALIGN_ASSET(2) char gArmcannonAdultDL[] = dgArmcannonAdultDL;
 
-#define dgameplay_keep_DL_3D108 "__OTR__objects/gameplay_keep/gameplay_keep_DL_3D108"
-static const ALIGN_ASSET(2) char gameplay_keep_DL_3D108[] = dgameplay_keep_DL_3D108;
+#define dgUltrahandChildDL "__OTR__customitems/ultrahand/child/gUltrahandChildDL" 
+static const ALIGN_ASSET(2) char gUltrahandChildDL[] = dgUltrahandChildDL;
 
-#define dgameplay_keep_DL_3D260 "__OTR__objects/gameplay_keep/gameplay_keep_DL_3D260"
-static const ALIGN_ASSET(2) char gameplay_keep_DL_3D260[] = dgameplay_keep_DL_3D260;
+#define dgUltrahandAdultDL "__OTR__customitems/ultrahand/adult/gUltrahandAdultDL" 
+static const ALIGN_ASSET(2) char gUltrahandAdultDL[] = dgUltrahandAdultDL;
 
-#define dgUnusedDropBombchuTex "__OTR__objects/gameplay_keep/gUnusedDropBombchuTex"
-static const ALIGN_ASSET(2) char gUnusedDropBombchuTex[] = dgUnusedDropBombchuTex;
-
-#define dgUnusedWalletTex "__OTR__objects/gameplay_keep/gUnusedWalletTex"
-static const ALIGN_ASSET(2) char gUnusedWalletTex[] = dgUnusedWalletTex;
-
-#define dgUnusedHeartPieceTex "__OTR__objects/gameplay_keep/gUnusedHeartPieceTex"
-static const ALIGN_ASSET(2) char gUnusedHeartPieceTex[] = dgUnusedHeartPieceTex;
-
-#define dgUnusedDropRecoveryHeartTex "__OTR__objects/gameplay_keep/gUnusedDropRecoveryHeartTex"
-static const ALIGN_ASSET(2) char gUnusedDropRecoveryHeartTex[] = dgUnusedDropRecoveryHeartTex;
-
-#define dgUnusedDropBombTex "__OTR__objects/gameplay_keep/gUnusedDropBombTex"
-static const ALIGN_ASSET(2) char gUnusedDropBombTex[] = dgUnusedDropBombTex;
-
-#define dgUnusedDropArrows1Tex "__OTR__objects/gameplay_keep/gUnusedDropArrows1Tex"
-static const ALIGN_ASSET(2) char gUnusedDropArrows1Tex[] = dgUnusedDropArrows1Tex;
-
-#define dgUnusedRupeeLightBlueTex "__OTR__objects/gameplay_keep/gUnusedRupeeLightBlueTex"
-static const ALIGN_ASSET(2) char gUnusedRupeeLightBlueTex[] = dgUnusedRupeeLightBlueTex;
-
-#define dgUnusedHeartContainerTex "__OTR__objects/gameplay_keep/gUnusedHeartContainerTex"
-static const ALIGN_ASSET(2) char gUnusedHeartContainerTex[] = dgUnusedHeartContainerTex;
-
-#define dgUnusedTreeBarkTex "__OTR__objects/gameplay_keep/gUnusedTreeBarkTex"
-static const ALIGN_ASSET(2) char gUnusedTreeBarkTex[] = dgUnusedTreeBarkTex;
+#define dgUltrahandProjectileDL "__OTR__customitems/ultrahand/projectile/gUltrahandProjectileDL"
+static const ALIGN_ASSET(2) char gUltrahandProjectileDL[] = dgUltrahandProjectileDL;
 
 
 

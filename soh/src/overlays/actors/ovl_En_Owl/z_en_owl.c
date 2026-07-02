@@ -10,10 +10,16 @@
 #include "scenes/overworld/spot16/spot16_scene.h"
 #include "vt.h"
 #include <assert.h>
-#include "soh/ResourceManagerHelpers.h"
-#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 
-#define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_CULLING_DISABLED)
+#define FLAGS (ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_WHILE_CULLED)
+
+typedef enum {
+    VISUALSTATE_RED,         // main/eye: red
+    VISUALSTATE_DEFAULT,     // main: greenish cyan, blinks with dark gray every 16 frames; eye: white
+    VISUALSTATE_DEFEATED,    // main/eye: dark gray
+    VISUALSTATE_STUNNED = 4, // main: greenish cyan, alternates with blue; eye: greenish cyan
+    VISUALSTATE_HIT          // main: greenish cyan, alternates with red; eye: greenish cyan
+} OwlVisualState;
 
 void EnOwl_Init(Actor* thisx, PlayState* play);
 void EnOwl_Destroy(Actor* thisx, PlayState* play);
@@ -44,9 +50,13 @@ void func_80ACAF74(EnOwl* this, PlayState* play);
 void func_80ACC30C(EnOwl* this, PlayState* play);
 void func_80ACB4FC(EnOwl* this, PlayState* play);
 void func_80ACB680(EnOwl* this, PlayState* play);
-void func_80ACA62C(EnOwl* this, PlayState* play);
 void func_80ACC460(EnOwl* this);
 void func_80ACBEA0(EnOwl*, PlayState*);
+
+void EnOwl_SetupDefeated(EnOwl* this, PlayState* play);
+void EnOwl_Defeated(EnOwl* this, PlayState* play);
+
+int dieNext;
 
 typedef enum {
     /* 0x00 */ OWL_DEFAULT,
@@ -82,11 +92,12 @@ const ActorInit En_Owl_InitVars = {
     NULL,
 };
 
+
 static ColliderCylinderInit sOwlCylinderInit = {
     {
         COLTYPE_NONE,
-        AT_NONE,
-        AC_ON | AC_TYPE_ENEMY,
+        AT_ON,
+        AC_ON | AC_TYPE_PLAYER,
         OC1_ON | OC1_TYPE_ALL,
         OC2_TYPE_1,
         COLSHAPE_CYLINDER,
@@ -95,7 +106,7 @@ static ColliderCylinderInit sOwlCylinderInit = {
         ELEMTYPE_UNK0,
         { 0x00000000, 0x00, 0x00 },
         { 0xFFCFFFFF, 0x00, 0x00 },
-        TOUCH_NONE,
+        TOUCH_ON,
         BUMP_ON,
         OCELEM_ON,
     },
@@ -109,6 +120,77 @@ static InitChainEntry sInitChain[] = {
     ICHAIN_F32(uncullZoneDownward, 2400, ICHAIN_STOP),
 };
 
+static u8 sClearPixelTableFirstPass[16 * 16] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
+    0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00,
+    0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00,
+    0x01, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01,
+    0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00,
+    0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x00, 0x01, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00,
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x01, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x00, 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00
+};
+
+static u8 sClearPixelTableSecondPass[16 * 16] = {
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01
+};
+
+static u8 sClearPixelTex16[16 * 16] = { { 0 } };
+static u8 sClearPixelTex32[32 * 32] = { { 0 } };
+
+// indexed by limb (where the root limb is 1)
+static u8 sDeadLimbLifetime[] = {
+    0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    30, // tail end/last part
+    40, // tail 2nd to last part
+    0,  0, 0, 0, 0, 0, 0, 0,
+    10, // back of right claw/hand
+    15, // front of right claw/hand
+    21, // part of right arm (inner)
+    0,  0,
+    25, // part of right arm (shell)
+    0,  0,
+    31, // part of right arm (shell on shoulder)
+    35, // part of right arm (shoulder)
+    0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    43, // end of left antenna
+    48, // middle of left antenna
+    53, // start of left antenna
+    0,  0, 0, 0,
+    42, // end of right antenna
+    45, // middle of right antenna
+    53, // start of right antenna
+    0,  0, 0, 0, 0, 0,
+    11, // back of left claw/hand
+    15, // front of left claw/hand
+    21, // part of left arm (inner)
+    0,  0,
+    25, // part of left arm (shell)
+    0,  0,
+    30, // part of left arm (shell on shoulder)
+    35, // part of left arm (shoulder)
+    0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
 void EnOwl_Init(Actor* thisx, PlayState* play) {
     EnOwl* this = (EnOwl*)thisx;
     ColliderCylinder* collider;
@@ -117,9 +199,10 @@ void EnOwl_Init(Actor* thisx, PlayState* play) {
 
     Actor_ProcessInitChain(&this->actor, sInitChain);
     ActorShape_Init(&this->actor.shape, 0, ActorShadow_DrawCircle, 36.0f);
-    SkelAnime_InitFlex(play, &this->skelAnime, &gOwlFlyingSkel, &gOwlFlyAnim, this->jointTable, this->morphTable, 21);
-    SkelAnime_InitFlex(play, &this->skelAnime2, &gOwlPerchingSkel, &gOwlPerchAnim, this->jointTable2, this->morphTable2,
-                       16);
+    SkelAnime_InitFlex(play, &this->skelAnime, &gOwlFlyingSkel, &gOwlFlyAnim, this->jointTable, this->morphTable,
+                       21);
+    SkelAnime_InitFlex(play, &this->skelAnime2, &gOwlPerchingSkel, &gOwlPerchAnim, this->jointTable2,
+                       this->morphTable2, 16);
     Collider_InitCylinder(play, &this->collider);
     Collider_SetCylinder(play, &this->collider, &this->actor, &sOwlCylinderInit);
     this->actor.colChkInfo.mass = MASS_IMMOVABLE;
@@ -139,7 +222,29 @@ void EnOwl_Init(Actor* thisx, PlayState* play) {
     // "conversation owl %4x no = %d, sv = %d"
     osSyncPrintf(VT_FGCOL(CYAN) " 会話フクロウ %4x no = %d, sv = %d\n" VT_RST, this->actor.params, owlType, switchFlag);
 
-    if ((owlType != OWL_DEFAULT) && (switchFlag < 0x20) && Flags_GetSwitch(play, switchFlag)) {
+
+    for (int i = 0; i < ARRAY_COUNT(sClearPixelTex16); i++) {
+        sClearPixelTex16[i] = 0;
+    }
+
+    for (int i = 0; i < ARRAY_COUNT(sClearPixelTex32); i++) {
+        sClearPixelTex32[i] = 0;
+    }
+
+    Gfx_RegisterBlendedTexture(object_owlTex_0071A8, sClearPixelTex32, NULL);
+    Gfx_RegisterBlendedTexture(object_owlTex_0079A8, sClearPixelTex32, NULL);
+    Gfx_RegisterBlendedTexture(object_owlTex_0081A8, sClearPixelTex32, NULL);
+    Gfx_RegisterBlendedTexture(object_owlTex_0095A8, sClearPixelTex32, NULL);
+    Gfx_RegisterBlendedTexture(object_owlTex_009DA8, sClearPixelTex32, NULL);
+    Gfx_RegisterBlendedTexture(object_owlTex_009FA8, sClearPixelTex32, NULL);
+    Gfx_RegisterBlendedTexture(object_owlTex_00AFA8, sClearPixelTex32, NULL);
+    Gfx_RegisterBlendedTexture(object_owlTex_00B7A8, sClearPixelTex32, NULL);
+
+
+
+    if (((owlType != OWL_DEFAULT) && (switchFlag < 0x20) && Flags_GetSwitch(play, switchFlag)) ||
+        // Owl shortcuts at SPOT06: Lake Hylia and SPOT16: Death Mountain Trail
+        (IS_RANDO && !(play->sceneNum == SCENE_LAKE_HYLIA || play->sceneNum == SCENE_DEATH_MOUNTAIN_TRAIL))) {
         osSyncPrintf("savebitでフクロウ退避\n"); // "Save owl with savebit"
         Actor_Kill(&this->actor);
         return;
@@ -185,8 +290,7 @@ void EnOwl_Init(Actor* thisx, PlayState* play) {
             this->actionFunc = EnOwl_WaitLakeHylia;
             break;
         case OWL_ZORA_RIVER:
-            if ((Flags_GetEventChkInf(EVENTCHKINF_OPENED_ZORAS_DOMAIN)) ||
-                !Flags_GetEventChkInf(EVENTCHKINF_OBTAINED_ZELDAS_LETTER)) {
+            if ((Flags_GetEventChkInf(EVENTCHKINF_OPENED_ZORAS_DOMAIN)) || !Flags_GetEventChkInf(EVENTCHKINF_OBTAINED_ZELDAS_LETTER)) {
                 // opened zora's domain or has zelda's letter
                 osSyncPrintf("フクロウ退避\n"); // "Owl evacuation"
                 Actor_Kill(&this->actor);
@@ -284,8 +388,8 @@ s32 EnOwl_CheckInitTalk(EnOwl* this, PlayState* play, u16 textId, f32 targetDist
     } else {
         this->actor.textId = textId;
         distCheck = (flags & 2) ? 200.0f : 1000.0f;
-        if (GameInteractor_Should(VB_OWL_INTERACTION, this->actor.xzDistToPlayer < targetDist, this)) {
-            this->actor.flags |= ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
+        if (this->actor.xzDistToPlayer < targetDist) {
+            this->actor.flags |= ACTOR_FLAG_WILL_TALK;
             func_8002F1C4(&this->actor, play, targetDist, distCheck, 0);
         }
         return false;
@@ -346,17 +450,17 @@ void func_80ACA71C(EnOwl* this) {
 }
 
 void func_80ACA76C(EnOwl* this, PlayState* play) {
-    Player_SetCsActionWithHaltedActors(play, &this->actor, 8);
+    func_8002DF54(play, &this->actor, 8);
 
     if (Actor_TextboxIsClosing(&this->actor, play)) {
         Audio_QueueSeqCmd(0x1 << 28 | SEQ_PLAYER_FANFARE << 24 | 0xFF);
         func_80ACA62C(this, play);
-        this->actor.flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
+        this->actor.flags &= ~ACTOR_FLAG_WILL_TALK;
     }
 }
 
 void func_80ACA7E0(EnOwl* this, PlayState* play) {
-    Player_SetCsActionWithHaltedActors(play, &this->actor, 8);
+    func_8002DF54(play, &this->actor, 8);
 
     if (Actor_TextboxIsClosing(&this->actor, play)) {
         Audio_QueueSeqCmd(0x1 << 28 | SEQ_PLAYER_FANFARE << 24 | 0xFF);
@@ -367,13 +471,15 @@ void func_80ACA7E0(EnOwl* this, PlayState* play) {
             func_80ACA71C(this);
             this->actionFunc = func_80ACA690;
         }
-        this->actor.flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
+        this->actor.flags &= ~ACTOR_FLAG_WILL_TALK;
     }
 }
 
 void EnOwl_ConfirmKokiriMessage(EnOwl* this, PlayState* play) {
     if (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(play)) {
-        switch (play->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVarGetInteger("gBetterOwl", 0) == 0 ? play->msgCtx.choiceIndex : (1 - play->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 Message_ContinueTextbox(play, 0x2065);
                 break;
@@ -401,7 +507,8 @@ void EnOwl_WaitOutsideKokiri(EnOwl* this, PlayState* play) {
 void func_80ACA998(EnOwl* this, PlayState* play) {
     if (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(play)) {
         // swap the order of the responses if better owl is enabled
-        switch (play->msgCtx.choiceIndex) {
+        uint8_t index = CVarGetInteger("gBetterOwl", 0) == 0 ? play->msgCtx.choiceIndex : (1 - play->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 Message_ContinueTextbox(play, 0x2069);
                 this->actionFunc = func_80ACAA54;
@@ -445,7 +552,9 @@ void EnOwl_WaitHyruleCastle(EnOwl* this, PlayState* play) {
 
 void func_80ACAB88(EnOwl* this, PlayState* play) {
     if (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(play)) {
-        switch (play->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVarGetInteger("gBetterOwl", 0) == 0 ? play->msgCtx.choiceIndex : (1 - play->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 // obtained zelda's letter
                 if (Flags_GetEventChkInf(EVENTCHKINF_OBTAINED_ZELDAS_LETTER)) {
@@ -486,7 +595,9 @@ void EnOwl_WaitKakariko(EnOwl* this, PlayState* play) {
 
 void func_80ACAD34(EnOwl* this, PlayState* play) {
     if (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(play)) {
-        switch (play->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVarGetInteger("gBetterOwl", 0) == 0 ? play->msgCtx.choiceIndex : (1 - play->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 Message_ContinueTextbox(play, 0x206F);
                 this->actionFunc = func_80ACADF0;
@@ -522,7 +633,9 @@ void EnOwl_WaitGerudo(EnOwl* this, PlayState* play) {
 
 void func_80ACAEB8(EnOwl* this, PlayState* play) {
     if (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(play)) {
-        switch (play->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVarGetInteger("gBetterOwl", 0) == 0 ? play->msgCtx.choiceIndex : (1 - play->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 Message_ContinueTextbox(play, 0x2071);
                 this->actionFunc = func_80ACAF74;
@@ -557,12 +670,12 @@ void EnOwl_WaitLakeHylia(EnOwl* this, PlayState* play) {
 }
 
 void func_80ACB03C(EnOwl* this, PlayState* play) {
-    Player_SetCsActionWithHaltedActors(play, &this->actor, 8);
+    func_8002DF54(play, &this->actor, 8);
 
     if (Actor_TextboxIsClosing(&this->actor, play)) {
         Audio_QueueSeqCmd(0x1 << 28 | SEQ_PLAYER_FANFARE << 24 | 0xFF);
         func_80ACA62C(this, play);
-        this->actor.flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
+        this->actor.flags &= ~ACTOR_FLAG_WILL_TALK;
     }
 }
 
@@ -642,7 +755,9 @@ void EnOwl_WaitDeathMountainShortcut(EnOwl* this, PlayState* play) {
 
 void func_80ACB344(EnOwl* this, PlayState* play) {
     if (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(play)) {
-        switch (play->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVarGetInteger("gBetterOwl", 0) == 0 ? play->msgCtx.choiceIndex : (1 - play->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 Message_ContinueTextbox(play, 0x607A);
                 break;
@@ -665,7 +780,9 @@ void func_80ACB3E0(EnOwl* this, PlayState* play) {
 
 void func_80ACB440(EnOwl* this, PlayState* play) {
     if (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(play)) {
-        switch (play->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVarGetInteger("gBetterOwl", 0) == 0 ? play->msgCtx.choiceIndex : (1 - play->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 Message_ContinueTextbox(play, 0x10C1);
                 this->actionFunc = func_80ACB4FC;
@@ -700,7 +817,9 @@ void EnOwl_WaitLWPreSaria(EnOwl* this, PlayState* play) {
 
 void func_80ACB5C4(EnOwl* this, PlayState* play) {
     if (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(play)) {
-        switch (play->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVarGetInteger("gBetterOwl", 0) == 0 ? play->msgCtx.choiceIndex : (1 - play->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 Message_ContinueTextbox(play, 0x10C5);
                 this->actionFunc = func_80ACB680;
@@ -753,7 +872,8 @@ void func_80ACB748(EnOwl* this, PlayState* play) {
     switch (owlType) {
         case 7:
             func_800F436C(&D_80ACD62C, NA_SE_EV_FLYING_AIR - SFX_FLAG, weight * 2.0f);
-            if ((play->csCtx.frames > 324) || ((play->csCtx.frames >= 142 && (play->csCtx.frames <= 266)))) {
+            if ((play->csCtx.frames > 324) ||
+                ((play->csCtx.frames >= 142 && (play->csCtx.frames <= 266)))) {
                 func_800F4414(&D_80ACD62C, NA_SE_EN_OWL_FLUTTER, weight * 2.0f);
             }
             if (play->csCtx.frames == 85) {
@@ -763,7 +883,8 @@ void func_80ACB748(EnOwl* this, PlayState* play) {
         case 8:
         case 9:
             func_800F436C(&D_80ACD62C, NA_SE_EV_FLYING_AIR - SFX_FLAG, weight * 2.0f);
-            if ((play->csCtx.frames >= 420) || ((0xC1 < play->csCtx.frames && (play->csCtx.frames <= 280)))) {
+            if ((play->csCtx.frames >= 420) ||
+                ((0xC1 < play->csCtx.frames && (play->csCtx.frames <= 280)))) {
                 func_800F4414(&D_80ACD62C, NA_SE_EN_OWL_FLUTTER, weight * 2.0f);
             }
             if (play->csCtx.frames == 217) {
@@ -843,7 +964,7 @@ void func_80ACBAB8(EnOwl* this, PlayState* play) {
 }
 
 void func_80ACBC0C(EnOwl* this, PlayState* play) {
-    this->actor.flags |= ACTOR_FLAG_DRAW_CULLING_DISABLED;
+    this->actor.flags |= ACTOR_FLAG_DRAW_WHILE_CULLED;
 
     if (this->actor.xzDistToPlayer > 6000.0f && !(this->actionFlags & 0x80)) {
         Actor_Kill(&this->actor);
@@ -940,27 +1061,45 @@ void func_80ACC00C(EnOwl* this, PlayState* play) {
             osSyncPrintf(VT_FGCOL(CYAN));
             osSyncPrintf("%dのフクロウ\n", owlType); // "%d owl"
             osSyncPrintf(VT_RST);
-            if (GameInteractor_Should(VB_PLAY_OWL_TRAVEL_CS, true, owlType)) {
-                switch (owlType) {
-                    case 7:
-                        osSyncPrintf(VT_FGCOL(CYAN));
-                        osSyncPrintf("SPOT 06 の デモがはしった\n"); // "Demo of SPOT 06 has been completed"
-                        osSyncPrintf(VT_RST);
-                        play->csCtx.segment = SEGMENTED_TO_VIRTUAL(gLakeHyliaOwlCs);
-                        this->actor.draw = NULL;
+            switch (owlType) {
+                case 7:
+                    osSyncPrintf(VT_FGCOL(CYAN));
+                    osSyncPrintf("SPOT 06 の デモがはしった\n"); // "Demo of SPOT 06 has been completed"
+                    osSyncPrintf(VT_RST);
+                    if (IS_RANDO) {
+                        if (Randomizer_GetSettingValue(RSK_SHUFFLE_OWL_DROPS)) {
+                            play->nextEntranceIndex = Entrance_OverrideNextIndex(0x027E);
+                        } else {
+                            play->nextEntranceIndex = 0x027E;
+                        }
+                        play->sceneLoadFlag = 0x14;
+                        play->fadeTransition = 2;
                         break;
-                    case 8:
-                    case 9:
-                        play->csCtx.segment = SEGMENTED_TO_VIRTUAL(gDMTOwlCs);
-                        this->actor.draw = NULL;
+                    }
+                    play->csCtx.segment = SEGMENTED_TO_VIRTUAL(gLakeHyliaOwlCs);
+                    this->actor.draw = NULL;
+                    break;
+                case 8:
+                case 9:
+                    if (IS_RANDO) {
+                        if (Randomizer_GetSettingValue(RSK_SHUFFLE_OWL_DROPS)) {
+                            play->nextEntranceIndex = Entrance_OverrideNextIndex(0x0554);
+                        } else {
+                            play->nextEntranceIndex = 0x0554;
+                        }
+                        play->sceneLoadFlag = 0x14;
+                        play->fadeTransition = 2;
                         break;
-                    default:
-                        assert(0);
-                        break;
-                }
+                    }
+                    play->csCtx.segment = SEGMENTED_TO_VIRTUAL(gDMTOwlCs);
+                    this->actor.draw = NULL;
+                    break;
+                default:
+                    assert(0);
+                    break;
             }
 
-            Sfx_PlaySfxCentered(NA_SE_SY_TRE_BOX_APPEAR);
+            func_80078884(NA_SE_SY_TRE_BOX_APPEAR);
             gSaveContext.cutsceneTrigger = 1;
             func_800F44EC(0x14, 0xA);
             this->actionFunc = EnOwl_WaitDefault;
@@ -1089,11 +1228,37 @@ void EnOwl_Update(Actor* thisx, PlayState* play) {
     EnOwl* this = (EnOwl*)thisx;
     s16 phi_a1;
 
+    if (dieNext) {
+
+        return;
+    }
+
+    if (this->collider.base.acFlags & AC_HIT) {
+        if (this->actionFunc != EnOwl_Defeated)  EnOwl_SetupDefeated(this, play);
+    }
+
+
     Collider_UpdateCylinder(&this->actor, &this->collider);
+    CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
     CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
     Actor_UpdateBgCheckInfo(play, &this->actor, 10.0f, 10.0f, 10.0f, 5);
     this->unk_410(this);
     this->actionFlags &= ~8;
+    this->visualState = VISUALSTATE_DEFAULT;
+    this->frameCount++;
+
+    if (this->framesUntilNextAction != 0) {
+        this->framesUntilNextAction--;
+    }
+
+    if (this->timer != 0) {
+        this->timer--;
+    }
+
+    if (this->sfxFaintTimer != 0) {
+        this->sfxFaintTimer--;
+    }
+
     this->actionFunc(this, play);
     if (this->actor.update == NULL) {
         // "Owl disappears"
@@ -1112,7 +1277,7 @@ void EnOwl_Update(Actor* thisx, PlayState* play) {
     }
 
     if (this->actor.draw != NULL) {
-        Actor_MoveXZGravity(&this->actor);
+        Actor_MoveForward(&this->actor);
     }
 
     if (this->actionFlags & 2) {
@@ -1320,6 +1485,20 @@ void EnOwl_PostLimbUpdate(PlayState* play, s32 limbIndex, Gfx** gfx, Vec3s* rot,
     }
 }
 
+Gfx* EnOwl_NoBackfaceCullingDlist(GraphicsContext* gfxCtx) {
+    Gfx* dListHead;
+    Gfx* dList;
+
+    dList = dListHead = Graph_Alloc(gfxCtx, sizeof(Gfx) * 4);
+
+    gDPPipeSync(dListHead++);
+    gDPSetRenderMode(dListHead++, G_RM_PASS, G_RM_AA_ZB_TEX_EDGE2);
+    gSPClearGeometryMode(dListHead++, G_CULL_BACK);
+    gSPEndDisplayList(dListHead++);
+
+    return dList;
+}
+
 void EnOwl_Draw(Actor* thisx, PlayState* play) {
     static void* eyeTextures[] = { gObjOwlEyeOpenTex, gObjOwlEyeHalfTex, gObjOwlEyeClosedTex };
     EnOwl* this = (EnOwl*)thisx;
@@ -1327,8 +1506,19 @@ void EnOwl_Draw(Actor* thisx, PlayState* play) {
 
     OPEN_DISPS(play->state.gfxCtx);
 
-    Gfx_SetupDL_37Opa(play->state.gfxCtx);
-    gSPSegment(POLY_OPA_DISP++, 8, SEGMENTED_TO_VIRTUAL(eyeTextures[this->eyeTexIndex]));
+    Gfx_SetupDL_37Opa(play->state.gfxCtx);    // Invalidate Texture Cache since Goma modifies her own texture
+    if (this->visualState == VISUALSTATE_DEFEATED) {
+        gSPInvalidateTexCache(POLY_OPA_DISP++, sClearPixelTex16);
+        gSPInvalidateTexCache(POLY_OPA_DISP++, sClearPixelTex32);
+    }
+
+    if (this->noBackfaceCulling) {
+        gSPSegment(POLY_OPA_DISP++, 0x08, EnOwl_NoBackfaceCullingDlist(play->state.gfxCtx));
+    }
+    else {
+        gSPSegment(POLY_OPA_DISP++, 8, SEGMENTED_TO_VIRTUAL(eyeTextures[this->eyeTexIndex]));
+    }
+    
     SkelAnime_DrawSkeletonOpa(play, this->curSkelAnime, EnOwl_OverrideLimbDraw, EnOwl_PostLimbUpdate, this);
 
     CLOSE_DISPS(play->state.gfxCtx);
@@ -1355,8 +1545,8 @@ void func_80ACD130(EnOwl* this, PlayState* play, s32 idx) {
 }
 
 f32 func_80ACD1C4(PlayState* play, s32 idx) {
-    f32 ret = Environment_LerpWeight(play->csCtx.npcActions[idx]->endFrame, play->csCtx.npcActions[idx]->startFrame,
-                                     play->csCtx.frames);
+    f32 ret = Environment_LerpWeight(play->csCtx.npcActions[idx]->endFrame,
+                                     play->csCtx.npcActions[idx]->startFrame, play->csCtx.frames);
 
     ret = CLAMP_MAX(ret, 1.0f);
     return ret;
@@ -1425,4 +1615,318 @@ void func_80ACD4D4(EnOwl* this, PlayState* play) {
     pos.y = (endPosf.y - pos.y) * temp_ret + pos.y;
     pos.z = (endPosf.z - pos.z) * temp_ret + pos.z;
     func_80ACD220(this, &pos, 1.0f);
+}
+
+
+
+/**
+ * Clear pixels from Gohma's textures
+ */
+void EnOwl_ClearPixels(u8* clearPixelTable, s16 i) {
+    if (clearPixelTable[i]) {
+        sClearPixelTex16[i] = 1;
+
+        u8* targetPixel = sClearPixelTex32 + ((i & 0xF) * 2 + (i & 0xF0) * 4);
+        // set the 2x2 block of pixels to 0
+        targetPixel[0] = 1;
+        targetPixel[1] = 1;
+        targetPixel[32 + 0] = 1;
+        targetPixel[32 + 1] = 1;
+    }
+}
+
+void EnOwl_SetupDefeated(EnOwl* this, PlayState* play) {
+    this->actionFunc = EnOwl_Defeated;
+    this->disableGameplayLogic = true;
+    this->decayingProgress = 0;
+    this->noBackfaceCulling = false;
+    this->framesUntilNextAction = 1200;
+    this->actionState = 0;
+    this->actor.flags &= ~(ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_HOSTILE);
+    this->actor.speedXZ = 0.0f;
+    this->actor.shape.shadowScale = 0.0f;
+    Audio_QueueSeqCmd(0x1 << 28 | SEQ_PLAYER_BGM_MAIN << 24 | 0x100FF);
+    Audio_PlayActorSound2(&this->actor, NA_SE_EN_GOMA_DEAD);
+}
+
+
+void EnOwl_Defeated(EnOwl* this, PlayState* play) {
+    static Vec3f roomCenter = { -150.0f, 0.0f, -350.0f };
+    f32 dx;
+    f32 dz;
+    s16 j;
+    Vec3f vel1 = { 0.0f, 0.0f, 0.0f };
+    Vec3f accel1 = { 0.0f, 1.0f, 0.0f };
+    Color_RGBA8 color1 = { 255, 255, 255, 255 };
+    Color_RGBA8 color2 = { 0, 100, 255, 255 };
+    Vec3f vel2 = { 0.0f, 0.0f, 0.0f };
+    Vec3f accel2 = { 0.0f, -0.5f, 0.0f };
+    Vec3f pos;
+    Camera* camera;
+    Player* player = GET_PLAYER(play);
+    Vec3f childPos;
+    s16 i;
+   
+
+    Math_ApproachS(&this->actor.shape.rot.x, 0, 2, 0xBB8);
+
+
+    if (this->framesUntilNextAction < 1200 && this->framesUntilNextAction > 1100 &&
+        this->framesUntilNextAction % 8 == 0) {
+        EffectSsSibuki_SpawnBurst(play, &this->actor.focus.pos);
+    }
+    if (this->framesUntilNextAction < 1000) {
+        Actor_SetScale(&this->actor, this->actor.scale.y * 0.975f); //shrink
+    }
+    if (this->framesUntilNextAction < 1180 && this->actionState < 3) {
+
+        this->actor.bgCheckFlags &= ~1;
+        Actor_UpdateBgCheckInfo(play, &this->actor, 0.0f, 0.0f, 0.0f, 4);
+        if (!(this->actor.bgCheckFlags & 1)) {
+            this->actor.velocity.y = -0.75f;
+            this->actor.velocity.z = 0.25f;
+            this->actor.speedXZ = 0.25f;
+            Actor_MoveForward(&this->actor);
+        }
+
+        if (this->framesUntilNextAction < 1070) {
+            Audio_PlayActorSound2(&this->actor, NA_SE_EN_GOMA_LAST - SFX_FLAG);
+        }
+
+        for (i = 0; i < 4; i++) {
+            if (true) {
+                pos.x = Rand_CenteredFloat(80.0f) + this->actor.world.pos.x;
+                pos.y = Rand_CenteredFloat(100.0f) + this->actor.world.pos.y + 25.0f;
+                pos.z = Rand_CenteredFloat(80.0f) + this->actor.world.pos.z;
+                func_8002836C(play, &pos, &vel1, &accel1, &color1, &color2, 500, 10, 10); //blue flames
+            }
+        }
+
+        for (i = 0; i < 10; i++) {
+            if (true) {
+                pos.x = Rand_CenteredFloat(80.0f) + this->actor.world.pos.x;
+                pos.y = Rand_CenteredFloat(100.0f) + this->actor.world.pos.y + 50.0f;
+                pos.z = Rand_CenteredFloat(80.0f) + this->actor.world.pos.z;
+                EffectSsHahen_Spawn(play, &pos, &vel2, &accel2, 0, (s16)(Rand_ZeroOne() * 5.0f) + 10, -1, 10, //flakes
+                    NULL);
+            }
+        }
+    }
+
+    switch (this->actionState) {
+    case 0:
+        this->actionState = 1;
+        func_80064520(play, &play->csCtx);
+        func_8002DF54(play, &this->actor, 1);
+        this->subCameraId = Play_CreateSubCamera(play);
+        Play_ChangeCameraStatus(play, 0, 3);
+        Play_ChangeCameraStatus(play, this->subCameraId, 7);
+        camera = Play_GetCamera(play, 0);
+        this->subCameraEye.x = camera->eye.x;
+        this->subCameraEye.y = camera->eye.y;
+        this->subCameraEye.z = camera->eye.z;
+        this->subCameraAt.x = camera->at.x;
+        this->subCameraAt.y = camera->at.y;
+        this->subCameraAt.z = camera->at.z;
+        dx = this->subCameraEye.x - this->actor.world.pos.x;
+        dz = this->subCameraEye.z - this->actor.world.pos.z;
+        this->defeatedCameraEyeDist = sqrtf(SQ(dx) + SQ(dz));
+        this->defeatedCameraEyeAngle = Math_FAtan2F(dx, dz);
+        this->timer = 270;
+        break;
+
+    case 1:
+        dx = Math_SinS(this->actor.shape.rot.y) * 100.0f;
+        dz = Math_CosS(this->actor.shape.rot.y) * 100.0f;
+        Math_ApproachF(&player->actor.world.pos.x, this->actor.world.pos.x + dx, 0.5f, 5.0f);
+        Math_ApproachF(&player->actor.world.pos.z, this->actor.world.pos.z + dz, 0.5f, 5.0f);
+
+        if (this->framesUntilNextAction < 1080) {
+            this->noBackfaceCulling = true;
+
+            for (i = 0; i < 4; i++) {
+                EnOwl_ClearPixels(sClearPixelTableFirstPass, this->decayingProgress);
+                //! @bug this allows this->decayingProgress = 0x100 = 256 which is out of bounds when accessing
+                // sClearPixelTableFirstPass, though timers may prevent this from ever happening?
+                if (this->decayingProgress < 0xFF) {
+                    this->decayingProgress++;
+                }
+            }
+        }
+
+        if (this->framesUntilNextAction < 1070 && this->frameCount % 4 == 0 && Rand_ZeroOne() < 0.5f) {
+            this->blinkTimer = 3;
+        }
+
+        this->defeatedCameraEyeAngle += 0.022f;
+        Math_ApproachF(&this->defeatedCameraEyeDist, 150.0f, 0.1f, 5.0f);
+        dx = sinf(this->defeatedCameraEyeAngle);
+        dx = dx * this->defeatedCameraEyeDist;
+        dz = cosf(this->defeatedCameraEyeAngle);
+        dz = dz * this->defeatedCameraEyeDist;
+        Math_SmoothStepToF(&this->subCameraEye.x, this->actor.world.pos.x + dx, 0.2f, 50.0f, 0.1f);
+        Math_SmoothStepToF(&this->subCameraEye.y, this->actor.world.pos.y + 20.0f, 0.2f, 50.0f, 0.1f);
+        Math_SmoothStepToF(&this->subCameraEye.z, this->actor.world.pos.z + dz, 0.2f, 50.0f, 0.1f);
+        Math_SmoothStepToF(&this->subCameraAt.x, this->actor.focus.pos.x, 0.2f, 50.0f, 0.1f);
+        Math_SmoothStepToF(&this->subCameraAt.y, this->actor.focus.pos.y, 0.5f, 100.0f, 0.1f);
+        Math_SmoothStepToF(&this->subCameraAt.z, this->actor.focus.pos.z, 0.2f, 50.0f, 0.1f);
+
+        if (this->timer == 80) {
+            Audio_QueueSeqCmd(SEQ_PLAYER_BGM_MAIN << 24 | NA_BGM_BOSS_CLEAR);
+        }
+
+        if (this->timer == 0) {
+            this->actionState = 2;
+            Play_ChangeCameraStatus(play, 0, 3);
+            this->timer = 70;
+            this->decayingProgress = 0;
+            this->subCameraFollowSpeed = 0.0f;
+        }
+        break;
+
+    case 2:
+        camera = Play_GetCamera(play, 0);
+        Math_SmoothStepToF(&this->subCameraEye.x, camera->eye.x, 0.2f, this->subCameraFollowSpeed * 50.0f, 0.1f);
+        Math_SmoothStepToF(&this->subCameraEye.y, camera->eye.y, 0.2f, this->subCameraFollowSpeed * 50.0f, 0.1f);
+        Math_SmoothStepToF(&this->subCameraEye.z, camera->eye.z, 0.2f, this->subCameraFollowSpeed * 50.0f, 0.1f);
+        Math_SmoothStepToF(&this->subCameraAt.x, camera->at.x, 0.2f, this->subCameraFollowSpeed * 50.0f, 0.1f);
+        Math_SmoothStepToF(&this->subCameraAt.y, camera->at.y, 0.2f, this->subCameraFollowSpeed * 50.0f, 0.1f);
+        Math_SmoothStepToF(&this->subCameraAt.z, camera->at.z, 0.2f, this->subCameraFollowSpeed * 50.0f, 0.1f);
+        Math_SmoothStepToF(&this->subCameraFollowSpeed, 1.0f, 1.0f, 0.02f, 0.0f);
+
+        if (this->timer == 0) {
+            childPos = roomCenter;
+            this->timer = 30;
+            this->actionState = 3;
+
+            for (i = 0; i < 10000; i++) {
+                if ((fabsf(childPos.x - player->actor.world.pos.x) < 100.0f &&
+                    fabsf(childPos.z - player->actor.world.pos.z) < 100.0f) ||
+                    (fabsf(childPos.x - this->actor.world.pos.x) < 150.0f &&
+                        fabsf(childPos.z - this->actor.world.pos.z) < 150.0f)) {
+                    childPos.x = Rand_CenteredFloat(400.0f) + -150.0f;
+                    childPos.z = Rand_CenteredFloat(400.0f) + -350.0f;
+                }
+                else {
+                    break;
+                }
+            }
+        }
+
+        for (i = 0; i < 4; i++) {
+            EnOwl_ClearPixels(sClearPixelTableSecondPass, this->decayingProgress);
+            //! @bug same as sClearPixelTableFirstPass
+            if (this->decayingProgress < 0xFF) {
+                this->decayingProgress++;
+            }
+        }
+        break;
+
+    case 3:
+        for (i = 0; i < 4; i++) {
+            EnOwl_ClearPixels(sClearPixelTableSecondPass, this->decayingProgress);
+            //! @bug same as sClearPixelTableFirstPass
+            if (this->decayingProgress < 0xFF) {
+                this->decayingProgress++;
+            }
+        }
+
+        play->nextEntranceIndex = 1024;// 343;//0x6B; 279
+        gSaveContext.nextCutsceneIndex = 0xFFF0; //FFF3//65521
+        play->sceneLoadFlag = 0x14;
+        play->fadeTransition = 3;
+        play->linkAgeOnLoad = 1;
+
+        play->startPlayerCutscene(play, &this->actor, 1024);
+        Actor_Kill(&this->actor);
+
+        if (this->timer == 0) {
+            if (Math_SmoothStepToF(&this->actor.scale.y, 0, 1.0f, 0.00075f, 0.0f) <= 0.001f) {
+                camera = Play_GetCamera(play, 0);
+                camera->eye = this->subCameraEye;
+                camera->eyeNext = this->subCameraEye;
+                camera->at = this->subCameraAt;
+                func_800C08AC(play, this->subCameraId, 0);
+                this->subCameraId = 0;
+                func_80064534(play, &play->csCtx);
+                func_8002DF54(play, &this->actor, 7);
+
+               // gSaveContext.gameMode = 3;
+               // Audio_SetSoundBanksMute(0x6F);
+               // play->linkAgeOnLoad = 1;
+
+                //play->nextEntranceIndex = 0x068;
+                //gSaveContext.cutsceneIndex = 0xFFF2;
+                //play->sceneLoadFlag = 0x14;
+                //play->fadeTransition = 2;
+
+
+
+
+            }
+
+            this->actor.scale.x = this->actor.scale.z = this->actor.scale.y;
+        }
+        break;
+    }
+
+    if (this->subCameraId != 0) {
+        Play_CameraSetAtEye(play, this->subCameraId, &this->subCameraAt, &this->subCameraEye);
+    }
+
+    if (this->blinkTimer != 0) {
+        this->blinkTimer--;
+        play->envCtx.adjAmbientColor[0] += 40;
+        play->envCtx.adjAmbientColor[1] += 40;
+        play->envCtx.adjAmbientColor[2] += 80;
+        play->envCtx.adjFogColor[0] += 10;
+        play->envCtx.adjFogColor[1] += 10;
+        play->envCtx.adjFogColor[2] += 20;
+    }
+    else {
+        play->envCtx.adjAmbientColor[0] -= 20;
+        play->envCtx.adjAmbientColor[1] -= 20;
+        play->envCtx.adjAmbientColor[2] -= 40;
+        play->envCtx.adjFogColor[0] -= 5;
+        play->envCtx.adjFogColor[1] -= 5;
+        play->envCtx.adjFogColor[2] -= 10;
+    }
+
+    if (play->envCtx.adjAmbientColor[0] > 200) {
+        play->envCtx.adjAmbientColor[0] = 200;
+    }
+    if (play->envCtx.adjAmbientColor[1] > 200) {
+        play->envCtx.adjAmbientColor[1] = 200;
+    }
+    if (play->envCtx.adjAmbientColor[2] > 200) {
+        play->envCtx.adjAmbientColor[2] = 200;
+    }
+    if (play->envCtx.adjFogColor[0] > 70) {
+        play->envCtx.adjFogColor[0] = 70;
+    }
+    if (play->envCtx.adjFogColor[1] > 70) {
+        play->envCtx.adjFogColor[1] = 70;
+    }
+    if (play->envCtx.adjFogColor[2] > 140) {
+        play->envCtx.adjFogColor[2] = 140;
+    }
+
+    if (play->envCtx.adjAmbientColor[0] < 0) {
+        play->envCtx.adjAmbientColor[0] = 0;
+    }
+    if (play->envCtx.adjAmbientColor[1] < 0) {
+        play->envCtx.adjAmbientColor[1] = 0;
+    }
+    if (play->envCtx.adjAmbientColor[2] < 0) {
+        play->envCtx.adjAmbientColor[2] = 0;
+    }
+    if (play->envCtx.adjFogColor[0] < 0) {
+        play->envCtx.adjFogColor[0] = 0;
+    }
+    if (play->envCtx.adjFogColor[1] < 0) {
+        play->envCtx.adjFogColor[1] = 0;
+    }
+    if (play->envCtx.adjFogColor[2] < 0) {
+        play->envCtx.adjFogColor[2] = 0;
+    }
 }

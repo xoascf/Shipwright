@@ -146,9 +146,14 @@ typedef enum {
     /* 0x1B */ SLOT_BOOTS_KOKIRI,
     /* 0x1C */ SLOT_BOOTS_IRON,
     /* 0x1D */ SLOT_BOOTS_HOVER,
-    /* 0x1E */ SLOT_SHIELD_DEKU,
-    /* 0x1F */ SLOT_SHIELD_HYLIAN,
-    /* 0x20 */ SLOT_SHIELD_MIRROR,
+    //CUSTOM
+    SLOT_JUMP = 0xA0, //160
+    SLOT_GLIDER = 0xA1, //161
+    SLOT_LANTERN = 0xA2, //162
+    SLOT_ULTRAHAND = 0xA3, //163
+    SLOT_ARMCANNON = 0xA4, //163
+    SLOT_MASK_FOX = 0xA5,
+    SLOT_CUSTOM_MAX,
     /* 0xFF */ SLOT_NONE = 0xFF
 } InventorySlot;
 
@@ -309,27 +314,18 @@ typedef enum {
     /* 0x99 */ ITEM_STICK_UPGRADE_30,
     /* 0x9A */ ITEM_NUT_UPGRADE_30,
     /* 0x9B */ ITEM_NUT_UPGRADE_40,
-    /* 0x9C */ ITEM_CUSTOM,
-    /* 0x9D */ ITEM_ROCS_FEATHER,
+        //CUSTOM
+               ITEM_JUMP = 0xA0, //160
+               ITEM_GLIDER = 0xA1, //161
+               ITEM_LANTERN = 0xA2, //161
+               ITEM_ULTRAHAND = 0xA3,
+               ITEM_ARMCANNON = 0xA4,
+               ITEM_MASK_FOX = 0xA5,
+               ITEM_CUSTOM_MAX,
     /* 0xFC */ ITEM_LAST_USED = 0xFC,
     /* 0xFE */ ITEM_NONE_FE = 0xFE,
     /* 0xFF */ ITEM_NONE = 0xFF
 } ItemID;
-
-typedef enum {
-    EQUIP_FLAG_SWORD_KOKIRI = 1 << 0,
-    EQUIP_FLAG_SWORD_MASTER = 1 << 1,
-    EQUIP_FLAG_SWORD_BGS = 1 << 2,
-    EQUIP_FLAG_SHIELD_DEKU = 1 << 4,
-    EQUIP_FLAG_SHIELD_HYLIAN = 1 << 5,
-    EQUIP_FLAG_SHIELD_MIRROR = 1 << 6,
-    EQUIP_FLAG_TUNIC_KOKIRI = 1 << 8,
-    EQUIP_FLAG_TUNIC_GORON = 1 << 9,
-    EQUIP_FLAG_TUNIC_ZORA = 1 << 10,
-    EQUIP_FLAG_BOOTS_KOKIRI = 1 << 12,
-    EQUIP_FLAG_BOOTS_IRON = 1 << 13,
-    EQUIP_FLAG_BOOTS_HOVER = 1 << 14,
-} EquipmentFlag;
 
 #define ITEM_TRADE_CHILD ITEM_WEIRD_EGG
 #define ITEM_TRADE_ADULT ITEM_POCKET_EGG
@@ -392,7 +388,7 @@ typedef enum {
     /* 0x35 */ GI_GAUNTLETS_SILVER,
     /* 0x36 */ GI_GAUNTLETS_GOLD,
     /* 0x37 */ GI_SCALE_SILVER,
-    /* 0x38 */ GI_SCALE_GOLDEN,
+    /* 0x38 */ GI_SCALE_GOLD,
     /* 0x39 */ GI_STONE_OF_AGONY,
     /* 0x3A */ GI_GERUDO_CARD,
     /* 0x3B */ GI_OCARINA_FAIRY, // uses Ocarina of Time message ID
@@ -462,6 +458,14 @@ typedef enum {
     /* 0x7B */ GI_BULLET_BAG_50,
     /* 0x7C */ GI_ICE_TRAP, // freezes link when opened from a chest
     /* 0x7D */ GI_TEXT_0,   // no model appears over Link, shows text id 0 (pocket egg)
+        //CUSTOM
+               GI_JUMP = 0xA0, //160
+               GI_GLIDER = 0xA1, //161
+               GI_LANTERN = 0xA2, //162
+               GI_ULTRAHAND = 0xA3, //163
+               GI_ARMCANNON = 0xA4, //164
+               GI_MASK_FOX = 0xA5,
+               GI_CUSTOM_MAX, 
     /* 0x84 */ GI_MAX
 } GetItemID;
 
@@ -594,8 +598,7 @@ typedef enum {
     /* 0x7A */ GID_SONG_TIME,
     /* 0x7B */ GID_SONG_STORM,
     /* 0x7C */ GID_TRIFORCE_PIECE,
-    /* 0x7D */ GID_FISHING_POLE,
-    /* 0x7E */ GID_MAXIMUM
+    /* 0x7C */ GID_MAXIMUM
 
 } GetItemDrawID;
 
