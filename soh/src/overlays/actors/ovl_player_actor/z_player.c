@@ -156,6 +156,8 @@ s32 func_80835C08(Player* this, PlayState* play);
 void Player_UseItem(PlayState* play, Player* this, s32 item);
 void func_80839F90(Player* this, PlayState* play);
 s32 func_8083C61C(PlayState* play, Player* this);
+s32 func_8083C61C(PlayState* play, Player* this);
+s32 SSBJump(PlayState* play, Player* this);
 void Player_StartMode_Idle(PlayState* play, Player* this);
 void Player_StartMode_MoveForwardSlow(PlayState* play, Player* this);
 void Player_StartMode_MoveForward(PlayState* play, Player* this);
@@ -417,6 +419,11 @@ static u8 sUpperBodyLimbCopyMap[PLAYER_LIMB_MAX] = {
     true,  // PLAYER_LIMB_SHEATH
     true   // PLAYER_LIMB_TORSO
 };
+
+//MY VARIABLES
+int numJumps = 0;
+int jump3timer = 0;
+
 
 static PlayerAgeProperties sAgeProperties[] = {
     {
@@ -1214,6 +1221,16 @@ static s8 sItemActions[] = {
     PLAYER_IA_SWORD_KOKIRI,        // ITEM_SWORD_KOKIRI
     PLAYER_IA_SWORD_MASTER,        // ITEM_SWORD_MASTER
     PLAYER_IA_SWORD_BIGGORON,      // ITEM_SWORD_BIGGORON
+    PLAYER_IA_SHIELD_DEKU,
+    PLAYER_IA_SHIELD_HYLIAN,
+    PLAYER_IA_SHIELD_MIRROR,
+    PLAYER_IA_TUNIC_KOKIRI,
+    PLAYER_IA_TUNIC_GORON,
+    PLAYER_IA_TUNIC_ZORA,
+    PLAYER_IA_BOOTS_KOKIRI,
+    PLAYER_IA_BOOTS_IRON,
+    PLAYER_IA_BOOTS_HOVER,
+    PLAYER_IA_JUMP
 };
 
 static s32 (*sItemActionUpdateFuncs[])(Player* this, PlayState* play) = {
@@ -2229,6 +2246,8 @@ s8 Player_ItemToItemAction(s32 item) {
         return PLAYER_IA_SWORD_CS;
     } else if (item == ITEM_FISHING_POLE) {
         return PLAYER_IA_FISHING_POLE;
+    } else if (item == ITEM_JUMP){
+        return PLAYER_IA_JUMP;
     } else {
         return sItemActions[item];
     }
@@ -3432,6 +3451,11 @@ void Player_UseItem(PlayState* play, Player* this, s32 item) {
                 // Prevent some items from being used if player is out of ammo.
                 // Also prevent explosives from being used if there are 3 or more active (outside of bombchu bowling)
                 Sfx_PlaySfxCentered(NA_SE_SY_ERROR);
+            } else if (itemAction == PLAYER_IA_JUMP) {
+                SSBJump(play, this);
+            } else if (itemAction >= PLAYER_IA_SHIELD_DEKU) {
+                // Changing shields through action commands is unimplemented
+                // Boots and tunics handled previously
             } else if (itemAction == PLAYER_IA_LENS_OF_TRUTH) {
                 // Handle Lens of Truth
                 if (Magic_RequestChange(play, 0, MAGIC_CONSUME_LENS)) {
@@ -4890,6 +4914,7 @@ s32 func_808382DC(Player* this, PlayState* play) {
 }
 
 void func_80838940(Player* this, LinkAnimationHeader* anim, f32 arg2, PlayState* play, u16 sfxId) {
+    numJumps++; // Autojump counts as first manual jump
     Player_SetupAction(play, this, Player_Action_8084411C, 1);
 
     if (anim != NULL) {
@@ -6257,6 +6282,7 @@ s32 Player_ActionHandler_0(Player* this, PlayState* play) {
 }
 
 void func_8083BA90(PlayState* play, Player* this, s32 arg2, f32 xzVelocity, f32 yVelocity) {
+    if (numJumps < 3) {
     func_80837948(play, this, arg2);
     Player_SetupAction(play, this, Player_Action_80844AF4, 0);
 
@@ -6271,6 +6297,7 @@ void func_8083BA90(PlayState* play, Player* this, s32 arg2, f32 xzVelocity, f32 
 
     Player_PlayJumpingSfx(this);
     Player_PlayVoiceSfx(this, NA_SE_VO_LI_SWORD_L);
+    }
 }
 
 s32 func_8083BB20(Player* this) {
@@ -6541,7 +6568,7 @@ s32 Player_ActionHandler_8(Player* this, PlayState* play) {
     return 0;
 }
 
-s32 func_8083C61C(PlayState* play, Player* this) {
+s32 func_8083C61C(PlayState* play, Player* this) { //use deku nut
     if ((play->roomCtx.curRoom.behaviorType1 != ROOM_BEHAVIOR_TYPE1_2) && (this->actor.bgCheckFlags & 1) &&
         (AMMO(ITEM_NUT) != 0)) {
         Player_SetupAction(play, this, Player_Action_8084E604, 0);
@@ -6551,6 +6578,33 @@ s32 func_8083C61C(PlayState* play, Player* this) {
     }
 
     return 0;
+}
+
+s32 SSBJump(PlayState* play, Player* this) { //use deku nut
+    if (numJumps == 0)func_80838940(this, gPlayerAnim_link_normal_run_jump, 6.7f, play, NA_SE_VO_LI_AUTO_JUMP); //First Jump
+    else if (numJumps == 1) {
+        func_80838940(this, &gPlayerAnim_link_fighter_backturn_jump, 6.7f, play, NA_SE_VO_LI_AUTO_JUMP); //Double Jump
+        Vec3f splashPos = this->actor.world.pos;
+        splashPos.x += this->actor.velocity.x * 3.0f;
+        splashPos.z += this->actor.velocity.z * 3.0f;
+        splashPos.y -= 0.0f;
+        EffectSsGRipple_Spawn(play, &splashPos, 10, 250, 0);
+        EffectSsGRipple_Spawn(play, &splashPos, 10, 250, 0);
+        EffectSsGRipple_Spawn(play, &splashPos, 10, 250, 0);
+
+    }
+    else if (numJumps == 2) { //Triple Jump
+        if (CUR_EQUIP_VALUE(EQUIP_TYPE_SWORD) != EQUIP_VALUE_SWORD_NONE) { // cant spin jump if no sword equipped
+            this->heldItemAction = PLAYER_IA_SWORD_KOKIRI; //Equip Sword
+                this->heldItemId = ITEM_SWORD_KOKIRI;
+                this->meleeWeaponState = 1; //Sword Does Damage
+                jump3timer = 0;
+
+                func_80838940(this, &gPlayerAnim_link_fighter_Wrolling_kiru, 10.0f, play, NA_SE_VO_LI_SWORD_L);
+        }
+
+    }
+    return 1;
 }
 
 typedef struct BottleSwingInfo {
@@ -11788,6 +11842,34 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     s32 pad;
 
     sControlInput = input;
+
+    if (this->actor.bgCheckFlags & 1) {  //When standing on ground - Reset numJumps, Turn off sword attack
+        if (numJumps != 0) this->meleeWeaponState = 0;
+        numJumps = 0;
+    }
+
+    if (this->stateFlags1 & PLAYER_STATE1_CLIMBING_LADDER) {  //1_21 //When climbing somthing - set to already jumped once
+        this->meleeWeaponState = 0;
+        numJumps = 1;
+    }
+
+    if (this->stateFlags2 & PLAYER_STATE2_DISABLE_ROTATION_ALWAYS) { //2_6 //When hanging from a ledge- set to already jumped once
+        this->meleeWeaponState = 0;
+        numJumps = 1;
+    }
+    if (this->stateFlags1 & PLAYER_STATE1_IN_WATER) {
+        this->meleeWeaponState = 0;
+        numJumps = 1;
+    }
+    if (numJumps == 3) {
+        if (jump3timer >= 13) {//once jump 3 attack is done - turn off sword, start flickering link
+            this->meleeWeaponState = 0;
+            if (((jump3timer - 13) % 2) == 0) { //every other frame set filter to black
+                Actor_SetColorFilter(&this->actor, 0x8000, 0, 0, 1);
+            }
+        }
+        jump3timer++;
+    }
 
     if (this->unk_A86 < 0) {
         this->unk_A86++;

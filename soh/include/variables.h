@@ -103,7 +103,7 @@ extern "C"
 	extern u16 gUpgradeCapacities[8][4];
 	extern u32 gGsFlagsMasks[4];
 	extern u32 gGsFlagsShifts[4];
-	extern void* gItemIcons[158];
+	extern void* gItemIcons[0xA1]; //SSBJUMPS 0x82
 	extern u8 gItemAgeReqs[];
 	extern u8 gSlotAgeReqs[];
 	extern u8 gItemSlots[56];

@@ -199,6 +199,9 @@ void* gItemIcons[] = {
     "", // ITEM_CUSTOM
     // Start custom items
     gRocsFeatherTex,
+    "",
+    gJumpIconTex, //SSBJUMP
+    gJumpIconTex, //SSBJUMP
 };
 
 // Used to map item IDs to inventory slots
