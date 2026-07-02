@@ -1,4 +1,4 @@
-/* 
+/*
 GameInteractor is meant to be used for interacting with the game (yup...).
 It exposes functions that directly modify, add or remove game related elements.
 
@@ -31,23 +31,33 @@ GameInteractionEffectQueryResult GameInteractor::ApplyEffect(GameInteractionEffe
     return effect->Apply();
 }
 
-GameInteractionEffectQueryResult GameInteractor::RemoveEffect(GameInteractionEffectBase* effect) {
+GameInteractionEffectQueryResult GameInteractor::RemoveEffect(RemovableGameInteractionEffect* effect) {
     return effect->Remove();
 }
 
 // MARK: - Helpers
 
-bool GameInteractor::IsSaveLoaded() {
+bool GameInteractor::IsSaveLoaded(bool allowDbgSave) {
     Player* player;
     if (gPlayState != NULL) {
         player = GET_PLAYER(gPlayState);
     }
-    return (gPlayState == NULL || player == NULL || gSaveContext.fileNum < 0 || gSaveContext.fileNum > 2) ? false : true;
+
+    // Checking for normal game mode prevents debug saves from reporting true on title screen
+    if (gPlayState == NULL || player == NULL || gSaveContext.gameMode != GAMEMODE_NORMAL) {
+        return false;
+    }
+
+    // Valid save file or debug save
+    return (gSaveContext.fileNum >= 0 && gSaveContext.fileNum <= 2) || (allowDbgSave && gSaveContext.fileNum == 0xFF);
 }
 
 bool GameInteractor::IsGameplayPaused() {
     Player* player = GET_PLAYER(gPlayState);
-    return (Player_InBlockingCsMode(gPlayState, player) || gPlayState->pauseCtx.state != 0 || gPlayState->msgCtx.msgMode != 0) ? true : false;
+    return (Player_InBlockingCsMode(gPlayState, player) || gPlayState->pauseCtx.state != 0 ||
+            gPlayState->msgCtx.msgMode != 0)
+               ? true
+               : false;
 }
 
 bool GameInteractor::CanSpawnActor() {

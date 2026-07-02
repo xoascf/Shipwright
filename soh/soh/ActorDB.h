@@ -39,7 +39,7 @@ struct ActorDBInit {
 };
 
 class ActorDB {
-public:
+  public:
     static ActorDB* Instance;
 
     ActorDB();
@@ -64,7 +64,9 @@ public:
 
     static void AddBuiltInCustomActors();
 
-private:
+    int GetEntryCount();
+
+  private:
     Entry& AddEntry(const std::string& name, const std::string& desc, size_t index);
     Entry& AddEntry(const std::string& name, const std::string& desc, const ActorInit& init);
 

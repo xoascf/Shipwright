@@ -7,8 +7,9 @@
 #include "z_obj_oshihiki.h"
 #include "overlays/actors/ovl_Obj_Switch/z_obj_switch.h"
 #include "objects/gameplay_dangeon_keep/gameplay_dangeon_keep.h"
+#include "soh/ResourceManagerHelpers.h"
 
-#define FLAGS ACTOR_FLAG_UPDATE_WHILE_CULLED
+#define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
 void ObjOshihiki_Init(Actor* thisx, PlayState* play);
 void ObjOshihiki_Destroy(Actor* thisx, PlayState* play);
@@ -50,7 +51,7 @@ static Color_RGB8 sColors[][4] = {
     { { 232, 210, 176 }, { 232, 210, 176 }, { 232, 210, 176 }, { 232, 210, 176 } }, // spirit temple
     { { 135, 125, 95 }, { 135, 125, 95 }, { 135, 125, 95 }, { 135, 125, 95 } },     // shadow temple
     { { 255, 255, 255 }, { 255, 255, 255 }, { 255, 255, 255 }, { 255, 255, 255 } }, // ganons castle
-    { { 232, 210, 176 }, { 232, 210, 176 }, { 232, 210, 176 }, { 232, 210, 176 } }, // gerudo training grounds
+    { { 232, 210, 176 }, { 232, 210, 176 }, { 232, 210, 176 }, { 232, 210, 176 } }, // Gerudo Training Ground
 };
 
 static s16 sScenes[] = {
@@ -273,15 +274,6 @@ void ObjOshihiki_Init(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
     ObjOshihiki* this = (ObjOshihiki*)thisx;
 
-    // In MQ Spirit, remove the large silver block in the hole as child so the chest in the silver block hallway
-    // can be guaranteed accessible
-    if (IS_RANDO && LINK_IS_CHILD && ResourceMgr_IsGameMasterQuest() &&
-        play->sceneNum == SCENE_SPIRIT_TEMPLE && thisx->room == 6 && // Spirit Temple silver block hallway
-        thisx->params == 0x9C7) { // Silver block that is marked as in the hole
-        Actor_Kill(thisx);
-        return;
-    }
-
     ObjOshihiki_CheckType(this, play);
 
     if ((((this->dyna.actor.params >> 8) & 0xFF) >= 0) && (((this->dyna.actor.params >> 8) & 0xFF) <= 0x3F)) {
@@ -343,8 +335,8 @@ void ObjOshihiki_SetFloors(ObjOshihiki* this, PlayState* play) {
 
         floorPoly = &this->floorPolys[i];
         floorBgId = &this->floorBgIds[i];
-        this->floorHeights[i] = BgCheck_EntityRaycastFloor6(&play->colCtx, floorPoly, floorBgId, &this->dyna.actor,
-                                                            &colCheckPoint, 0.0f);
+        this->floorHeights[i] =
+            BgCheck_EntityRaycastFloor6(&play->colCtx, floorPoly, floorBgId, &this->dyna.actor, &colCheckPoint, 0.0f);
     }
 }
 
@@ -436,8 +428,8 @@ s32 ObjOshihiki_CheckWall(PlayState* play, s16 angle, f32 direction, ObjOshihiki
         faceVtxNext.x = faceVtx.x + maxDist * sn;
         faceVtxNext.y = faceVtx.y;
         faceVtxNext.z = faceVtx.z + maxDist * cs;
-        if (BgCheck_EntityLineTest3(&play->colCtx, &faceVtx, &faceVtxNext, &posResult, &outPoly, true, false,
-                                    false, true, &bgId, &this->dyna.actor, 0.0f)) {
+        if (BgCheck_EntityLineTest3(&play->colCtx, &faceVtx, &faceVtxNext, &posResult, &outPoly, true, false, false,
+                                    true, &bgId, &this->dyna.actor, 0.0f)) {
             return true;
         }
     }
@@ -486,11 +478,11 @@ void ObjOshihiki_OnScene(ObjOshihiki* this, PlayState* play) {
             this->direction = this->dyna.unk_150;
             ObjOshihiki_SetupPush(this, play);
         } else {
-            player->stateFlags2 &= ~0x10;
+            player->stateFlags2 &= ~PLAYER_STATE2_MOVING_DYNAPOLY;
             this->dyna.unk_150 = 0.0f;
         }
     } else {
-        player->stateFlags2 &= ~0x10;
+        player->stateFlags2 &= ~PLAYER_STATE2_MOVING_DYNAPOLY;
         this->dyna.unk_150 = 0.0f;
     }
 }
@@ -508,7 +500,7 @@ void ObjOshihiki_OnActor(ObjOshihiki* this, PlayState* play) {
     DynaPolyActor* dynaPolyActor;
 
     this->stateFlags |= PUSHBLOCK_ON_ACTOR;
-    Actor_MoveForward(&this->dyna.actor);
+    Actor_MoveXZGravity(&this->dyna.actor);
 
     if (ObjOshihiki_CheckFloor(this, play)) {
         bgId = this->floorBgIds[this->highestFloor];
@@ -517,8 +509,8 @@ void ObjOshihiki_OnActor(ObjOshihiki* this, PlayState* play) {
         } else {
             dynaPolyActor = DynaPoly_GetActor(&play->colCtx, bgId);
             if (dynaPolyActor != NULL) {
-                func_800434A8(dynaPolyActor);
-                func_80043538(dynaPolyActor);
+                DynaPolyActor_SetActorOnTop(dynaPolyActor);
+                DynaPolyActor_SetSwitchPressed(dynaPolyActor);
 
                 if ((this->timer <= 0) && (fabsf(this->dyna.unk_150) > 0.001f)) {
                     if (ObjOshihiki_StrongEnough(this) && ObjOshihiki_NoSwitchPress(this, dynaPolyActor, play) &&
@@ -527,11 +519,11 @@ void ObjOshihiki_OnActor(ObjOshihiki* this, PlayState* play) {
                         this->direction = this->dyna.unk_150;
                         ObjOshihiki_SetupPush(this, play);
                     } else {
-                        player->stateFlags2 &= ~0x10;
+                        player->stateFlags2 &= ~PLAYER_STATE2_MOVING_DYNAPOLY;
                         this->dyna.unk_150 = 0.0f;
                     }
                 } else {
-                    player->stateFlags2 &= ~0x10;
+                    player->stateFlags2 &= ~PLAYER_STATE2_MOVING_DYNAPOLY;
                     this->dyna.unk_150 = 0.0f;
                 }
             } else {
@@ -545,9 +537,9 @@ void ObjOshihiki_OnActor(ObjOshihiki* this, PlayState* play) {
         } else {
             dynaPolyActor = DynaPoly_GetActor(&play->colCtx, bgId);
 
-            if ((dynaPolyActor != NULL) && (dynaPolyActor->unk_15C & 1)) {
-                func_800434A8(dynaPolyActor);
-                func_80043538(dynaPolyActor);
+            if ((dynaPolyActor != NULL) && (dynaPolyActor->transformFlags & 1)) {
+                DynaPolyActor_SetActorOnTop(dynaPolyActor);
+                DynaPolyActor_SetSwitchPressed(dynaPolyActor);
                 this->dyna.actor.world.pos.y = this->dyna.actor.floorHeight;
             } else {
                 ObjOshihiki_SetupFall(this, play);
@@ -568,9 +560,9 @@ void ObjOshihiki_Push(ObjOshihiki* this, PlayState* play) {
     f32 pushDistSigned;
     s32 stopFlag;
 
-    this->pushSpeed = this->pushSpeed + (CVarGetInteger("gFasterBlockPush", 0) * 0.25) + 0.5f;
+    this->pushSpeed = this->pushSpeed + (CVarGetInteger(CVAR_ENHANCEMENT("FasterBlockPush"), 0) * 0.25) + 0.5f;
     this->stateFlags |= PUSHBLOCK_PUSH;
-    this->pushSpeed = CLAMP_MAX(this->pushSpeed, 2.0f + (CVarGetInteger("gFasterBlockPush", 0) * 0.5));
+    this->pushSpeed = CLAMP_MAX(this->pushSpeed, 2.0f + (CVarGetInteger(CVAR_ENHANCEMENT("FasterBlockPush"), 0) * 0.5));
     stopFlag = Math_StepToF(&this->pushDist, 20.0f, this->pushSpeed);
     pushDistSigned = ((this->direction >= 0.0f) ? 1.0f : -1.0f) * this->pushDist;
     thisx->world.pos.x = thisx->home.pos.x + (pushDistSigned * this->yawSin);
@@ -579,7 +571,7 @@ void ObjOshihiki_Push(ObjOshihiki* this, PlayState* play) {
     if (!ObjOshihiki_CheckFloor(this, play)) {
         thisx->home.pos.x = thisx->world.pos.x;
         thisx->home.pos.z = thisx->world.pos.z;
-        player->stateFlags2 &= ~0x10;
+        player->stateFlags2 &= ~PLAYER_STATE2_MOVING_DYNAPOLY;
         this->dyna.unk_150 = 0.0f;
         this->pushDist = 0.0f;
         this->pushSpeed = 0.0f;
@@ -592,11 +584,11 @@ void ObjOshihiki_Push(ObjOshihiki* this, PlayState* play) {
 
         thisx->home.pos.x = thisx->world.pos.x;
         thisx->home.pos.z = thisx->world.pos.z;
-        player->stateFlags2 &= ~0x10;
+        player->stateFlags2 &= ~PLAYER_STATE2_MOVING_DYNAPOLY;
         this->dyna.unk_150 = 0.0f;
         this->pushDist = 0.0f;
         this->pushSpeed = 0.0f;
-        this->timer = 10 - ((CVarGetInteger("gFasterBlockPush", 0) * 3) / 2);
+        this->timer = 10 - ((CVarGetInteger(CVAR_ENHANCEMENT("FasterBlockPush"), 0) * 3) / 2);
         if (this->floorBgIds[this->highestFloor] == BGCHECK_SCENE) {
             ObjOshihiki_SetupOnScene(this, play);
         } else {
@@ -620,9 +612,9 @@ void ObjOshihiki_Fall(ObjOshihiki* this, PlayState* play) {
     this->stateFlags |= PUSHBLOCK_FALL;
     if (fabsf(this->dyna.unk_150) > 0.001f) {
         this->dyna.unk_150 = 0.0f;
-        player->stateFlags2 &= ~0x10;
+        player->stateFlags2 &= ~PLAYER_STATE2_MOVING_DYNAPOLY;
     }
-    Actor_MoveForward(&this->dyna.actor);
+    Actor_MoveXZGravity(&this->dyna.actor);
     if (ObjOshihiki_CheckGround(this, play)) {
         if (this->floorBgIds[this->highestFloor] == BGCHECK_SCENE) {
             ObjOshihiki_SetupOnScene(this, play);
@@ -630,10 +622,9 @@ void ObjOshihiki_Fall(ObjOshihiki* this, PlayState* play) {
             ObjOshihiki_SetupOnActor(this, play);
         }
         Audio_PlayActorSound2(&this->dyna.actor, NA_SE_EV_BLOCK_BOUND);
-        Audio_PlayActorSound2(&this->dyna.actor,
-                              SurfaceType_GetSfx(&play->colCtx, this->floorPolys[this->highestFloor],
-                                                 this->floorBgIds[this->highestFloor]) +
-                                  SFX_FLAG);
+        Audio_PlayActorSound2(&this->dyna.actor, SurfaceType_GetSfx(&play->colCtx, this->floorPolys[this->highestFloor],
+                                                                    this->floorBgIds[this->highestFloor]) +
+                                                     SFX_FLAG);
     }
 }
 
@@ -672,8 +663,7 @@ void ObjOshihiki_Draw(Actor* thisx, PlayState* play) {
     Gfx_SetupDL_25Opa(play->state.gfxCtx);
     gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(this->texture));
 
-    gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-              G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 
     switch (play->sceneNum) {
         case SCENE_DEKU_TREE:

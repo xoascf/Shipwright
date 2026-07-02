@@ -1452,8 +1452,9 @@ static MapMarkData sMapMarkIceCavernVanilla[] = {
 };
 
 MapMarkData* gMapMarkDataTableVanilla[] = {
-    sMapMarkDekuTreeVanilla,    sMapMarkDodongosCavernVanilla, sMapMarkJabuJabuBellyVanilla, sMapMarkForestTempleVanilla, sMapMarkFireTempleVanilla,
-    sMapMarkWaterTempleVanilla, sMapMarkSpiritTempleVanilla,   sMapMarkShadowTempleVanilla,  sMapMarkBottomWellVanilla,   sMapMarkIceCavernVanilla,
+    sMapMarkDekuTreeVanilla,   sMapMarkDodongosCavernVanilla, sMapMarkJabuJabuBellyVanilla, sMapMarkForestTempleVanilla,
+    sMapMarkFireTempleVanilla, sMapMarkWaterTempleVanilla,    sMapMarkSpiritTempleVanilla,  sMapMarkShadowTempleVanilla,
+    sMapMarkBottomWellVanilla, sMapMarkIceCavernVanilla,
 };
 
 static MapMarkData sMapMarkDekuTreeMq[] = {
@@ -1760,6 +1761,13 @@ static MapMarkData sMapMarkJabuJabuBellyMq[] = {
               { 0, 48, 57 },
               { 2, 77, 55 },
           } },
+        { MAP_MARK_NONE, 0, { 0 } },
+    },
+    // Jabu-Jabu's Belly minimap 16
+    // SoH [General] - This entry corresponds to Big Octorok's room and is missing in the MQ game
+    // N64 hardware does an OoB read and lands on MQ Forest Temple room 0
+    // To avoid UB with OoB for SoH, the correct entry is now added below
+    {
         { MAP_MARK_NONE, 0, { 0 } },
     },
 };
@@ -2895,6 +2903,7 @@ static MapMarkData sMapMarkIceCavernMq[] = {
 };
 
 MapMarkData* gMapMarkDataTableMq[] = {
-    sMapMarkDekuTreeMq,    sMapMarkDodongosCavernMq, sMapMarkJabuJabuBellyMq, sMapMarkForestTempleMq, sMapMarkFireTempleMq,
-    sMapMarkWaterTempleMq, sMapMarkSpiritTempleMq,   sMapMarkShadowTempleMq,  sMapMarkBottomWellMq,   sMapMarkIceCavernMq,
+    sMapMarkDekuTreeMq,   sMapMarkDodongosCavernMq, sMapMarkJabuJabuBellyMq, sMapMarkForestTempleMq,
+    sMapMarkFireTempleMq, sMapMarkWaterTempleMq,    sMapMarkSpiritTempleMq,  sMapMarkShadowTempleMq,
+    sMapMarkBottomWellMq, sMapMarkIceCavernMq,
 };

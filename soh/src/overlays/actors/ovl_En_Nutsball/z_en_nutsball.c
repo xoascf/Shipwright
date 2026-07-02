@@ -13,7 +13,7 @@
 #include "objects/object_dns/object_dns.h"
 #include "objects/object_dnk/object_dnk.h"
 
-#define FLAGS ACTOR_FLAG_UPDATE_WHILE_CULLED
+#define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
 void EnNutsball_Init(Actor* thisx, PlayState* play);
 void EnNutsball_Destroy(Actor* thisx, PlayState* play);
@@ -75,7 +75,7 @@ void EnNutsball_Init(Actor* thisx, PlayState* play) {
     ActorShape_Init(&this->actor.shape, 400.0f, ActorShadow_DrawCircle, 13.0f);
     Collider_InitCylinder(play, &this->collider);
     Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-    if (CVarGetInteger("gRandomizedEnemies", 0)) {
+    if (CVarGetInteger(CVAR_ENHANCEMENT("RandomizedEnemies"), 0)) {
         this->objBankIndex = 0;
     } else {
         this->objBankIndex = Object_GetIndex(&play->objectCtx, sObjectIDs[this->actor.params]);
@@ -156,14 +156,16 @@ void EnNutsball_Update(Actor* thisx, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s32 pad;
 
-    if (!(player->stateFlags1 & 0x300000C0) || (this->actionFunc == func_80ABBB34)) {
+    if (!(player->stateFlags1 &
+          (PLAYER_STATE1_TALKING | PLAYER_STATE1_DEAD | PLAYER_STATE1_IN_ITEM_CS | PLAYER_STATE1_IN_CUTSCENE)) ||
+        (this->actionFunc == func_80ABBB34)) {
         this->actionFunc(this, play);
 
-        Actor_MoveForward(&this->actor);
+        Actor_MoveXZGravity(&this->actor);
         Actor_UpdateBgCheckInfo(play, &this->actor, 10, sCylinderInit.dim.radius, sCylinderInit.dim.height, 5);
         Collider_UpdateCylinder(&this->actor, &this->collider);
 
-        this->actor.flags |= ACTOR_FLAG_PLAY_HIT_SFX;
+        this->actor.flags |= ACTOR_FLAG_SFX_FOR_PLAYER_BODY_HIT;
 
         CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
         CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
@@ -176,24 +178,21 @@ void EnNutsball_Draw(Actor* thisx, PlayState* play) {
 
     OPEN_DISPS(play->state.gfxCtx);
 
-    if (CVarGetInteger("gNewDrops", 0) != 0) {
+    if (CVarGetInteger(CVAR_ENHANCEMENT("NewDrops"), 0) != 0) {
         Gfx_SetupDL_25Opa(play->state.gfxCtx);
         gSPSegment(POLY_OPA_DISP++, 0x08,
-                Gfx_TwoTexScroll(play->state.gfxCtx, 0, 1 * (play->state.frames * 6),
-                                    1 * (play->state.frames * 6), 32, 32, 1, 1 * (play->state.frames * 6),
-                                    1 * (play->state.frames * 6), 32, 32));
-        Matrix_Scale(25.0f,25.0f,25.0f,MTXMODE_APPLY);
+                   Gfx_TwoTexScroll(play->state.gfxCtx, 0, 1 * (play->state.frames * 6), 1 * (play->state.frames * 6),
+                                    32, 32, 1, 1 * (play->state.frames * 6), 1 * (play->state.frames * 6), 32, 32));
+        Matrix_Scale(25.0f, 25.0f, 25.0f, MTXMODE_APPLY);
         Matrix_RotateX(thisx->home.rot.z * 9.58738e-05f, MTXMODE_APPLY);
-        gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-                G_MTX_MODELVIEW | G_MTX_LOAD);
+        gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_MODELVIEW | G_MTX_LOAD);
         gSPDisplayList(POLY_OPA_DISP++, sDListsNew[thisx->params]);
     } else {
         Gfx_SetupDL_25Opa(play->state.gfxCtx);
         Matrix_Mult(&play->billboardMtxF, MTXMODE_APPLY);
-        
+
         Matrix_RotateZ(thisx->home.rot.z * 9.58738e-05f, MTXMODE_APPLY);
-        gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-                G_MTX_MODELVIEW | G_MTX_LOAD);
+        gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_MODELVIEW | G_MTX_LOAD);
         gSPDisplayList(POLY_OPA_DISP++, sDLists[thisx->params]);
     }
 

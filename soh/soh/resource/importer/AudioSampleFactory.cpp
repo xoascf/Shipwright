@@ -2,33 +2,16 @@
 #include "soh/resource/type/AudioSample.h"
 #include "spdlog/spdlog.h"
 
-namespace LUS {
-std::shared_ptr<IResource>
-AudioSampleFactory::ReadResource(std::shared_ptr<ResourceInitData> initData, std::shared_ptr<BinaryReader> reader) {
-    auto resource = std::make_shared<AudioSample>(initData);
-    std::shared_ptr<ResourceVersionFactory> factory = nullptr;
-
-    switch (resource->GetInitData()->ResourceVersion) {
-    case 2:
-	factory = std::make_shared<AudioSampleFactoryV0>();
-	break;
+namespace SOH {
+std::shared_ptr<Ship::IResource>
+ResourceFactoryBinaryAudioSampleV2::ReadResource(std::shared_ptr<Ship::File> file,
+                                                 std::shared_ptr<Ship::ResourceInitData> initData) {
+    if (!FileHasValidFormatAndReader(file, initData)) {
+        return nullptr;
     }
 
-    if (factory == nullptr) {
-        SPDLOG_ERROR("Failed to load AudioSample with version {}", resource->GetInitData()->ResourceVersion);
-	return nullptr;
-    }
-
-    factory->ParseFileBinary(reader, resource);
-
-    return resource;
-}
-
-void LUS::AudioSampleFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader,
-                                                 std::shared_ptr<IResource> resource)
-{
-    std::shared_ptr<AudioSample> audioSample = std::static_pointer_cast<AudioSample>(resource);
-    ResourceVersionFactory::ParseFileBinary(reader, audioSample);
+    auto audioSample = std::make_shared<AudioSample>(initData);
+    auto reader = std::get<std::shared_ptr<Ship::BinaryReader>>(file->Reader);
 
     audioSample->sample.codec = reader->ReadUByte();
     audioSample->sample.medium = reader->ReadUByte();
@@ -65,9 +48,10 @@ void LUS::AudioSampleFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> re
     }
     audioSample->book.book = audioSample->bookData.data();
     audioSample->sample.book = &audioSample->book;
-}
-} // namespace LUS
 
+    return audioSample;
+}
+} // namespace SOH
 
 /*
 in ResourceMgr_LoadAudioSample we used to have
@@ -89,7 +73,7 @@ extern "C" SoundFontSample* ReadCustomSample(const char* path) {
 
     ExtensionEntry entry = ExtensionCache[path];
 
-    auto sampleRaw = LUS::Context::GetInstance()->GetResourceManager()->LoadFile(entry.path);
+    auto sampleRaw = Ship::Context::GetInstance()->GetResourceManager()->LoadFile(entry.path);
     uint32_t* strem = (uint32_t*)sampleRaw->Buffer.get();
     uint8_t* strem2 = (uint8_t*)strem;
 
@@ -100,10 +84,8 @@ extern "C" SoundFontSample* ReadCustomSample(const char* path) {
         drwav_uint32 sampleRate;
         drwav_uint64 totalPcm;
         drmp3_int16* pcmData =
-            drwav_open_memory_and_read_pcm_frames_s16(strem2, sampleRaw->BufferSize, &channels, &sampleRate, &totalPcm, NULL);
-        sampleC->size = totalPcm;
-        sampleC->sampleAddr = (uint8_t*)pcmData;
-        sampleC->codec = CODEC_S16;
+            drwav_open_memory_and_read_pcm_frames_s16(strem2, sampleRaw->BufferSize, &channels, &sampleRate, &totalPcm,
+NULL); sampleC->size = totalPcm; sampleC->sampleAddr = (uint8_t*)pcmData; sampleC->codec = CODEC_S16;
 
         sampleC->loop = new AdpcmLoop;
         sampleC->loop->start = 0;

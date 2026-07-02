@@ -7,8 +7,12 @@
 #include "z_en_fu.h"
 #include "objects/object_fu/object_fu.h"
 #include "scenes/indoors/hakasitarelay/hakasitarelay_scene.h"
+#include "soh/OTRGlobals.h"
+#include "soh/ResourceManagerHelpers.h"
 
-#define FLAGS (ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_NO_FREEZE_OCARINA)
+#define FLAGS                                                                                  \
+    (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_CULLING_DISABLED | \
+     ACTOR_FLAG_UPDATE_DURING_OCARINA)
 
 #define FU_RESET_LOOK_ANGLE (1 << 0)
 #define FU_WAIT (1 << 1)
@@ -161,19 +165,11 @@ void GivePlayerRandoRewardSongOfStorms(EnFu* windmillGuy, PlayState* play, Rando
     }
 }
 
-void func_WaitForSongGive(EnFu* this, PlayState* play) {
-    GivePlayerRandoRewardSongOfStorms(this, play, RC_SONG_FROM_WINDMILL);
-}
-
 void func_80A1DB60(EnFu* this, PlayState* play) {
     if (play->csCtx.state == CS_STATE_IDLE) {
         this->actionFunc = EnFu_WaitAdult;
         Flags_SetEventChkInf(EVENTCHKINF_LEARNED_SONG_OF_STORMS);
         play->msgCtx.ocarinaMode = OCARINA_MODE_04;
-    }
-
-    if (IS_RANDO) {
-        this->actionFunc = func_WaitForSongGive;
     }
 }
 
@@ -186,39 +182,29 @@ void func_80A1DBA0(EnFu* this, PlayState* play) {
 void func_80A1DBD4(EnFu* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    if (IS_RANDO && (Message_GetState(&play->msgCtx) == TEXT_STATE_CLOSING)) {
-        play->msgCtx.ocarinaMode = OCARINA_MODE_03;
-    }
-
     if (play->msgCtx.ocarinaMode >= OCARINA_MODE_04) {
         this->actionFunc = EnFu_WaitAdult;
         play->msgCtx.ocarinaMode = OCARINA_MODE_04;
-        this->actor.flags &= ~ACTOR_FLAG_WILL_TALK;
+        this->actor.flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
     } else if (play->msgCtx.ocarinaMode == OCARINA_MODE_03) {
-        func_80078884(NA_SE_SY_CORRECT_CHIME);
+        Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
         this->actionFunc = func_80A1DB60;
-        this->actor.flags &= ~ACTOR_FLAG_WILL_TALK;
-
-        if (!IS_RANDO) {
-            play->csCtx.segment = SEGMENTED_TO_VIRTUAL(gSongOfStormsCs);
-            gSaveContext.cutsceneTrigger = 1;
-            Item_Give(play, ITEM_SONG_STORMS);
-        }
+        this->actor.flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
 
         play->msgCtx.ocarinaMode = OCARINA_MODE_00;
         Flags_SetEventChkInf(EVENTCHKINF_PLAYED_SONG_OF_STORMS_IN_WINDMILL);
     } else if (play->msgCtx.ocarinaMode == OCARINA_MODE_02) {
-        player->stateFlags2 &= ~0x1000000;
+        player->stateFlags2 &= ~PLAYER_STATE2_ATTEMPT_PLAY_FOR_ACTOR;
         this->actionFunc = EnFu_WaitAdult;
     } else if (play->msgCtx.ocarinaMode == OCARINA_MODE_01) {
-        player->stateFlags2 |= 0x800000;
+        player->stateFlags2 |= PLAYER_STATE2_NEAR_OCARINA_ACTOR;
     }
 }
 
 void EnFu_WaitForPlayback(EnFu* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    player->stateFlags2 |= 0x800000;
+    player->stateFlags2 |= PLAYER_STATE2_NEAR_OCARINA_ACTOR;
     // if dialog state is 7, player has played back the song
     if (Message_GetState(&play->msgCtx) == TEXT_STATE_SONG_DEMO_DONE) {
         func_8010BD58(play, OCARINA_ACTION_PLAYBACK_STORMS);
@@ -229,7 +215,7 @@ void EnFu_WaitForPlayback(EnFu* this, PlayState* play) {
 void EnFu_TeachSong(EnFu* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    player->stateFlags2 |= 0x800000;
+    player->stateFlags2 |= PLAYER_STATE2_NEAR_OCARINA_ACTOR;
     // if dialog state is 2, start song demonstration
     if (Message_GetState(&play->msgCtx) == TEXT_STATE_CLOSING) {
         this->behaviorFlags &= ~FU_WAIT;
@@ -246,10 +232,10 @@ void EnFu_WaitAdult(EnFu* this, PlayState* play) {
     yawDiff = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
     if ((Flags_GetEventChkInf(EVENTCHKINF_LEARNED_SONG_OF_STORMS))) {
         func_80A1D94C(this, play, 0x508E, func_80A1DBA0);
-    } else if (player->stateFlags2 & 0x1000000) {
+    } else if (player->stateFlags2 & PLAYER_STATE2_ATTEMPT_PLAY_FOR_ACTOR) {
         this->actor.textId = 0x5035;
         Message_StartTextbox(play, this->actor.textId, NULL);
-        this->actionFunc = IS_RANDO ? func_80A1DBD4 : EnFu_TeachSong;
+        this->actionFunc = EnFu_TeachSong;
         this->behaviorFlags |= FU_WAIT;
     } else if (Actor_ProcessTalkRequest(&this->actor, play)) {
         this->actionFunc = func_80A1DBA0;
@@ -257,7 +243,7 @@ void EnFu_WaitAdult(EnFu* this, PlayState* play) {
         if (this->actor.xzDistToPlayer < 100.0f) {
             this->actor.textId = 0x5034;
             func_8002F2CC(&this->actor, play, 100.0f);
-            player->stateFlags2 |= 0x800000;
+            player->stateFlags2 |= PLAYER_STATE2_NEAR_OCARINA_ACTOR;
         }
     }
 }
@@ -268,7 +254,7 @@ void EnFu_Update(Actor* thisx, PlayState* play) {
 
     Collider_UpdateCylinder(&this->actor, &this->collider);
     CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
-    Actor_MoveForward(&this->actor);
+    Actor_MoveXZGravity(&this->actor);
     Actor_UpdateBgCheckInfo(play, &this->actor, 0.0f, 0.0f, 0.0f, 4);
     if ((!(this->behaviorFlags & FU_WAIT)) && (SkelAnime_Update(&this->skelanime) != 0)) {
         Animation_Change(&this->skelanime, this->skelanime.animation, 1.0f, 0.0f,

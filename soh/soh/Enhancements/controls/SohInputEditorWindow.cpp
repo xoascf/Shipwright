@@ -1,13 +1,17 @@
 #include "SohInputEditorWindow.h"
-#include <Utils/StringHelper.h>
+#include <utils/StringHelper.h>
 #include "soh/OTRGlobals.h"
-#include "../../UIWidgets.hpp"
+#include "soh/SohGui/UIWidgets.hpp"
+#include "soh/SohGui/SohGui.hpp"
 #include "z64.h"
+#include "soh/cvar_prefixes.h"
 #ifndef __WIIU__
 #include "controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
 #endif
 
 #define SCALE_IMGUI_SIZE(value) ((value / 13.0f) * ImGui::GetFontSize())
+
+using namespace UIWidgets;
 
 SohInputEditorWindow::~SohInputEditorWindow() {
 }
@@ -21,7 +25,26 @@ void SohInputEditorWindow::InitElement() {
 
     mButtonsBitmasks = { BTN_A, BTN_B, BTN_START, BTN_L, BTN_R, BTN_Z, BTN_CUP, BTN_CDOWN, BTN_CLEFT, BTN_CRIGHT };
     mDpadBitmasks = { BTN_DUP, BTN_DDOWN, BTN_DLEFT, BTN_DRIGHT };
-    mModifierButtonsBitmasks = { BTN_MODIFIER1, BTN_MODIFIER2 };
+    mModifierButtonsBitmasks = { BTN_CUSTOM_MODIFIER1, BTN_CUSTOM_MODIFIER2 };
+    mCustomOcarinaButtonsBitmasks = { BTN_CUSTOM_OCARINA_NOTE_D4, BTN_CUSTOM_OCARINA_NOTE_F4,
+                                      BTN_CUSTOM_OCARINA_NOTE_A4, BTN_CUSTOM_OCARINA_NOTE_B4,
+                                      BTN_CUSTOM_OCARINA_NOTE_D5 };
+
+    addButtonName(BTN_A, "A");
+    addButtonName(BTN_B, "B");
+    addButtonName(BTN_CUP, "C Up");
+    addButtonName(BTN_CDOWN, "C Down");
+    addButtonName(BTN_CLEFT, "C Left");
+    addButtonName(BTN_CRIGHT, "C Right");
+    addButtonName(BTN_L, "L");
+    addButtonName(BTN_Z, "Z");
+    addButtonName(BTN_R, "R");
+    addButtonName(BTN_START, "Start");
+    addButtonName(BTN_DUP, "D-pad up");
+    addButtonName(BTN_DDOWN, "D-pad down");
+    addButtonName(BTN_DLEFT, "D-pad left");
+    addButtonName(BTN_DRIGHT, "D-pad right");
+    addButtonName(0, "None");
 }
 
 #define INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID 95237929
@@ -41,7 +64,7 @@ void SohInputEditorWindow::UpdateElement() {
     }
 
     if (mInputEditorPopupOpen && ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {
-        LUS::Context::GetInstance()->GetControlDeck()->BlockGameInput(INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID);
+        Ship::Context::GetInstance()->GetControlDeck()->BlockGameInput(INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID);
 
         // continue to block input for a third of a second after getting the mapping
         mGameInputBlockTimer = ImGui::GetIO().Framerate / 3;
@@ -53,24 +76,24 @@ void SohInputEditorWindow::UpdateElement() {
             }
         }
 
-        LUS::Context::GetInstance()->GetWindow()->GetGui()->BlockImGuiGamepadNavigation();
+        Ship::Context::GetInstance()->GetWindow()->GetGui()->BlockGamepadNavigation();
     } else {
         if (mGameInputBlockTimer != INT32_MAX) {
             mGameInputBlockTimer--;
             if (mGameInputBlockTimer <= 0) {
-                LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput(
+                Ship::Context::GetInstance()->GetControlDeck()->UnblockGameInput(
                     INPUT_EDITOR_WINDOW_GAME_INPUT_BLOCK_ID);
                 mGameInputBlockTimer = INT32_MAX;
             }
         }
 
-        if (LUS::Context::GetInstance()->GetWindow()->GetGui()->ImGuiGamepadNavigationEnabled()) {
+        if (Ship::Context::GetInstance()->GetWindow()->GetGui()->GamepadNavigationEnabled()) {
             mMappingInputBlockTimer = ImGui::GetIO().Framerate / 3;
         } else {
             mMappingInputBlockTimer = INT32_MAX;
         }
 
-        LUS::Context::GetInstance()->GetWindow()->GetGui()->UnblockImGuiGamepadNavigation();
+        Ship::Context::GetInstance()->GetWindow()->GetGui()->UnblockGamepadNavigation();
     }
 }
 
@@ -145,6 +168,9 @@ void SohInputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, fl
 #define BUTTON_COLOR_KEYBOARD_BEIGE ImVec4(0.651f, 0.482f, 0.357f, 0.5f)
 #define BUTTON_COLOR_KEYBOARD_BEIGE_HOVERED ImVec4(0.651f, 0.482f, 0.357f, 1.0f)
 
+#define BUTTON_COLOR_MOUSE_GRAY ImVec4(0.5f, 0.5f, 0.5f, 0.5f)
+#define BUTTON_COLOR_MOUSE_GRAY_HOVERED ImVec4(0.5f, 0.5f, 0.5f, 1.0f)
+
 #define BUTTON_COLOR_GAMEPAD_BLUE ImVec4(0.0f, 0.255f, 0.976f, 0.5f)
 #define BUTTON_COLOR_GAMEPAD_BLUE_HOVERED ImVec4(0.0f, 0.255f, 0.976f, 1.0f)
 
@@ -160,28 +186,20 @@ void SohInputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, fl
 #define BUTTON_COLOR_GAMEPAD_PURPLE ImVec4(0.431f, 0.369f, 0.706f, 0.5f)
 #define BUTTON_COLOR_GAMEPAD_PURPLE_HOVERED ImVec4(0.431f, 0.369f, 0.706f, 1.0f)
 
-void SohInputEditorWindow::GetButtonColorsForLUSDeviceIndex(LUS::LUSDeviceIndex lusIndex, ImVec4& buttonColor,
-                                                            ImVec4& buttonHoveredColor) {
+void SohInputEditorWindow::GetButtonColorsForDeviceType(Ship::PhysicalDeviceType lusIndex, ImVec4& buttonColor,
+                                                        ImVec4& buttonHoveredColor) {
     switch (lusIndex) {
-        case LUS::LUSDeviceIndex::Keyboard:
+        case Ship::PhysicalDeviceType::Keyboard:
             buttonColor = BUTTON_COLOR_KEYBOARD_BEIGE;
             buttonHoveredColor = BUTTON_COLOR_KEYBOARD_BEIGE_HOVERED;
             break;
-        case LUS::LUSDeviceIndex::Blue:
+        case Ship::PhysicalDeviceType::Mouse:
+            buttonColor = BUTTON_COLOR_MOUSE_GRAY;
+            buttonHoveredColor = BUTTON_COLOR_MOUSE_GRAY_HOVERED;
+            break;
+        case Ship::PhysicalDeviceType::SDLGamepad:
             buttonColor = BUTTON_COLOR_GAMEPAD_BLUE;
             buttonHoveredColor = BUTTON_COLOR_GAMEPAD_BLUE_HOVERED;
-            break;
-        case LUS::LUSDeviceIndex::Red:
-            buttonColor = BUTTON_COLOR_GAMEPAD_RED;
-            buttonHoveredColor = BUTTON_COLOR_GAMEPAD_RED_HOVERED;
-            break;
-        case LUS::LUSDeviceIndex::Orange:
-            buttonColor = BUTTON_COLOR_GAMEPAD_ORANGE;
-            buttonHoveredColor = BUTTON_COLOR_GAMEPAD_ORANGE_HOVERED;
-            break;
-        case LUS::LUSDeviceIndex::Green:
-            buttonColor = BUTTON_COLOR_GAMEPAD_GREEN;
-            buttonHoveredColor = BUTTON_COLOR_GAMEPAD_GREEN_HOVERED;
             break;
         default:
             buttonColor = BUTTON_COLOR_GAMEPAD_PURPLE;
@@ -197,7 +215,7 @@ void SohInputEditorWindow::DrawInputChip(const char* buttonName, ImVec4 color = 
     ImGui::EndDisabled();
 }
 
-void SohInputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t bitmask) {
+void SohInputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, N64ButtonMask bitmask) {
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
     auto popupId = StringHelper::Sprintf("addButtonMappingPopup##%d-%d", port, bitmask);
     if (ImGui::Button(StringHelper::Sprintf("%s###addButtonMappingButton%d-%d", ICON_FA_PLUS, port, bitmask).c_str(),
@@ -214,7 +232,7 @@ void SohInputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t
             ImGui::CloseCurrentPopup();
         }
         // todo: figure out why optional params (using id = "" in the definition) wasn't working
-        if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && Ship::Context::GetInstance()
                                                         ->GetControlDeck()
                                                         ->GetControllerByPort(port)
                                                         ->GetButton(bitmask)
@@ -226,8 +244,8 @@ void SohInputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, uint16_t
     }
 }
 
-void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_t bitmask, std::string id) {
-    auto mapping = LUS::Context::GetInstance()
+void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, N64ButtonMask bitmask, std::string id) {
+    auto mapping = Ship::Context::GetInstance()
                        ->GetControlDeck()
                        ->GetControllerByPort(port)
                        ->GetButton(bitmask)
@@ -243,6 +261,7 @@ void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_
             icon = ICON_FA_GAMEPAD;
             break;
         case MAPPING_TYPE_KEYBOARD:
+        case MAPPING_TYPE_MOUSE:
             icon = ICON_FA_KEYBOARD_O;
             break;
         case MAPPING_TYPE_UNKNOWN:
@@ -253,7 +272,7 @@ void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_
     auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
     auto physicalInputDisplayName =
         StringHelper::Sprintf("%s %s", icon.c_str(), mapping->GetPhysicalInputName().c_str());
-    GetButtonColorsForLUSDeviceIndex(mapping->GetLUSDeviceIndex(), buttonColor, buttonHoveredColor);
+    GetButtonColorsForDeviceType(mapping->GetPhysicalDeviceType(), buttonColor, buttonHoveredColor);
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     auto popupId = StringHelper::Sprintf("editButtonMappingPopup##%s", id.c_str());
@@ -264,7 +283,7 @@ void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_
         ImGui::OpenPopup(popupId.c_str());
     }
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
-        ImGui::SetTooltip(mapping->GetPhysicalDeviceName().c_str());
+        ImGui::SetTooltip("%s", mapping->GetPhysicalDeviceName().c_str());
     }
     ImGui::PopStyleColor();
     ImGui::PopStyleColor();
@@ -276,7 +295,7 @@ void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_
             mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
-        if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && Ship::Context::GetInstance()
                                                         ->GetControlDeck()
                                                         ->GetControllerByPort(port)
                                                         ->GetButton(bitmask)
@@ -290,19 +309,12 @@ void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_
     ImGui::PopStyleVar();
     ImGui::SameLine(0, 0);
 
-#ifndef __WIIU__
-    auto sdlAxisDirectionToButtonMapping = std::dynamic_pointer_cast<LUS::SDLAxisDirectionToButtonMapping>(mapping);
-    auto indexMapping = LUS::Context::GetInstance()
-                            ->GetControlDeck()
-                            ->GetDeviceIndexMappingManager()
-                            ->GetDeviceIndexMappingFromLUSDeviceIndex(mapping->GetLUSDeviceIndex());
-    auto sdlIndexMapping = std::dynamic_pointer_cast<LUS::LUSDeviceIndexToSDLDeviceIndexMapping>(indexMapping);
-
-    if (sdlIndexMapping != nullptr && sdlAxisDirectionToButtonMapping != nullptr) {
+    auto sdlAxisDirectionToButtonMapping = std::dynamic_pointer_cast<Ship::SDLAxisDirectionToButtonMapping>(mapping);
+    if (sdlAxisDirectionToButtonMapping != nullptr) {
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
         auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
         auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForLUSDeviceIndex(mapping->GetLUSDeviceIndex(), buttonColor, buttonHoveredColor);
+        GetButtonColorsForDeviceType(mapping->GetPhysicalDeviceType(), buttonColor, buttonHoveredColor);
         ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
@@ -323,17 +335,19 @@ void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_
             ImGui::Text("Axis Threshold\n\nThe extent to which the joystick\nmust be moved or the trigger\npressed to "
                         "initiate the assigned\nbutton action.\n\n");
 
+            auto globalSettings = Ship::Context::GetInstance()->GetControlDeck()->GetGlobalSDLDeviceSettings();
+
             if (sdlAxisDirectionToButtonMapping->AxisIsStick()) {
                 ImGui::Text("Stick axis threshold:");
 
-                int32_t stickAxisThreshold = sdlIndexMapping->GetStickAxisThresholdPercentage();
+                int32_t stickAxisThreshold = globalSettings->GetStickAxisThresholdPercentage();
                 if (stickAxisThreshold == 0) {
                     ImGui::BeginDisabled();
                 }
                 ImGui::PushButtonRepeat(true);
                 if (ImGui::Button(StringHelper::Sprintf("-##Stick Axis Threshold%s", id.c_str()).c_str())) {
-                    sdlIndexMapping->SetStickAxisThresholdPercentage(stickAxisThreshold - 1);
-                    sdlIndexMapping->SaveToConfig();
+                    globalSettings->SetStickAxisThresholdPercentage(stickAxisThreshold - 1);
+                    globalSettings->SaveToConfig();
                 }
                 ImGui::PopButtonRepeat();
                 if (stickAxisThreshold == 0) {
@@ -343,8 +357,8 @@ void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_
                 ImGui::SetNextItemWidth(SCALE_IMGUI_SIZE(160.0f));
                 if (ImGui::SliderInt(StringHelper::Sprintf("##Stick Axis Threshold%s", id.c_str()).c_str(),
                                      &stickAxisThreshold, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
-                    sdlIndexMapping->SetStickAxisThresholdPercentage(stickAxisThreshold);
-                    sdlIndexMapping->SaveToConfig();
+                    globalSettings->SetStickAxisThresholdPercentage(stickAxisThreshold);
+                    globalSettings->SaveToConfig();
                 }
                 ImGui::SameLine(0.0f, 0.0f);
                 if (stickAxisThreshold == 100) {
@@ -352,8 +366,8 @@ void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_
                 }
                 ImGui::PushButtonRepeat(true);
                 if (ImGui::Button(StringHelper::Sprintf("+##Stick Axis Threshold%s", id.c_str()).c_str())) {
-                    sdlIndexMapping->SetStickAxisThresholdPercentage(stickAxisThreshold + 1);
-                    sdlIndexMapping->SaveToConfig();
+                    globalSettings->SetStickAxisThresholdPercentage(stickAxisThreshold + 1);
+                    globalSettings->SaveToConfig();
                 }
                 ImGui::PopButtonRepeat();
                 if (stickAxisThreshold == 100) {
@@ -364,14 +378,14 @@ void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_
             if (sdlAxisDirectionToButtonMapping->AxisIsTrigger()) {
                 ImGui::Text("Trigger axis threshold:");
 
-                int32_t triggerAxisThreshold = sdlIndexMapping->GetTriggerAxisThresholdPercentage();
+                int32_t triggerAxisThreshold = globalSettings->GetTriggerAxisThresholdPercentage();
                 if (triggerAxisThreshold == 0) {
                     ImGui::BeginDisabled();
                 }
                 ImGui::PushButtonRepeat(true);
                 if (ImGui::Button(StringHelper::Sprintf("-##Trigger Axis Threshold%s", id.c_str()).c_str())) {
-                    sdlIndexMapping->SetTriggerAxisThresholdPercentage(triggerAxisThreshold - 1);
-                    sdlIndexMapping->SaveToConfig();
+                    globalSettings->SetTriggerAxisThresholdPercentage(triggerAxisThreshold - 1);
+                    globalSettings->SaveToConfig();
                 }
                 ImGui::PopButtonRepeat();
                 if (triggerAxisThreshold == 0) {
@@ -381,8 +395,8 @@ void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_
                 ImGui::SetNextItemWidth(SCALE_IMGUI_SIZE(160.0f));
                 if (ImGui::SliderInt(StringHelper::Sprintf("##Trigger Axis Threshold%s", id.c_str()).c_str(),
                                      &triggerAxisThreshold, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
-                    sdlIndexMapping->SetTriggerAxisThresholdPercentage(triggerAxisThreshold);
-                    sdlIndexMapping->SaveToConfig();
+                    globalSettings->SetTriggerAxisThresholdPercentage(triggerAxisThreshold);
+                    globalSettings->SaveToConfig();
                 }
                 ImGui::SameLine(0.0f, 0.0f);
                 if (triggerAxisThreshold == 100) {
@@ -390,8 +404,8 @@ void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_
                 }
                 ImGui::PushButtonRepeat(true);
                 if (ImGui::Button(StringHelper::Sprintf("+##Trigger Axis Threshold%s", id.c_str()).c_str())) {
-                    sdlIndexMapping->SetTriggerAxisThresholdPercentage(triggerAxisThreshold + 1);
-                    sdlIndexMapping->SaveToConfig();
+                    globalSettings->SetTriggerAxisThresholdPercentage(triggerAxisThreshold + 1);
+                    globalSettings->SaveToConfig();
                 }
                 ImGui::PopButtonRepeat();
                 if (triggerAxisThreshold == 100) {
@@ -410,14 +424,13 @@ void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_
         ImGui::PopStyleVar();
         ImGui::SameLine(0, 0);
     }
-#endif
 
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
     if (ImGui::Button(StringHelper::Sprintf("%s###removeButtonMappingButton%s", ICON_FA_TIMES, id.c_str()).c_str(),
                       ImVec2(ImGui::CalcTextSize(ICON_FA_TIMES).x + SCALE_IMGUI_SIZE(10.0f), 0.0f))) {
-        LUS::Context::GetInstance()
+        Ship::Context::GetInstance()
             ->GetControlDeck()
             ->GetControllerByPort(port)
             ->GetButton(bitmask)
@@ -430,7 +443,7 @@ void SohInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, uint16_
     ImGui::SameLine(0, SCALE_IMGUI_SIZE(4.0f));
 }
 
-void SohInputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, uint16_t bitmask,
+void SohInputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, N64ButtonMask bitmask,
                                           ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::NewLine();
     ImGui::SameLine(SCALE_IMGUI_SIZE(32.0f));
@@ -443,7 +456,7 @@ void SohInputEditorWindow::DrawButtonLine(const char* buttonName, uint8_t port, 
 }
 
 void SohInputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uint8_t stick,
-                                                                  LUS::Direction direction) {
+                                                                  Ship::Direction direction) {
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
     auto popupId = StringHelper::Sprintf("addStickDirectionMappingPopup##%d-%d-%d", port, stick, direction);
     if (ImGui::Button(
@@ -461,9 +474,9 @@ void SohInputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, 
             mInputEditorPopupOpen = false;
             ImGui::CloseCurrentPopup();
         }
-        if (stick == LUS::LEFT) {
+        if (stick == Ship::LEFT) {
             if (mMappingInputBlockTimer == INT32_MAX &&
-                LUS::Context::GetInstance()
+                Ship::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetLeftStick()
@@ -473,7 +486,7 @@ void SohInputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, 
             }
         } else {
             if (mMappingInputBlockTimer == INT32_MAX &&
-                LUS::Context::GetInstance()
+                Ship::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetRightStick()
@@ -486,16 +499,16 @@ void SohInputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, 
 }
 
 void SohInputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, uint8_t stick,
-                                                                   LUS::Direction direction, std::string id) {
-    std::shared_ptr<LUS::ControllerAxisDirectionMapping> mapping = nullptr;
-    if (stick == LUS::LEFT) {
-        mapping = LUS::Context::GetInstance()
+                                                                   Ship::Direction direction, std::string id) {
+    std::shared_ptr<Ship::ControllerAxisDirectionMapping> mapping = nullptr;
+    if (stick == Ship::LEFT) {
+        mapping = Ship::Context::GetInstance()
                       ->GetControlDeck()
                       ->GetControllerByPort(port)
                       ->GetLeftStick()
                       ->GetAxisDirectionMappingById(direction, id);
     } else {
-        mapping = LUS::Context::GetInstance()
+        mapping = Ship::Context::GetInstance()
                       ->GetControlDeck()
                       ->GetControllerByPort(port)
                       ->GetRightStick()
@@ -523,7 +536,7 @@ void SohInputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port,
     auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
     auto physicalInputDisplayName =
         StringHelper::Sprintf("%s %s", icon.c_str(), mapping->GetPhysicalInputName().c_str());
-    GetButtonColorsForLUSDeviceIndex(mapping->GetLUSDeviceIndex(), buttonColor, buttonHoveredColor);
+    GetButtonColorsForDeviceType(mapping->GetPhysicalDeviceType(), buttonColor, buttonHoveredColor);
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
     auto popupId = StringHelper::Sprintf("editStickDirectionMappingPopup##%s", id.c_str());
@@ -535,7 +548,7 @@ void SohInputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port,
         ImGui::OpenPopup(popupId.c_str());
     }
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
-        ImGui::SetTooltip(mapping->GetPhysicalDeviceName().c_str());
+        ImGui::SetTooltip("%s", mapping->GetPhysicalDeviceName().c_str());
     }
     ImGui::PopStyleColor();
     ImGui::PopStyleColor();
@@ -548,9 +561,9 @@ void SohInputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port,
             ImGui::CloseCurrentPopup();
         }
 
-        if (stick == LUS::LEFT) {
+        if (stick == Ship::LEFT) {
             if (mMappingInputBlockTimer == INT32_MAX &&
-                LUS::Context::GetInstance()
+                Ship::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetLeftStick()
@@ -560,7 +573,7 @@ void SohInputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port,
             }
         } else {
             if (mMappingInputBlockTimer == INT32_MAX &&
-                LUS::Context::GetInstance()
+                Ship::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(port)
                     ->GetRightStick()
@@ -579,14 +592,14 @@ void SohInputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port,
     if (ImGui::Button(
             StringHelper::Sprintf("%s###removeStickDirectionMappingButton%s", ICON_FA_TIMES, id.c_str()).c_str(),
             ImVec2(ImGui::CalcTextSize(ICON_FA_TIMES).x + SCALE_IMGUI_SIZE(10.0f), 0.0f))) {
-        if (stick == LUS::LEFT) {
-            LUS::Context::GetInstance()
+        if (stick == Ship::LEFT) {
+            Ship::Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(port)
                 ->GetLeftStick()
                 ->ClearAxisDirectionMapping(direction, id);
         } else {
-            LUS::Context::GetInstance()
+            Ship::Context::GetInstance()
                 ->GetControlDeck()
                 ->GetControllerByPort(port)
                 ->GetRightStick()
@@ -600,7 +613,7 @@ void SohInputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port,
 }
 
 void SohInputEditorWindow::DrawStickDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick,
-                                                  LUS::Direction direction, ImVec4 color = CHIP_COLOR_N64_GREY) {
+                                                  Ship::Direction direction, ImVec4 color = CHIP_COLOR_N64_GREY) {
     ImGui::NewLine();
     ImGui::SameLine();
     ImGui::BeginDisabled();
@@ -618,24 +631,67 @@ void SohInputEditorWindow::DrawStickDirectionLine(const char* axisDirectionName,
 void SohInputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id,
                                             ImVec4 color = CHIP_COLOR_N64_GREY) {
     static int8_t sX, sY;
-    std::shared_ptr<LUS::ControllerStick> controllerStick = nullptr;
-    if (stick == LUS::LEFT) {
-        controllerStick = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick();
+    std::shared_ptr<Ship::ControllerStick> controllerStick = nullptr;
+    if (stick == Ship::LEFT) {
+        controllerStick = Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick();
     } else {
-        controllerStick = LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick();
+        controllerStick = Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick();
     }
     controllerStick->Process(sX, sY);
     DrawAnalogPreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(sX, sY));
 
     ImGui::SameLine();
     ImGui::BeginGroup();
-    DrawStickDirectionLine(ICON_FA_ARROW_UP, port, stick, LUS::UP, color);
-    DrawStickDirectionLine(ICON_FA_ARROW_DOWN, port, stick, LUS::DOWN, color);
-    DrawStickDirectionLine(ICON_FA_ARROW_LEFT, port, stick, LUS::LEFT, color);
-    DrawStickDirectionLine(ICON_FA_ARROW_RIGHT, port, stick, LUS::RIGHT, color);
+    DrawStickDirectionLine(StringHelper::Sprintf("%s##%d", ICON_FA_ARROW_UP, stick).c_str(), port, stick, Ship::UP,
+                           color);
+    DrawStickDirectionLine(StringHelper::Sprintf("%s##%d", ICON_FA_ARROW_DOWN, stick).c_str(), port, stick, Ship::DOWN,
+                           color);
+    DrawStickDirectionLine(StringHelper::Sprintf("%s##%d", ICON_FA_ARROW_LEFT, stick).c_str(), port, stick, Ship::LEFT,
+                           color);
+    DrawStickDirectionLine(StringHelper::Sprintf("%s##%d", ICON_FA_ARROW_RIGHT, stick).c_str(), port, stick,
+                           Ship::RIGHT, color);
     ImGui::EndGroup();
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode(StringHelper::Sprintf("Analog Stick Options##%d", id).c_str())) {
+        ImGui::Text("Sensitivity:");
+
+        int32_t sensitivityPercentage = controllerStick->GetSensitivityPercentage();
+        if (sensitivityPercentage == 0) {
+            ImGui::BeginDisabled();
+        }
+        ImGui::PushButtonRepeat(true);
+        if (ImGui::Button(StringHelper::Sprintf("-##Sensitivity%d", id).c_str())) {
+            controllerStick->SetSensitivity(sensitivityPercentage - 1);
+        }
+        ImGui::PopButtonRepeat();
+        if (sensitivityPercentage == 0) {
+            ImGui::EndDisabled();
+        }
+        ImGui::SameLine(0.0f, 0.0f);
+        ImGui::SetNextItemWidth(SCALE_IMGUI_SIZE(160.0f));
+        if (ImGui::SliderInt(StringHelper::Sprintf("##Sensitivity%d", id).c_str(), &sensitivityPercentage, 0, 200,
+                             "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
+            controllerStick->SetSensitivity(sensitivityPercentage);
+        }
+        ImGui::SameLine(0.0f, 0.0f);
+        if (sensitivityPercentage == 200) {
+            ImGui::BeginDisabled();
+        }
+        ImGui::PushButtonRepeat(true);
+        if (ImGui::Button(StringHelper::Sprintf("+##Sensitivity%d", id).c_str())) {
+            controllerStick->SetSensitivity(sensitivityPercentage + 1);
+        }
+        ImGui::PopButtonRepeat();
+        if (sensitivityPercentage == 200) {
+            ImGui::EndDisabled();
+        }
+        if (!controllerStick->SensitivityIsDefault()) {
+            ImGui::SameLine();
+            if (ImGui::Button(StringHelper::Sprintf("Reset to Default###resetStickSensitivity%d", id).c_str())) {
+                controllerStick->ResetSensitivityToDefault();
+            }
+        }
+
         ImGui::Text("Deadzone:");
 
         int32_t deadzonePercentage = controllerStick->GetDeadzonePercentage();
@@ -721,7 +777,7 @@ void SohInputEditorWindow::UpdateBitmaskToMappingIds(uint8_t port) {
     // todo: do we need this now that ControllerButton exists?
 
     for (auto [bitmask, button] :
-         LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetAllButtons()) {
+         Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetAllButtons()) {
         for (auto [id, mapping] : button->GetAllButtonMappings()) {
             // using a vector here instead of a set because i want newly added mappings
             // to go to the end of the list instead of autosorting
@@ -736,12 +792,12 @@ void SohInputEditorWindow::UpdateBitmaskToMappingIds(uint8_t port) {
 void SohInputEditorWindow::UpdateStickDirectionToMappingIds(uint8_t port) {
     // todo: do we need this?
     for (auto stick :
-         { std::make_pair<uint8_t, std::shared_ptr<LUS::ControllerStick>>(
-               LUS::LEFT, LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()),
-           std::make_pair<uint8_t, std::shared_ptr<LUS::ControllerStick>>(
-               LUS::RIGHT,
-               LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()) }) {
-        for (auto direction : { LUS::LEFT, LUS::RIGHT, LUS::UP, LUS::DOWN }) {
+         { std::make_pair<uint8_t, std::shared_ptr<Ship::ControllerStick>>(
+               Ship::LEFT, Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()),
+           std::make_pair<uint8_t, std::shared_ptr<Ship::ControllerStick>>(
+               Ship::RIGHT,
+               Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()) }) {
+        for (auto direction : { Ship::LEFT, Ship::RIGHT, Ship::UP, Ship::DOWN }) {
             for (auto [id, mapping] : stick.second->GetAllAxisDirectionMappingByDirection(direction)) {
                 // using a vector here instead of a set because i want newly added mappings
                 // to go to the end of the list instead of autosorting
@@ -760,7 +816,7 @@ void SohInputEditorWindow::DrawRemoveRumbleMappingButton(uint8_t port, std::stri
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
     if (ImGui::Button(StringHelper::Sprintf("%s###removeRumbleMapping%s", ICON_FA_TIMES, id.c_str()).c_str(),
                       ImVec2(SCALE_IMGUI_SIZE(20.0f), SCALE_IMGUI_SIZE(20.0f)))) {
-        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRumble()->ClearRumbleMapping(id);
+        Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRumble()->ClearRumbleMapping(id);
     }
     ImGui::PopStyleVar();
 }
@@ -783,7 +839,7 @@ void SohInputEditorWindow::DrawAddRumbleMappingButton(uint8_t port) {
             ImGui::CloseCurrentPopup();
         }
 
-        if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && Ship::Context::GetInstance()
                                                         ->GetControlDeck()
                                                         ->GetControllerByPort(port)
                                                         ->GetRumble()
@@ -800,7 +856,7 @@ bool SohInputEditorWindow::TestingRumble() {
 }
 
 void SohInputEditorWindow::DrawRumbleSection(uint8_t port) {
-    for (auto [id, mapping] : LUS::Context::GetInstance()
+    for (auto [id, mapping] : Ship::Context::GetInstance()
                                   ->GetControlDeck()
                                   ->GetControllerByPort(port)
                                   ->GetRumble()
@@ -809,7 +865,7 @@ void SohInputEditorWindow::DrawRumbleSection(uint8_t port) {
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
         auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForLUSDeviceIndex(mapping->GetLUSDeviceIndex(), buttonColor, buttonHoveredColor);
+        GetButtonColorsForDeviceType(mapping->GetPhysicalDeviceType(), buttonColor, buttonHoveredColor);
         // begin hackaround https://github.com/ocornut/imgui/issues/282#issuecomment-123763192
         // spaces to have background color for text in a tree node
         std::string spaces = "";
@@ -943,7 +999,7 @@ void SohInputEditorWindow::DrawRemoveLEDMappingButton(uint8_t port, std::string 
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
     if (ImGui::Button(StringHelper::Sprintf("%s###removeLEDMapping%s", ICON_FA_TIMES, id.c_str()).c_str(),
                       ImVec2(SCALE_IMGUI_SIZE(20.0f), SCALE_IMGUI_SIZE(20.0f)))) {
-        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->ClearLEDMapping(id);
+        Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->ClearLEDMapping(id);
     }
     ImGui::PopStyleVar();
 }
@@ -966,7 +1022,7 @@ void SohInputEditorWindow::DrawAddLEDMappingButton(uint8_t port) {
             ImGui::CloseCurrentPopup();
         }
 
-        if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && Ship::Context::GetInstance()
                                                         ->GetControlDeck()
                                                         ->GetControllerByPort(port)
                                                         ->GetLED()
@@ -978,17 +1034,9 @@ void SohInputEditorWindow::DrawAddLEDMappingButton(uint8_t port) {
     }
 }
 
-void SohInputEditorWindow::DrawHelpIcon(const std::string& helptext) {
-    // place the ? button to the most of the right side of the cell it is using.
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() - SCALE_IMGUI_SIZE(22));
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - SCALE_IMGUI_SIZE(15));
-    ImGui::SmallButton("?");
-    UIWidgets::Tooltip(helptext.c_str());
-}
-
 void SohInputEditorWindow::DrawLEDSection(uint8_t port) {
     for (auto [id, mapping] :
-         LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->GetAllLEDMappings()) {
+         Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLED()->GetAllLEDMappings()) {
         ImGui::AlignTextToFramePadding();
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         auto open = ImGui::TreeNode(
@@ -1018,20 +1066,23 @@ void SohInputEditorWindow::DrawLEDSection(uint8_t port) {
             }
             // todo: clean this up, probably just hardcode to LED_COLOR_SOURCE_GAME and use SoH options only here
             if (mapping->GetColorSource() == LED_COLOR_SOURCE_GAME) {
-                static const char* ledSources[] = {
+                static std::vector<const char*> ledSources = {
                     "Original Tunic Colors",          "Cosmetics Tunic Colors",          "Health Colors",
                     "Original Navi Targeting Colors", "Cosmetics Navi Targeting Colors", "Custom"
                 };
-                UIWidgets::PaddedText("Source");
-                UIWidgets::EnhancementCombobox("gLedColorSource", ledSources, LED_SOURCE_TUNIC_ORIGINAL);
-                DrawHelpIcon("Health\n- Red when health critical (13-20% depending on max health)\n- Yellow when "
-                             "health < 40%. Green otherwise.\n\n"
-                             "Tunics: colors will mirror currently equipped tunic, whether original or the current "
-                             "values in Cosmetics Editor.\n\n"
-                             "Custom: single, solid color");
-                if (CVarGetInteger("gLedColorSource", 1) == LED_SOURCE_CUSTOM) {
+                CVarCombobox(
+                    "Source", CVAR_SETTING("LEDColorSource"), ledSources,
+                    UIWidgets::ComboboxOptions()
+                        .Color(THEME_COLOR)
+                        .DefaultIndex(LED_SOURCE_TUNIC_ORIGINAL)
+                        .Tooltip("Health\n- Red when health critical (13-20% depending on max health)\n- Yellow when "
+                                 "health < 40%. Green otherwise.\n\n"
+                                 "Tunics: colors will mirror currently equipped tunic, whether original or the current "
+                                 "values in Cosmetics Editor.\n\n"
+                                 "Custom: single, solid color"));
+                if (CVarGetInteger(CVAR_SETTING("LEDColorSource"), 1) == LED_SOURCE_CUSTOM) {
                     UIWidgets::Spacer(3);
-                    auto port1Color = CVarGetColor24("gLedPort1Color", { 255, 255, 255 });
+                    auto port1Color = CVarGetColor24(CVAR_SETTING("LEDPort1Color"), { 255, 255, 255 });
                     ImVec4 colorVec = { port1Color.r / 255.0f, port1Color.g / 255.0f, port1Color.b / 255.0f, 1.0f };
                     if (ImGui::ColorEdit3("", (float*)&colorVec,
                                           ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
@@ -1040,20 +1091,28 @@ void SohInputEditorWindow::DrawLEDSection(uint8_t port) {
                         color.g = colorVec.y * 255.0;
                         color.b = colorVec.z * 255.0;
 
-                        CVarSetColor24("gLedPort1Color", color);
-                        LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
+                        CVarSetColor24(CVAR_SETTING("LEDPort1Color"), color);
+                        Ship::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
                     }
                     ImGui::SameLine();
                     ImGui::Text("Custom Color");
                 }
-                UIWidgets::PaddedEnhancementSliderFloat("Brightness: %d%%", "##LED_Brightness", "gLedBrightness", 0.0f,
-                                                        1.0f, "", 1.0f, true, true);
-                DrawHelpIcon("Sets the brightness of controller LEDs. 0% brightness = LEDs off.");
-                UIWidgets::PaddedEnhancementCheckbox(
-                    "Critical Health Override", "gLedCriticalOverride", true, true,
-                    CVarGetInteger("gLedColorSource", LED_SOURCE_TUNIC_ORIGINAL) == LED_SOURCE_HEALTH,
-                    "Override redundant for health source.", UIWidgets::CheckboxGraphics::Cross, true);
-                DrawHelpIcon("Shows red color when health is critical, otherwise displays according to color source.");
+                CVarSliderFloat("Brightness: %.1f %%", CVAR_SETTING("LEDBrightness"),
+                                FloatSliderOptions()
+                                    .IsPercentage()
+                                    .Min(0.0f)
+                                    .Max(1.0f)
+                                    .DefaultValue(1.0f)
+                                    .ShowButtons(true)
+                                    .Tooltip("Sets the brightness of controller LEDs. 0% brightness = LEDs off."));
+                CVarCheckbox(
+                    "Critical Health Override", CVAR_SETTING("LEDCriticalOverride"),
+                    CheckboxOptions({ { .disabled = CVarGetInteger(CVAR_SETTING("LEDColorSource"),
+                                                                   LED_SOURCE_TUNIC_ORIGINAL) == LED_SOURCE_HEALTH,
+                                        .disabledTooltip = "Override redundant for health source." } })
+                        .DefaultValue(true)
+                        .Tooltip(
+                            "Shows red color when health is critical, otherwise displays according to color source."));
             }
             ImGui::TreePop();
         }
@@ -1069,7 +1128,7 @@ void SohInputEditorWindow::DrawRemoveGyroMappingButton(uint8_t port, std::string
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
     if (ImGui::Button(StringHelper::Sprintf("%s###removeGyroMapping%s", ICON_FA_TIMES, id.c_str()).c_str(),
                       ImVec2(SCALE_IMGUI_SIZE(20.0f), SCALE_IMGUI_SIZE(20.0f)))) {
-        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetGyro()->ClearGyroMapping();
+        Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetGyro()->ClearGyroMapping();
     }
     ImGui::PopStyleVar();
 }
@@ -1092,7 +1151,7 @@ void SohInputEditorWindow::DrawAddGyroMappingButton(uint8_t port) {
             ImGui::CloseCurrentPopup();
         }
 
-        if (mMappingInputBlockTimer == INT32_MAX && LUS::Context::GetInstance()
+        if (mMappingInputBlockTimer == INT32_MAX && Ship::Context::GetInstance()
                                                         ->GetControlDeck()
                                                         ->GetControllerByPort(port)
                                                         ->GetGyro()
@@ -1106,12 +1165,12 @@ void SohInputEditorWindow::DrawAddGyroMappingButton(uint8_t port) {
 
 void SohInputEditorWindow::DrawGyroSection(uint8_t port) {
     auto mapping =
-        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetGyro()->GetGyroMapping();
+        Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetGyro()->GetGyroMapping();
     if (mapping != nullptr) {
         auto id = mapping->GetGyroMappingId();
         ImGui::AlignTextToFramePadding();
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        ImGui::BulletText(mapping->GetPhysicalDeviceName().c_str());
+        ImGui::BulletText("%s", mapping->GetPhysicalDeviceName().c_str());
         DrawRemoveGyroMappingButton(port, id);
 
         static float sPitch, sYaw = 0.0f;
@@ -1188,206 +1247,298 @@ void SohInputEditorWindow::DrawGyroSection(uint8_t port) {
     }
 }
 
-void SohInputEditorWindow::DrawButtonDeviceIcons(uint8_t portIndex, std::set<uint16_t> bitmasks) {
-    std::set<LUS::LUSDeviceIndex> allLusDeviceIndices;
-    allLusDeviceIndices.insert(LUS::LUSDeviceIndex::Keyboard);
-    for (auto [lusIndex, mapping] : LUS::Context::GetInstance()
-                                        ->GetControlDeck()
-                                        ->GetDeviceIndexMappingManager()
-                                        ->GetAllDeviceIndexMappingsFromConfig()) {
-        allLusDeviceIndices.insert(lusIndex);
+const ImGuiTableFlags PANEL_TABLE_FLAGS = ImGuiTableFlags_BordersH | ImGuiTableFlags_BordersV;
+const ImGuiTableColumnFlags PANEL_TABLE_COLUMN_FLAGS =
+    ImGuiTableColumnFlags_IndentEnable | ImGuiTableColumnFlags_NoSort;
+
+namespace TableHelper {
+void InitHeader(bool has_header = true) {
+    if (has_header) {
+        ImGui::TableHeadersRow();
+    }
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::AlignTextToFramePadding(); // This is to adjust Vertical pos of item in a cell to be normlized.
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+}
+
+void NextCol() {
+    ImGui::TableNextColumn();
+    ImGui::AlignTextToFramePadding();
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+}
+
+void NextLine() {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::AlignTextToFramePadding();
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+}
+} // namespace TableHelper
+
+void SohInputEditorWindow::addButtonName(N64ButtonMask mask, const char* name) {
+    buttons.push_back(std::make_pair(mask, name));
+    buttonNames[mask] = std::prev(buttons.end());
+}
+
+// Draw a button mapping setting consisting of a padded label and button dropdown.
+// excludedButtons indicates which buttons are unavailable to choose from.
+void SohInputEditorWindow::DrawMapping(CustomButtonMap& mapping, float labelWidth, N64ButtonMask excludedButtons) {
+    N64ButtonMask currentButton = CVarGetInteger(mapping.cVarName, mapping.defaultBtn);
+
+    const char* preview;
+    if (buttonNames.contains(currentButton)) {
+        preview = buttonNames[currentButton]->second;
+    } else {
+        preview = "Unknown";
     }
 
-    std::vector<std::pair<LUS::LUSDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
-    for (auto lusIndex : allLusDeviceIndices) {
-        for (auto [bitmask, button] :
-             LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetAllButtons()) {
-            if (!bitmasks.contains(bitmask)) {
+    ImVec2 cursorPos = ImGui::GetCursorPos();
+    ImVec2 textSize = ImGui::CalcTextSize(mapping.label);
+    ImGui::SetCursorPosY(cursorPos.y + textSize.y / 4);
+    ImGui::SetCursorPosX(cursorPos.x + abs(textSize.x - labelWidth));
+    ImGui::Text("%s", mapping.label);
+    ImGui::SameLine();
+    ImGui::SetCursorPosY(cursorPos.y);
+
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+    if (ImGui::BeginCombo(StringHelper::Sprintf("##%s", mapping.cVarName).c_str(), preview)) {
+        for (auto i = buttons.begin(); i != buttons.end(); i++) {
+            if ((i->first & excludedButtons) != 0) {
                 continue;
             }
-
-            if (button->HasMappingsForLUSDeviceIndex(lusIndex)) {
-                for (auto [id, mapping] : button->GetAllButtonMappings()) {
-                    if (mapping->GetLUSDeviceIndex() == lusIndex) {
-                        lusDeviceIndiciesWithMappings.push_back(
-                            std::pair<LUS::LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
-                        break;
-                    }
-                }
-                break;
+            if (ImGui::Selectable(i->second, i->first == currentButton)) {
+                CVarSetInteger(mapping.cVarName, i->first);
+                Ship::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
             }
         }
-    }
-
-    for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
-        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
-        ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-        ImGui::SameLine();
-        if (lusIndex == LUS::LUSDeviceIndex::Keyboard) {
-            ImGui::SmallButton(ICON_FA_KEYBOARD_O);
-        } else {
-            ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
-        }
-        ImGui::PopStyleColor();
-        ImGui::PopStyleColor();
+        ImGui::EndCombo();
     }
 }
 
-void SohInputEditorWindow::DrawAnalogStickDeviceIcons(uint8_t portIndex, LUS::Stick stick) {
-    std::set<LUS::LUSDeviceIndex> allLusDeviceIndices;
-    allLusDeviceIndices.insert(LUS::LUSDeviceIndex::Keyboard);
-    for (auto [lusIndex, mapping] : LUS::Context::GetInstance()
-                                        ->GetControlDeck()
-                                        ->GetDeviceIndexMappingManager()
-                                        ->GetAllDeviceIndexMappingsFromConfig()) {
-        allLusDeviceIndices.insert(lusIndex);
+void SohInputEditorWindow::DrawOcarinaControlPanel() {
+    ImVec2 cursor = ImGui::GetCursorPos();
+    ImGui::SetCursorPos(ImVec2(cursor.x, cursor.y + 5));
+
+    CheckboxOptions checkOpt = CheckboxOptions().Color(THEME_COLOR);
+    CVarCheckbox("Dpad Ocarina Playback", CVAR_SETTING("CustomOcarina.Dpad"), checkOpt);
+    CVarCheckbox("Right Stick Ocarina Playback", CVAR_SETTING("CustomOcarina.RightStick"), checkOpt);
+    CVarCheckbox("Customize Ocarina Controls", CVAR_SETTING("CustomOcarina.Enabled"), checkOpt);
+
+    if (!CVarGetInteger(CVAR_SETTING("CustomOcarina.Enabled"), 0)) {
+        ImGui::BeginDisabled();
     }
 
-    std::vector<std::pair<LUS::LUSDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
-    for (auto lusIndex : allLusDeviceIndices) {
-        auto controllerStick =
-            stick == LUS::Stick::LEFT_STICK
-                ? LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetLeftStick()
-                : LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetRightStick();
-        if (controllerStick->HasMappingsForLUSDeviceIndex(lusIndex)) {
-            for (auto [direction, mappings] : controllerStick->GetAllAxisDirectionMappings()) {
-                bool foundMapping = false;
-                for (auto [id, mapping] : mappings) {
-                    if (mapping->GetLUSDeviceIndex() == lusIndex) {
-                        foundMapping = true;
-                        lusDeviceIndiciesWithMappings.push_back(
-                            std::pair<LUS::LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
-                        break;
-                    }
-                }
-                if (foundMapping) {
-                    break;
-                }
-            }
-        }
-    }
+    ImGui::AlignTextToFramePadding();
+    ImGui::BulletText("Notes");
+    DrawButtonLine("A (D4)", 0, BTN_CUSTOM_OCARINA_NOTE_D4);
+    DrawButtonLine(ICON_FA_ARROW_DOWN " (F4)", 0, BTN_CUSTOM_OCARINA_NOTE_F4);
+    DrawButtonLine(ICON_FA_ARROW_RIGHT " (A4)", 0, BTN_CUSTOM_OCARINA_NOTE_A4);
+    DrawButtonLine(ICON_FA_ARROW_LEFT " (B4)", 0, BTN_CUSTOM_OCARINA_NOTE_B4);
+    DrawButtonLine(ICON_FA_ARROW_UP " (D5)", 0, BTN_CUSTOM_OCARINA_NOTE_D5);
 
-    for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
-        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
-        ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-        ImGui::SameLine();
-        if (lusIndex == LUS::LUSDeviceIndex::Keyboard) {
-            ImGui::SmallButton(ICON_FA_KEYBOARD_O);
-        } else {
-            ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
-        }
-        ImGui::PopStyleColor();
-        ImGui::PopStyleColor();
+    ImGui::AlignTextToFramePadding();
+    ImGui::BulletText("Disable song detection");
+    DrawButtonLine(ICON_FA_BAN "##DisableSongDetection", 0, BTN_CUSTOM_OCARINA_DISABLE_SONGS);
+
+    ImGui::AlignTextToFramePadding();
+    ImGui::BulletText("Pitch");
+    DrawButtonLine(ICON_FA_ARROW_UP "##Pitch", 0, BTN_CUSTOM_OCARINA_PITCH_UP);
+    DrawButtonLine(ICON_FA_ARROW_DOWN "##Pitch", 0, BTN_CUSTOM_OCARINA_PITCH_DOWN);
+
+    if (!CVarGetInteger(CVAR_SETTING("CustomOcarina.Enabled"), 0)) {
+        ImGui::EndDisabled();
     }
 }
 
-void SohInputEditorWindow::DrawRumbleDeviceIcons(uint8_t portIndex) {
-    std::set<LUS::LUSDeviceIndex> allLusDeviceIndices;
-    for (auto [lusIndex, mapping] : LUS::Context::GetInstance()
-                                        ->GetControlDeck()
-                                        ->GetDeviceIndexMappingManager()
-                                        ->GetAllDeviceIndexMappingsFromConfig()) {
-        allLusDeviceIndices.insert(lusIndex);
+void SohInputEditorWindow::DrawCameraControlPanel() {
+    ImVec2 cursor = ImGui::GetCursorPos();
+    ImGui::SetCursorPos(ImVec2(cursor.x + 5, cursor.y + 5));
+    CVarCheckbox(
+        "Enable Mouse Controls", CVAR_SETTING("EnableMouse"),
+        CheckboxOptions()
+            .Color(THEME_COLOR)
+            .Tooltip("Allows for using the mouse to control the camera (must enable Free Look), "
+                     "aim with the shield, and perform quickspin attacks (quickly rotate the mouse then press B)"));
+    Ship::GuiWindow::BeginGroupPanel("Aiming/First-Person Camera", ImGui::GetContentRegionAvail());
+    CVarCheckbox("Right Stick Aiming", CVAR_SETTING("Controls.RightStickAim"),
+                 CheckboxOptions()
+                     .Color(THEME_COLOR)
+                     .Tooltip("Allows for aiming with the right stick in:\n-First-Person/C-Up view\n-Weapon Aiming"));
+    if (CVarGetInteger(CVAR_SETTING("Controls.RightStickAim"), 0)) {
+        CVarCheckbox("Allow moving while in first person mode", CVAR_SETTING("MoveInFirstPerson"),
+                     CheckboxOptions()
+                         .Color(THEME_COLOR)
+                         .Tooltip("Changes the left stick to move the player while in first person mode"));
     }
-
-    std::vector<std::pair<LUS::LUSDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
-    for (auto lusIndex : allLusDeviceIndices) {
-        if (LUS::Context::GetInstance()
-                ->GetControlDeck()
-                ->GetControllerByPort(portIndex)
-                ->GetRumble()
-                ->HasMappingsForLUSDeviceIndex(lusIndex)) {
-            for (auto [id, mapping] : LUS::Context::GetInstance()
-                                          ->GetControlDeck()
-                                          ->GetControllerByPort(portIndex)
-                                          ->GetRumble()
-                                          ->GetAllRumbleMappings()) {
-                if (mapping->GetLUSDeviceIndex() == lusIndex) {
-                    lusDeviceIndiciesWithMappings.push_back(
-                        std::pair<LUS::LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
-                    break;
-                }
-            }
+    CVarCheckbox("Invert Aiming X Axis", CVAR_SETTING("Controls.InvertAimingXAxis"),
+                 CheckboxOptions()
+                     .Color(THEME_COLOR)
+                     .Tooltip("Inverts the Camera X Axis in:\n-First-Person/C-Up view\n-Weapon Aiming"));
+    CVarCheckbox("Invert Aiming Y Axis", CVAR_SETTING("Controls.InvertAimingYAxis"),
+                 CheckboxOptions()
+                     .Color(THEME_COLOR)
+                     .DefaultValue(true)
+                     .Tooltip("Inverts the Camera Y Axis in:\n-First-Person/C-Up view\n-Weapon Aiming"));
+    CVarCheckbox("Invert Shield Aiming X Axis", CVAR_SETTING("Controls.InvertShieldAimingXAxis"),
+                 CheckboxOptions().Color(THEME_COLOR).DefaultValue(true).Tooltip("Inverts the Shield Aiming X Axis"));
+    CVarCheckbox("Invert Shield Aiming Y Axis", CVAR_SETTING("Controls.InvertShieldAimingYAxis"),
+                 CheckboxOptions().Color(THEME_COLOR).Tooltip("Inverts the Shield Aiming Y Axis"));
+    CVarCheckbox("Invert Z-Weapon Aiming Y Axis", CVAR_SETTING("Controls.InvertZAimingYAxis"),
+                 CheckboxOptions()
+                     .Color(THEME_COLOR)
+                     .DefaultValue(true)
+                     .Tooltip("Inverts the Camera Y Axis in:\n-Z-Weapon Aiming"));
+    CVarCheckbox("Disable Auto-Centering in First-Person View", CVAR_SETTING("DisableFirstPersonAutoCenterView"),
+                 CheckboxOptions()
+                     .Color(THEME_COLOR)
+                     .Tooltip("Prevents the C-Up view from auto-centering, allowing for Gyro Aiming"));
+    if (CVarCheckbox("Enable Custom Aiming/First-Person sensitivity",
+                     CVAR_SETTING("FirstPersonCameraSensitivity.Enabled"), CheckboxOptions().Color(THEME_COLOR))) {
+        if (!CVarGetInteger(CVAR_SETTING("FirstPersonCameraSensitivity.Enabled"), 0)) {
+            CVarClear(CVAR_SETTING("FirstPersonCameraSensitivity.X"));
+            CVarClear(CVAR_SETTING("FirstPersonCameraSensitivity.Y"));
+            Ship::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
         }
     }
-
-    for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
-        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
-        ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-        ImGui::SameLine();
-        ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
-        ImGui::PopStyleColor();
-        ImGui::PopStyleColor();
+    if (CVarGetInteger(CVAR_SETTING("FirstPersonCameraSensitivity.Enabled"), 0)) {
+        CVarSliderFloat("Aiming/First-Person Horizontal Sensitivity: %.0f %%",
+                        CVAR_SETTING("FirstPersonCameraSensitivity.X"),
+                        FloatSliderOptions()
+                            .Color(THEME_COLOR)
+                            .IsPercentage()
+                            .Min(0.01f)
+                            .Max(5.0f)
+                            .DefaultValue(1.0f)
+                            .ShowButtons(true));
+        CVarSliderFloat("Aiming/First-Person Vertical Sensitivity: %.0f %%",
+                        CVAR_SETTING("FirstPersonCameraSensitivity.Y"),
+                        FloatSliderOptions()
+                            .Color(THEME_COLOR)
+                            .IsPercentage()
+                            .Min(0.01f)
+                            .Max(5.0f)
+                            .DefaultValue(1.0f)
+                            .ShowButtons(true));
     }
+    Ship::GuiWindow::EndGroupPanel(0);
+
+    cursor = ImGui::GetCursorPos();
+    ImGui::SetCursorPos(ImVec2(cursor.x + 5, cursor.y + 5));
+    Ship::GuiWindow::BeginGroupPanel("Third-Person Camera", ImGui::GetContentRegionAvail());
+
+    CVarCheckbox(
+        "Free Look", CVAR_SETTING("FreeLook.Enabled"),
+        CheckboxOptions()
+            .Color(THEME_COLOR)
+            .Tooltip("Enables free look camera control\nNote: You must remap C buttons off of the right stick in the "
+                     "controller config menu, and map the camera stick to the right stick."));
+    CVarCheckbox("Invert Camera X Axis", CVAR_SETTING("FreeLook.InvertXAxis"),
+                 CheckboxOptions().Color(THEME_COLOR).Tooltip("Inverts the Camera X Axis in:\n-Free look"));
+    CVarCheckbox(
+        "Invert Camera Y Axis", CVAR_SETTING("FreeLook.InvertYAxis"),
+        CheckboxOptions().Color(THEME_COLOR).DefaultValue(true).Tooltip("Inverts the Camera Y Axis in:\n-Free look"));
+    CVarSliderFloat("Third-Person Horizontal Sensitivity: %.0f %%", CVAR_SETTING("FreeLook.CameraSensitivity.X"),
+                    FloatSliderOptions()
+                        .Color(THEME_COLOR)
+                        .IsPercentage()
+                        .Min(0.01f)
+                        .Max(5.0f)
+                        .DefaultValue(1.0f)
+                        .ShowButtons(true));
+    CVarSliderFloat("Third-Person Vertical Sensitivity: %.0f %%", CVAR_SETTING("FreeLook.CameraSensitivity.Y"),
+                    FloatSliderOptions()
+                        .Color(THEME_COLOR)
+                        .IsPercentage()
+                        .Min(0.01f)
+                        .Max(5.0f)
+                        .DefaultValue(1.0f)
+                        .ShowButtons(true));
+    CVarSliderInt("Camera Distance: %d", CVAR_SETTING("FreeLook.MaxCameraDistance"),
+                  IntSliderOptions().Color(THEME_COLOR).Min(100).Max(900).DefaultValue(185).ShowButtons(true));
+    CVarSliderInt("Camera Transition Speed: %d", CVAR_SETTING("FreeLook.TransitionSpeed"),
+                  IntSliderOptions().Color(THEME_COLOR).Min(0).Max(900).DefaultValue(25).ShowButtons(true));
+    Ship::GuiWindow::EndGroupPanel(0);
 }
 
-void SohInputEditorWindow::DrawGyroDeviceIcons(uint8_t portIndex) {
-    auto mapping =
-        LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->GetGyro()->GetGyroMapping();
-    if (mapping == nullptr) {
-        return;
+void SohInputEditorWindow::DrawDpadControlPanel() {
+    ImVec2 cursor = ImGui::GetCursorPos();
+    ImGui::SetCursorPos(ImVec2(cursor.x + 5, cursor.y + 5));
+    Ship::GuiWindow::BeginGroupPanel("D-Pad Options", ImGui::GetContentRegionAvail());
+    CVarCheckbox("D-pad Support on Pause Screen", CVAR_SETTING("DPadOnPause"),
+                 CheckboxOptions()
+                     .Color(THEME_COLOR)
+                     .Tooltip("Navigate Pause with the D-pad\nIf used with \"D-pad as Equip Items\", you must hold "
+                              "C-Up to equip instead of navigate"));
+    CVarCheckbox("D-pad Support in Text Boxes", CVAR_SETTING("DpadInText"),
+                 CheckboxOptions()
+                     .Color(THEME_COLOR)
+                     .Tooltip("Navigate choices in text boxes, shop item selection, and the file select / name entry "
+                              "screens with the D-pad"));
+
+    if (!CVarGetInteger(CVAR_SETTING("DPadOnPause"), 0) && !CVarGetInteger(CVAR_SETTING("DpadInText"), 0)) {
+        ImGui::BeginDisabled();
     }
 
-    auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-    auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-    GetButtonColorsForLUSDeviceIndex(mapping->GetLUSDeviceIndex(), buttonColor, buttonHoveredColor);
-    ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-    ImGui::SameLine();
-    ImGui::SmallButton(mapping->PhysicalDeviceIsConnected() ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
+    CVarCheckbox("D-pad hold change", CVAR_SETTING("DpadHoldChange"),
+                 CheckboxOptions()
+                     .Color(THEME_COLOR)
+                     .DefaultValue(true)
+                     .Tooltip("The cursor will only move a single space no matter how long a D-pad direction is held"));
+
+    if (!CVarGetInteger(CVAR_SETTING("DPadOnPause"), 0) && !CVarGetInteger(CVAR_SETTING("DpadInText"), 0)) {
+        ImGui::EndDisabled();
+    }
+
+    Ship::GuiWindow::EndGroupPanel(0);
+}
+
+void SohInputEditorWindow::DrawDeviceToggles(uint8_t portIndex) {
+    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+
+    auto keyboardButtonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+    auto keyboardButtonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+    GetButtonColorsForDeviceType(Ship::PhysicalDeviceType::Keyboard, keyboardButtonColor, keyboardButtonHoveredColor);
+    ImGui::PushStyleColor(ImGuiCol_Button, keyboardButtonColor);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, keyboardButtonHoveredColor);
+    ImGui::Button(StringHelper::Sprintf("%s Keyboard", ICON_FA_KEYBOARD_O).c_str());
     ImGui::PopStyleColor();
     ImGui::PopStyleColor();
-}
 
-void SohInputEditorWindow::DrawLEDDeviceIcons(uint8_t portIndex) {
-    std::set<LUS::LUSDeviceIndex> allLusDeviceIndices;
-    for (auto [lusIndex, mapping] : LUS::Context::GetInstance()
-                                        ->GetControlDeck()
-                                        ->GetDeviceIndexMappingManager()
-                                        ->GetAllDeviceIndexMappingsFromConfig()) {
-        allLusDeviceIndices.insert(lusIndex);
-    }
+    auto mouseButtonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+    auto mouseButtonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+    GetButtonColorsForDeviceType(Ship::PhysicalDeviceType::Mouse, mouseButtonColor, mouseButtonHoveredColor);
+    ImGui::PushStyleColor(ImGuiCol_Button, mouseButtonColor);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, mouseButtonHoveredColor);
+    ImGui::Button(StringHelper::Sprintf("%s Mouse", ICON_FA_KEYBOARD_O).c_str());
+    ImGui::PopStyleColor();
+    ImGui::PopStyleColor();
 
-    std::vector<std::pair<LUS::LUSDeviceIndex, bool>> lusDeviceIndiciesWithMappings;
-    for (auto lusIndex : allLusDeviceIndices) {
-        if (LUS::Context::GetInstance()
-                ->GetControlDeck()
-                ->GetControllerByPort(portIndex)
-                ->GetRumble()
-                ->HasMappingsForLUSDeviceIndex(lusIndex)) {
-            for (auto [id, mapping] : LUS::Context::GetInstance()
-                                          ->GetControlDeck()
-                                          ->GetControllerByPort(portIndex)
-                                          ->GetLED()
-                                          ->GetAllLEDMappings()) {
-                if (mapping->GetLUSDeviceIndex() == lusIndex) {
-                    lusDeviceIndiciesWithMappings.push_back(
-                        std::pair<LUS::LUSDeviceIndex, bool>(lusIndex, mapping->PhysicalDeviceIsConnected()));
-                    break;
-                }
-            }
-        }
-    }
+    ImGui::PopItemFlag();
 
-    for (auto [lusIndex, connected] : lusDeviceIndiciesWithMappings) {
+    auto connectedDeviceManager = Ship::Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager();
+    for (const auto& [instanceId, name] : connectedDeviceManager->GetConnectedSDLGamepadNames()) {
+        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
         auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
         auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-        GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
+        GetButtonColorsForDeviceType(Ship::PhysicalDeviceType::SDLGamepad, buttonColor, buttonHoveredColor);
         ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
+        auto notIgnored = !connectedDeviceManager->PortIsIgnoringInstanceId(portIndex, instanceId);
+        ImGui::PopItemFlag();
+        if (ImGui::Checkbox(StringHelper::Sprintf("###instanceId_%d", instanceId).c_str(), &notIgnored)) {
+            if (notIgnored) {
+                connectedDeviceManager->UnignoreInstanceIdForPort(portIndex, instanceId);
+            } else {
+                connectedDeviceManager->IgnoreInstanceIdForPort(portIndex, instanceId);
+            }
+        };
+        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
         ImGui::SameLine();
-        ImGui::SmallButton(connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN);
+        ImGui::Button(StringHelper::Sprintf("%s %s (SDL)", ICON_FA_GAMEPAD, name.c_str()).c_str());
         ImGui::PopStyleColor();
         ImGui::PopStyleColor();
+        ImGui::PopItemFlag();
     }
 }
 
@@ -1396,6 +1547,7 @@ void SohInputEditorWindow::DrawLinkTab() {
     if (ImGui::BeginTabItem(StringHelper::Sprintf("Link (P1)###port%d", portIndex).c_str())) {
         DrawClearAllButton(portIndex);
         DrawSetDefaultsButton(portIndex);
+        DrawDeviceToggles(portIndex);
 
         UpdateBitmaskToMappingIds(portIndex);
         UpdateStickDirectionToMappingIds(portIndex);
@@ -1405,7 +1557,6 @@ void SohInputEditorWindow::DrawLinkTab() {
         ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 
         if (ImGui::CollapsingHeader("Buttons", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawButtonDeviceIcons(portIndex, mButtonsBitmasks);
             DrawButtonLine("A", portIndex, BTN_A, CHIP_COLOR_N64_BLUE);
             DrawButtonLine("B", portIndex, BTN_B, CHIP_COLOR_N64_GREEN);
             DrawButtonLine("Start", portIndex, BTN_START, CHIP_COLOR_N64_RED);
@@ -1420,61 +1571,114 @@ void SohInputEditorWindow::DrawLinkTab() {
                            CHIP_COLOR_N64_YELLOW);
             DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_CRIGHT,
                            CHIP_COLOR_N64_YELLOW);
-        } else {
-            DrawButtonDeviceIcons(portIndex, mButtonsBitmasks);
         }
 
         if (ImGui::CollapsingHeader("D-Pad", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawButtonDeviceIcons(portIndex, mDpadBitmasks);
-            DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_UP).c_str(), portIndex, BTN_DUP);
-            DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_DOWN).c_str(), portIndex, BTN_DDOWN);
-            DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_LEFT).c_str(), portIndex, BTN_DLEFT);
-            DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_DRIGHT);
-        } else {
-            DrawButtonDeviceIcons(portIndex, mDpadBitmasks);
+            DrawButtonLine(StringHelper::Sprintf("D %s", ICON_FA_ARROW_UP).c_str(), portIndex, BTN_DUP);
+            DrawButtonLine(StringHelper::Sprintf("D %s", ICON_FA_ARROW_DOWN).c_str(), portIndex, BTN_DDOWN);
+            DrawButtonLine(StringHelper::Sprintf("D %s", ICON_FA_ARROW_LEFT).c_str(), portIndex, BTN_DLEFT);
+            DrawButtonLine(StringHelper::Sprintf("D %s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_DRIGHT);
         }
 
         if (ImGui::CollapsingHeader("Analog Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawAnalogStickDeviceIcons(portIndex, LUS::LEFT_STICK);
-            DrawStickSection(portIndex, LUS::LEFT, 0);
-        } else {
-            DrawAnalogStickDeviceIcons(portIndex, LUS::LEFT_STICK);
+            DrawStickSection(portIndex, Ship::LEFT, 0);
         }
 
         if (ImGui::CollapsingHeader("Additional (\"Right\") Stick")) {
-            DrawAnalogStickDeviceIcons(portIndex, LUS::RIGHT_STICK);
-            DrawStickSection(portIndex, LUS::RIGHT, 1, CHIP_COLOR_N64_YELLOW);
-        } else {
-            DrawAnalogStickDeviceIcons(portIndex, LUS::RIGHT_STICK);
+            DrawStickSection(portIndex, Ship::RIGHT, 1, CHIP_COLOR_N64_YELLOW);
         }
 
         if (ImGui::CollapsingHeader("Rumble")) {
-            DrawRumbleDeviceIcons(portIndex);
             DrawRumbleSection(portIndex);
-        } else {
-            DrawRumbleDeviceIcons(portIndex);
         }
 
         if (ImGui::CollapsingHeader("Gyro")) {
-            DrawGyroDeviceIcons(portIndex);
             DrawGyroSection(portIndex);
-        } else {
-            DrawGyroDeviceIcons(portIndex);
         }
 
         if (ImGui::CollapsingHeader("LEDs")) {
-            DrawLEDDeviceIcons(portIndex);
             DrawLEDSection(portIndex);
-        } else {
-            DrawLEDDeviceIcons(portIndex);
         }
 
         if (ImGui::CollapsingHeader("Modifier Buttons")) {
-            DrawButtonDeviceIcons(portIndex, mModifierButtonsBitmasks);
-            DrawButtonLine("M1", portIndex, BTN_MODIFIER1);
-            DrawButtonLine("M2", portIndex, BTN_MODIFIER2);
-        } else {
-            DrawButtonDeviceIcons(portIndex, mModifierButtonsBitmasks);
+            DrawButtonLine("M1", portIndex, BTN_CUSTOM_MODIFIER1);
+            DrawButtonLine("M2", portIndex, BTN_CUSTOM_MODIFIER2);
+
+            ImGui::BeginDisabled(CVarGetInteger(CVAR_SETTING("DisableChanges"), 0));
+            CVarCheckbox("Enable speed modifiers", CVAR_SETTING("WalkModifier.Enabled"),
+                         CheckboxOptions()
+                             .Color(THEME_COLOR)
+                             .Tooltip("Hold the assigned button to change the maximum walking or swimming speed"));
+            if (CVarGetInteger(CVAR_SETTING("WalkModifier.Enabled"), 0)) {
+                UIWidgets::Spacer(5);
+                Ship::GuiWindow::BeginGroupPanel("Speed Modifier", ImGui::GetContentRegionAvail());
+                CVarCheckbox("Toggle modifier instead of holding", CVAR_SETTING("WalkModifier.SpeedToggle"),
+                             CheckboxOptions().Color(THEME_COLOR));
+                Ship::GuiWindow::BeginGroupPanel("Walk Modifier", ImGui::GetContentRegionAvail());
+                CVarCheckbox("Don't affect jump distance/velocity", CVAR_SETTING("WalkModifier.DoesntChangeJump"),
+                             CheckboxOptions().Color(THEME_COLOR));
+                CVarSliderFloat("Walk Modifier 1: %.0f %%", CVAR_SETTING("WalkModifier.Mapping1"),
+                                FloatSliderOptions()
+                                    .Color(THEME_COLOR)
+                                    .IsPercentage()
+                                    .Min(0.0f)
+                                    .Max(5.0f)
+                                    .DefaultValue(1.0f)
+                                    .ShowButtons(true));
+                CVarSliderFloat("Walk Modifier 2: %.0f %%", CVAR_SETTING("WalkModifier.Mapping2"),
+                                FloatSliderOptions()
+                                    .Color(THEME_COLOR)
+                                    .IsPercentage()
+                                    .Min(0.0f)
+                                    .Max(5.0f)
+                                    .DefaultValue(1.0f)
+                                    .ShowButtons(true));
+                Ship::GuiWindow::EndGroupPanel(0);
+                Ship::GuiWindow::BeginGroupPanel("Swim Modifier", ImGui::GetContentRegionAvail());
+                CVarSliderFloat("Swim Modifier 1: %.0f %%", CVAR_SETTING("WalkModifier.SwimMapping1"),
+                                FloatSliderOptions()
+                                    .Color(THEME_COLOR)
+                                    .IsPercentage()
+                                    .Min(0.0f)
+                                    .Max(5.0f)
+                                    .DefaultValue(1.0f)
+                                    .ShowButtons(true));
+                CVarSliderFloat("Swim Modifier 2: %.0f %%", CVAR_SETTING("WalkModifier.SwimMapping2"),
+                                FloatSliderOptions()
+                                    .Color(THEME_COLOR)
+                                    .IsPercentage()
+                                    .Min(0.0f)
+                                    .Max(5.0f)
+                                    .DefaultValue(1.0f)
+                                    .ShowButtons(true));
+                Ship::GuiWindow::EndGroupPanel(0);
+                Ship::GuiWindow::EndGroupPanel(0);
+            }
+            ImGui::EndDisabled();
+        }
+
+        if (ImGui::CollapsingHeader("Ocarina Controls")) {
+            DrawOcarinaControlPanel();
+        }
+
+        if (ImGui::CollapsingHeader("Camera Controls")) {
+            ImGui::PopStyleColor();
+            ImGui::PopStyleColor();
+            ImGui::PopStyleColor();
+            DrawCameraControlPanel();
+            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.133f, 0.133f, 0.133f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+        }
+
+        if (ImGui::CollapsingHeader("D-Pad Controls")) {
+            ImGui::PopStyleColor();
+            ImGui::PopStyleColor();
+            ImGui::PopStyleColor();
+            DrawDpadControlPanel();
+            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.133f, 0.133f, 0.133f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
         }
 
         ImGui::PopStyleColor();
@@ -1485,7 +1689,7 @@ void SohInputEditorWindow::DrawLinkTab() {
 }
 
 void SohInputEditorWindow::DrawIvanTab() {
-    if (CVarGetInteger("gDebugEnabled", 0)) {
+    if (CVarGetInteger(CVAR_DEVELOPER_TOOLS("DebugEnabled"), 0)) {
         DrawDebugPortTab(1, "Ivan (P2)");
         return;
     }
@@ -1494,6 +1698,7 @@ void SohInputEditorWindow::DrawIvanTab() {
     if (ImGui::BeginTabItem(StringHelper::Sprintf("Ivan (P2)###port%d", portIndex).c_str())) {
         DrawClearAllButton(portIndex);
         DrawSetDefaultsButton(portIndex);
+        DrawDeviceToggles(portIndex);
 
         UpdateBitmaskToMappingIds(portIndex);
         UpdateStickDirectionToMappingIds(portIndex);
@@ -1503,7 +1708,6 @@ void SohInputEditorWindow::DrawIvanTab() {
         ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 
         if (ImGui::CollapsingHeader("Buttons", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawButtonDeviceIcons(portIndex, mButtonsBitmasks);
             DrawButtonLine("A", portIndex, BTN_A, CHIP_COLOR_N64_BLUE);
             DrawButtonLine("B", portIndex, BTN_B, CHIP_COLOR_N64_GREEN);
             DrawButtonLine("Z", portIndex, BTN_Z);
@@ -1515,25 +1719,17 @@ void SohInputEditorWindow::DrawIvanTab() {
                            CHIP_COLOR_N64_YELLOW);
             DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_CRIGHT,
                            CHIP_COLOR_N64_YELLOW);
-        } else {
-            DrawButtonDeviceIcons(portIndex, mButtonsBitmasks);
         }
 
         if (ImGui::CollapsingHeader("D-Pad", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawButtonDeviceIcons(portIndex, mDpadBitmasks);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_UP).c_str(), portIndex, BTN_DUP);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_DOWN).c_str(), portIndex, BTN_DDOWN);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_LEFT).c_str(), portIndex, BTN_DLEFT);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_DRIGHT);
-        } else {
-            DrawButtonDeviceIcons(portIndex, mDpadBitmasks);
         }
 
         if (ImGui::CollapsingHeader("Analog Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawAnalogStickDeviceIcons(portIndex, LUS::LEFT_STICK);
-            DrawStickSection(portIndex, LUS::LEFT, 0);
-        } else {
-            DrawAnalogStickDeviceIcons(portIndex, LUS::LEFT_STICK);
+            DrawStickSection(portIndex, Ship::LEFT, 0);
         }
 
         ImGui::PopStyleColor();
@@ -1549,16 +1745,14 @@ void SohInputEditorWindow::DrawDebugPortTab(uint8_t portIndex, std::string custo
                                 : customName.c_str())) {
         DrawClearAllButton(portIndex);
         DrawSetDefaultsButton(portIndex);
+        DrawDeviceToggles(portIndex);
 
         UpdateBitmaskToMappingIds(portIndex);
         UpdateStickDirectionToMappingIds(portIndex);
 
-        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.133f, 0.133f, 0.133f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+        PushStyleHeader(THEME_COLOR);
 
         if (ImGui::CollapsingHeader("Buttons", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawButtonDeviceIcons(portIndex, mButtonsBitmasks);
             DrawButtonLine("A", portIndex, BTN_A, CHIP_COLOR_N64_BLUE);
             DrawButtonLine("B", portIndex, BTN_B, CHIP_COLOR_N64_GREEN);
             DrawButtonLine("Start", portIndex, BTN_START, CHIP_COLOR_N64_RED);
@@ -1573,330 +1767,136 @@ void SohInputEditorWindow::DrawDebugPortTab(uint8_t portIndex, std::string custo
                            CHIP_COLOR_N64_YELLOW);
             DrawButtonLine(StringHelper::Sprintf("C %s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_CRIGHT,
                            CHIP_COLOR_N64_YELLOW);
-        } else {
-            DrawButtonDeviceIcons(portIndex, mButtonsBitmasks);
         }
-
         if (ImGui::CollapsingHeader("D-Pad", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawButtonDeviceIcons(portIndex, mDpadBitmasks);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_UP).c_str(), portIndex, BTN_DUP);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_DOWN).c_str(), portIndex, BTN_DDOWN);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_LEFT).c_str(), portIndex, BTN_DLEFT);
             DrawButtonLine(StringHelper::Sprintf("%s", ICON_FA_ARROW_RIGHT).c_str(), portIndex, BTN_DRIGHT);
-        } else {
-            DrawButtonDeviceIcons(portIndex, mDpadBitmasks);
         }
 
         if (ImGui::CollapsingHeader("Analog Stick", NULL, ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawAnalogStickDeviceIcons(portIndex, LUS::LEFT_STICK);
-            DrawStickSection(portIndex, LUS::LEFT, 0);
-        } else {
-            DrawAnalogStickDeviceIcons(portIndex, LUS::LEFT_STICK);
+            DrawStickSection(portIndex, Ship::LEFT, 0);
         }
 
-        ImGui::PopStyleColor();
-        ImGui::PopStyleColor();
-        ImGui::PopStyleColor();
+        PopStyleHeader();
         ImGui::EndTabItem();
     }
 }
 
 void SohInputEditorWindow::DrawClearAllButton(uint8_t portIndex) {
+    PushStyleButton(THEME_COLOR);
     if (ImGui::Button("Clear All", ImGui::CalcTextSize("Clear All") * 2)) {
         ImGui::OpenPopup("Clear All##clearAllPopup");
     }
+    PopStyleButton();
     if (ImGui::BeginPopupModal("Clear All##clearAllPopup", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("This will clear all mappings for port %d.\n\nContinue?", portIndex + 1);
+        PushStyleButton(THEME_COLOR);
         if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
         }
         if (ImGui::Button("Clear All")) {
-            LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->ClearAllMappings();
+            Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->ClearAllMappings();
             ImGui::CloseCurrentPopup();
         }
+        PopStyleButton();
         ImGui::EndPopup();
     }
 }
 
-#ifdef __WIIU__
-void SohInputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
-    ImGui::SameLine();
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
-    auto popupId = StringHelper::Sprintf("setDefaultsPopup##%d", portIndex);
-    if (ImGui::Button(StringHelper::Sprintf("Set defaults...##%d", portIndex).c_str())) {
-        ImGui::OpenPopup(popupId.c_str());
-    }
-    ImGui::PopStyleVar();
-
-    if (ImGui::BeginPopup(popupId.c_str())) {
-        std::map<LUS::LUSDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
-        for (auto [lusIndex, mapping] : LUS::Context::GetInstance()
-                                            ->GetControlDeck()
-                                            ->GetDeviceIndexMappingManager()
-                                            ->GetAllDeviceIndexMappings()) {
-            auto wiiuIndexMapping = std::static_pointer_cast<LUS::LUSDeviceIndexToWiiUDeviceIndexMapping>(mapping);
-            if (wiiuIndexMapping == nullptr) {
-                continue;
-            }
-
-            indexMappings[lusIndex] = { wiiuIndexMapping->GetWiiUControllerName(),
-                                        wiiuIndexMapping->IsWiiUGamepad() ? INT32_MAX
-                                                                          : wiiuIndexMapping->GetDeviceChannel() };
-        }
-
-        bool shouldClose = false;
-        for (auto [lusIndex, info] : indexMappings) {
-            auto [name, wiiuChannel] = info;
-            bool isGamepad = wiiuChannel == INT32_MAX;
-
-            auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-            auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-            GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
-            ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-
-            auto fancyName = StringHelper::Sprintf(
-                "%s%s", name.c_str(), isGamepad ? "" : StringHelper::Sprintf(" (%d)", wiiuChannel).c_str());
-            if (ImGui::Button(StringHelper::Sprintf("%s %s", ICON_FA_GAMEPAD, fancyName.c_str()).c_str())) {
-                ImGui::OpenPopup(StringHelper::Sprintf("Set Defaults for %s", name.c_str()).c_str());
-            }
-            ImGui::PopStyleColor();
-            ImGui::PopStyleColor();
-            if (ImGui::BeginPopupModal(StringHelper::Sprintf("Set Defaults for %s", name.c_str()).c_str(), NULL,
-                                       ImGuiWindowFlags_AlwaysAutoResize)) {
-                ImGui::Text("This will clear all existing mappings for\n%s on port %d.\n\nContinue?", fancyName.c_str(),
-                            portIndex + 1);
-                if (ImGui::Button("Cancel")) {
-                    shouldClose = true;
-                    ImGui::CloseCurrentPopup();
-                }
-                if (ImGui::Button("Set defaults")) {
-                    LUS::Context::GetInstance()
-                        ->GetControlDeck()
-                        ->GetControllerByPort(portIndex)
-                        ->ClearAllMappingsForDevice(lusIndex);
-                    LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->AddDefaultMappings(
-                        lusIndex);
-                    shouldClose = true;
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::EndPopup();
-            }
-        }
-
-        if (ImGui::Button("Cancel") || shouldClose) {
-            ImGui::CloseCurrentPopup();
-        }
-
-        ImGui::EndPopup();
-    }
-}
-
-void SohInputEditorWindow::DrawDevicesTab() {
-    if (ImGui::BeginTabItem("Devices")) {
-        std::map<LUS::LUSDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
-        for (auto [lusIndex, mapping] : LUS::Context::GetInstance()
-                                            ->GetControlDeck()
-                                            ->GetDeviceIndexMappingManager()
-                                            ->GetAllDeviceIndexMappingsFromConfig()) {
-            auto wiiuIndexMapping = std::static_pointer_cast<LUS::LUSDeviceIndexToWiiUDeviceIndexMapping>(mapping);
-            if (wiiuIndexMapping == nullptr) {
-                continue;
-            }
-
-            indexMappings[lusIndex] = { wiiuIndexMapping->GetWiiUControllerName(), -1 };
-        }
-
-        for (auto [lusIndex, mapping] : LUS::Context::GetInstance()
-                                            ->GetControlDeck()
-                                            ->GetDeviceIndexMappingManager()
-                                            ->GetAllDeviceIndexMappings()) {
-            auto wiiuIndexMapping = std::static_pointer_cast<LUS::LUSDeviceIndexToWiiUDeviceIndexMapping>(mapping);
-            if (wiiuIndexMapping == nullptr) {
-                continue;
-            }
-
-            indexMappings[lusIndex] = { wiiuIndexMapping->GetWiiUControllerName(),
-                                        wiiuIndexMapping->IsWiiUGamepad() ? INT32_MAX
-                                                                          : wiiuIndexMapping->GetDeviceChannel() };
-        }
-
-        for (auto [lusIndex, info] : indexMappings) {
-            auto [name, wiiuChannel] = info;
-            bool connected = wiiuChannel != -1;
-            bool isGamepad = wiiuChannel == INT32_MAX;
-
-            auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-            auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-            GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
-            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-            ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-            ImGui::Button(StringHelper::Sprintf("%s %s%s", connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN,
-                                                name.c_str(),
-                                                !connected  ? " (Disconnected)"
-                                                : isGamepad ? ""
-                                                            : StringHelper::Sprintf(" (%d)", wiiuChannel).c_str())
-                              .c_str());
-            ImGui::PopStyleColor();
-            ImGui::PopItemFlag();
-        }
-
-        ImGui::EndTabItem();
-    }
-}
-#else
 void SohInputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
     ImGui::SameLine();
     auto popupId = StringHelper::Sprintf("setDefaultsPopup##%d", portIndex);
+    PushStyleButton(THEME_COLOR);
     if (ImGui::Button(StringHelper::Sprintf("Set Defaults##%d", portIndex).c_str(),
                       ImVec2(ImGui::CalcTextSize("Set Defaults") * 2))) {
         ImGui::OpenPopup(popupId.c_str());
     }
+    PopStyleButton();
 
     if (ImGui::BeginPopup(popupId.c_str())) {
-        std::map<LUS::LUSDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
-        for (auto [lusIndex, mapping] : LUS::Context::GetInstance()
-                                            ->GetControlDeck()
-                                            ->GetDeviceIndexMappingManager()
-                                            ->GetAllDeviceIndexMappings()) {
-            auto sdlIndexMapping = std::static_pointer_cast<LUS::LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
-            if (sdlIndexMapping == nullptr) {
-                continue;
-            }
-
-            indexMappings[lusIndex] = { sdlIndexMapping->GetSDLControllerName(), sdlIndexMapping->GetSDLDeviceIndex() };
-        }
-
         bool shouldClose = false;
-        ImGui::PushStyleColor(ImGuiCol_Button, BUTTON_COLOR_KEYBOARD_BEIGE);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, BUTTON_COLOR_KEYBOARD_BEIGE_HOVERED);
+        PushStyleButton(BUTTON_COLOR_KEYBOARD_BEIGE);
         if (ImGui::Button(StringHelper::Sprintf("%s Keyboard", ICON_FA_KEYBOARD_O).c_str())) {
             ImGui::OpenPopup("Set Defaults for Keyboard");
         }
-        ImGui::PopStyleColor();
-        ImGui::PopStyleColor();
+        PopStyleButton();
         if (ImGui::BeginPopupModal("Set Defaults for Keyboard", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text("This will clear all existing mappings for\nKeyboard on port %d.\n\nContinue?", portIndex + 1);
+            PushStyleButton(THEME_COLOR);
             if (ImGui::Button("Cancel")) {
                 shouldClose = true;
                 ImGui::CloseCurrentPopup();
             }
             if (ImGui::Button("Set defaults")) {
-                LUS::Context::GetInstance()
+                Ship::Context::GetInstance()
                     ->GetControlDeck()
                     ->GetControllerByPort(portIndex)
-                    ->ClearAllMappingsForDevice(LUS::LUSDeviceIndex::Keyboard);
-                LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->AddDefaultMappings(
-                    LUS::LUSDeviceIndex::Keyboard);
+                    ->ClearAllMappingsForDeviceType(Ship::PhysicalDeviceType::Keyboard);
+                Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->AddDefaultMappings(
+                    Ship::PhysicalDeviceType::Keyboard);
                 shouldClose = true;
                 ImGui::CloseCurrentPopup();
             }
+            PopStyleButton();
             ImGui::EndPopup();
         }
-        for (auto [lusIndex, info] : indexMappings) {
-            auto [name, sdlIndex] = info;
 
-            auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-            auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-            GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
-            ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-            if (ImGui::Button(StringHelper::Sprintf("%s %s (%s)", ICON_FA_GAMEPAD, name.c_str(),
-                                                    StringHelper::Sprintf("SDL %d", sdlIndex).c_str())
-                                  .c_str())) {
-                ImGui::OpenPopup(StringHelper::Sprintf("Set Defaults for %s", name.c_str()).c_str());
+        auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+        auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+        GetButtonColorsForDeviceType(Ship::PhysicalDeviceType::SDLGamepad, buttonColor, buttonHoveredColor);
+        PushStyleButton(buttonColor);
+        if (ImGui::Button(StringHelper::Sprintf("%s %s", ICON_FA_GAMEPAD, "Gamepad (SDL)").c_str())) {
+            ImGui::OpenPopup("Set Defaults for Gamepad (SDL)");
+        }
+        PopStyleButton();
+        if (ImGui::BeginPopupModal("Set Defaults for Gamepad (SDL)", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("This will clear all existing mappings for\nGamepad (SDL) on port %d.\n\nContinue?",
+                        portIndex + 1);
+            PushStyleButton(THEME_COLOR);
+            if (ImGui::Button("Cancel")) {
+                shouldClose = true;
+                ImGui::CloseCurrentPopup();
             }
-            ImGui::PopStyleColor();
-            ImGui::PopStyleColor();
-            if (ImGui::BeginPopupModal(StringHelper::Sprintf("Set Defaults for %s", name.c_str()).c_str(), NULL,
-                                       ImGuiWindowFlags_AlwaysAutoResize)) {
-                ImGui::Text("This will clear all existing mappings for\n%s (SDL %d) on port %d.\n\nContinue?",
-                            name.c_str(), sdlIndex, portIndex + 1);
-                if (ImGui::Button("Cancel")) {
-                    shouldClose = true;
-                    ImGui::CloseCurrentPopup();
-                }
-                if (ImGui::Button("Set defaults")) {
-                    LUS::Context::GetInstance()
-                        ->GetControlDeck()
-                        ->GetControllerByPort(portIndex)
-                        ->ClearAllMappingsForDevice(lusIndex);
-                    LUS::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->AddDefaultMappings(
-                        lusIndex);
-                    shouldClose = true;
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::EndPopup();
+            if (ImGui::Button("Set defaults")) {
+                Ship::Context::GetInstance()
+                    ->GetControlDeck()
+                    ->GetControllerByPort(portIndex)
+                    ->ClearAllMappingsForDeviceType(Ship::PhysicalDeviceType::SDLGamepad);
+                Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(portIndex)->AddDefaultMappings(
+                    Ship::PhysicalDeviceType::SDLGamepad);
+                shouldClose = true;
+                ImGui::CloseCurrentPopup();
             }
+            PopStyleButton();
+            ImGui::EndPopup();
         }
 
+        PushStyleButton(THEME_COLOR);
         if (ImGui::Button("Cancel") || shouldClose) {
             ImGui::CloseCurrentPopup();
         }
+        PopStyleButton();
 
         ImGui::EndPopup();
     }
 }
 
-void SohInputEditorWindow::DrawDevicesTab() {
-    if (ImGui::BeginTabItem("Devices")) {
-        std::map<LUS::LUSDeviceIndex, std::pair<std::string, int32_t>> indexMappings;
-        for (auto [lusIndex, mapping] : LUS::Context::GetInstance()
-                                            ->GetControlDeck()
-                                            ->GetDeviceIndexMappingManager()
-                                            ->GetAllDeviceIndexMappingsFromConfig()) {
-            auto sdlIndexMapping = std::static_pointer_cast<LUS::LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
-            if (sdlIndexMapping == nullptr) {
-                continue;
-            }
-
-            indexMappings[lusIndex] = { sdlIndexMapping->GetSDLControllerName(), -1 };
-        }
-
-        for (auto [lusIndex, mapping] : LUS::Context::GetInstance()
-                                            ->GetControlDeck()
-                                            ->GetDeviceIndexMappingManager()
-                                            ->GetAllDeviceIndexMappings()) {
-            auto sdlIndexMapping = std::static_pointer_cast<LUS::LUSDeviceIndexToSDLDeviceIndexMapping>(mapping);
-            if (sdlIndexMapping == nullptr) {
-                continue;
-            }
-
-            indexMappings[lusIndex] = { sdlIndexMapping->GetSDLControllerName(), sdlIndexMapping->GetSDLDeviceIndex() };
-        }
-
-        for (auto [lusIndex, info] : indexMappings) {
-            auto [name, sdlIndex] = info;
-            bool connected = sdlIndex != -1;
-
-            auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-            auto buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-            GetButtonColorsForLUSDeviceIndex(lusIndex, buttonColor, buttonHoveredColor);
-            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-            ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-            ImGui::Button(
-                StringHelper::Sprintf("%s %s (%s)", connected ? ICON_FA_GAMEPAD : ICON_FA_CHAIN_BROKEN, name.c_str(),
-                                      connected ? StringHelper::Sprintf("SDL %d", sdlIndex).c_str() : "Disconnected")
-                    .c_str());
-            ImGui::PopStyleColor();
-            ImGui::PopItemFlag();
-        }
-
-        ImGui::EndTabItem();
-    }
-}
-#endif
-
 void SohInputEditorWindow::DrawElement() {
-    ImGui::Begin("Controller Configuration###sohControllerConfigWindowV1", &mIsVisible);
+    ImGui::PushFont(OTRGlobals::Instance->fontMonoLarger);
+    ImVec4 themeColor = ColorValues.at(THEME_COLOR);
+    ImGui::PushStyleColor(ImGuiCol_Tab, ImVec4(themeColor.x, themeColor.y, themeColor.z, 0.8f));
+    ImGui::PushStyleColor(ImGuiCol_TabHovered, ImVec4(themeColor.x, themeColor.y, themeColor.z, 0.6f));
+    ImGui::PushStyleColor(ImGuiCol_TabActive, ImVec4(themeColor.x, themeColor.y, themeColor.z, 0.6f));
     ImGui::BeginTabBar("##ControllerConfigPortTabs");
     DrawLinkTab();
     DrawIvanTab();
-    if (CVarGetInteger("gDebugEnabled", 0)) {
+    if (CVarGetInteger(CVAR_DEVELOPER_TOOLS("DebugEnabled"), 0)) {
         DrawDebugPortTab(2);
         DrawDebugPortTab(3);
     }
-    DrawDevicesTab();
     ImGui::EndTabBar();
-    ImGui::End();
+    ImGui::PopStyleColor(3);
+    ImGui::PopFont();
 }

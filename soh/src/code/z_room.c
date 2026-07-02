@@ -4,9 +4,13 @@
 
 #include "global.h"
 #include "vt.h"
-#include "soh/Enhancements/randomizer/randomizer_entrance.h"
+#include "soh/Enhancements/game-interactor/GameInteractor.h"
 #include <string.h>
 #include <assert.h>
+
+#include "public/bridge/gfxbridge.h"
+#include "soh/OTRGlobals.h"
+#include "soh/ResourceManagerHelpers.h"
 
 void func_80095AB4(PlayState* play, Room* room, u32 flags);
 void func_80095D04(PlayState* play, Room* room, u32 flags);
@@ -112,13 +116,13 @@ void func_80095D04(PlayState* play, Room* room, u32 flags) {
     OPEN_DISPS(play->state.gfxCtx);
     if (flags & 1) {
         func_800342EC(&D_801270A0, play);
-        //gSPSegment(POLY_OPA_DISP++, 0x03, room->segment);
+        // gSPSegment(POLY_OPA_DISP++, 0x03, room->segment);
         func_80093C80(play);
         gSPMatrix(POLY_OPA_DISP++, &gMtxClear, G_MTX_MODELVIEW | G_MTX_LOAD);
     }
     if (flags & 2) {
         func_8003435C(&D_801270A0, play);
-        //gSPSegment(POLY_XLU_DISP++, 0x03, room->segment);
+        // gSPSegment(POLY_XLU_DISP++, 0x03, room->segment);
         Gfx_SetupDL_25Xlu(play->state.gfxCtx);
         gSPMatrix(POLY_XLU_DISP++, &gMtxClear, G_MTX_MODELVIEW | G_MTX_LOAD);
     }
@@ -135,8 +139,7 @@ void func_80095D04(PlayState* play, Room* room, u32 flags) {
         sp90.y = polygonDlist->pos.y;
         sp90.z = polygonDlist->pos.z;
         SkinMatrix_Vec3fMtxFMultXYZW(&play->viewProjectionMtxF, &sp90, &sp84, &sp80);
-        if (-(f32)polygonDlist->unk_06 < sp84.z)
-        {
+        if (-(f32)polygonDlist->unk_06 < sp84.z) {
             temp_f2 = sp84.z - polygonDlist->unk_06;
             if (temp_f2 < play->lightCtx.fogFar) {
                 phi_v0 = spB4;
@@ -180,8 +183,7 @@ void func_80095D04(PlayState* play, Room* room, u32 flags) {
         Gfx* temp2;
 
         polygonDlist = spB4->unk_00;
-        if (iREG(86) != 0)
-        {
+        if (iREG(86) != 0) {
             temp = sp78;
             for (phi_v1 = 0; phi_v1 < polygon2->num; phi_v1++, temp++) {
                 if (polygonDlist == temp) {
@@ -189,8 +191,7 @@ void func_80095D04(PlayState* play, Room* room, u32 flags) {
                 }
             }
 
-            if (((iREG(86) == 1) && (iREG(89) >= sp9C)) || ((iREG(86) == 2) && (iREG(89) == sp9C)))
-            {
+            if (((iREG(86) == 1) && (iREG(89) >= sp9C)) || ((iREG(86) == 2) && (iREG(89) == sp9C))) {
                 if (flags & 1) {
                     temp2 = polygonDlist->opa;
                     if (temp2 != NULL) {
@@ -234,7 +235,7 @@ s32 swapAndConvertJPEG(void* data) {
     if (BE32SWAP(*(u32*)data) == JPEG_MARKER) {
         size_t size = 320 * 240 * 2;
 
-        char *decodedJpeg = ResourceMgr_LoadJPEG(data, size);
+        char* decodedJpeg = ResourceMgr_LoadJPEG(data, size);
 
         osSyncPrintf("Expanding jpeg data\n");
         osSyncPrintf("Work buffer address (Z buffer) %08x\n", gZBuffer);
@@ -253,84 +254,91 @@ s32 swapAndConvertJPEG(void* data) {
     return 0;
 }
 
-
-void func_8009638C(Gfx** displayList, void* source, void* tlut, u16 width, u16 height, u8 fmt, u8 siz, u16 mode0,
-                   u16 tlutCount, f32 frameX, f32 frameY) {
-    Gfx* displayListHead;
+void Room_DrawBackground2D(Gfx** gfxP, void* tex, void* tlut, u16 width, u16 height, u8 fmt, u8 siz, u16 tlutMode,
+                           u16 tlutCount, f32 offsetX, f32 offsetY) {
+    Gfx* gfx = *gfxP;
     uObjBg* bg;
-    s32 temp;
 
-    displayListHead = *displayList;
+    bg = (uObjBg*)(gfx + 1);
+    gSPBranchList(gfx, (Gfx*)(bg + 1));
 
-    bg = (uObjBg*)(displayListHead + 1);
-    gSPBranchList(displayListHead, (u8*)bg + sizeof(uObjBg));
     bg->b.imageX = 0;
-    bg->b.imageW = width * 4;
-    bg->b.frameX = frameX * 4;
+    bg->b.imageW = width * (1 << 2);
+    bg->b.frameX = offsetX * (1 << 2);
     bg->b.imageY = 0;
-    bg->b.imageH = height * 4;
-    bg->b.frameY = frameY * 4;
-    bg->b.imagePtr = source;
+    bg->b.imageH = height * (1 << 2);
+    bg->b.frameY = offsetY * (1 << 2);
+    bg->b.imagePtr = tex;
     bg->b.imageLoad = G_BGLT_LOADTILE;
     bg->b.imageFmt = fmt;
     bg->b.imageSiz = siz;
     bg->b.imagePal = 0;
-    bg->b.imageFlip = CVarGetInteger("gMirroredWorld", 0) ? G_BG_FLAG_FLIPS : 0;
+    bg->b.imageFlip = CVarGetInteger(CVAR_ENHANCEMENT("MirroredWorld"), 0) ? G_BG_FLAG_FLIPS : 0;
 
-    if (ResourceMgr_ResourceIsBackground((char*) source)) {
-        char* blob = (char*) ResourceGetDataByName((char *) source);
+    // When an alt resource exists for the background, we need to unload the original asset
+    // to clear the cache so the alt asset will be loaded instead
+    // OTRTODO: If Alt loading over original cache is fixed, this line can most likely be removed
+    ResourceMgr_UnloadOriginalWhenAltExists((char*)tex);
+
+    if (ResourceMgr_ResourceIsBackground((char*)tex)) {
+        char* blob = (char*)ResourceGetDataByName((char*)tex);
         swapAndConvertJPEG(blob);
-        bg->b.imagePtr = (uintptr_t) blob;
+        bg->b.imagePtr = (uintptr_t)blob;
     }
 
-    displayListHead = (void*)(bg + 1);
+    gfx = (Gfx*)(bg + 1);
+
     if (fmt == G_IM_FMT_CI) {
-        gDPLoadTLUT(displayListHead++, tlutCount, 256, tlut);
+        gDPLoadTLUT(gfx++, tlutCount, 256, tlut);
     } else {
-        gDPPipeSync(displayListHead++);
+        gDPPipeSync(gfx++);
     }
 
     if ((fmt == G_IM_FMT_RGBA) && (SREG(26) == 0)) {
-        bg->b.frameW = width * 4;
-        bg->b.frameH = height * 4;
+        bg->b.frameW = width * (1 << 2);
+        bg->b.frameH = height * (1 << 2);
         guS2DInitBg(bg);
 
-        gDPSetOtherMode(displayListHead++, mode0 | G_TL_TILE | G_TD_CLAMP | G_TP_NONE | G_CYC_FILL | G_PM_NPRIMITIVE,
+        // #region SOH [Port][Widescreen]
+        // When larger than 4:3 we want to render an additional black rectangle behind the 2d image
+        // to simulate black bars on the side that cover up the world
+        s16 newX = OTRGetRectDimensionFromLeftEdge(0);
+        if (newX < 0) {
+            gDPSetOtherMode(gfx++, tlutMode | G_TL_TILE | G_TD_CLAMP | G_TP_NONE | G_CYC_FILL | G_PM_NPRIMITIVE,
+                            G_AC_THRESHOLD | G_ZS_PIXEL | G_RM_NOOP | G_RM_NOOP2);
+            gDPSetFillColor(gfx++, GPACK_RGBA5551(0, 0, 0, 1) << 16 | GPACK_RGBA5551(0, 0, 0, 1));
+            gDPFillWideRectangle(gfx++, newX, 0, OTRGetRectDimensionFromRightEdge(SCREEN_WIDTH), SCREEN_HEIGHT);
+        }
+        // #endregion
+
+        gDPSetOtherMode(gfx++, tlutMode | G_TL_TILE | G_TD_CLAMP | G_TP_NONE | G_CYC_COPY | G_PM_NPRIMITIVE,
                         G_AC_THRESHOLD | G_ZS_PIXEL | G_RM_NOOP | G_RM_NOOP2);
 
-        gDPSetFillColor(displayListHead++, GPACK_RGBA5551(0, 0, 0, 1) << 16 | GPACK_RGBA5551(0, 0, 0, 1));
-        gDPFillWideRectangle(displayListHead++, OTRGetRectDimensionFromLeftEdge(0), 0,
-                         OTRGetRectDimensionFromRightEdge(SCREEN_WIDTH), SCREEN_HEIGHT);
+        gDPLoadMultiTile(gfx++, bg->b.imagePtr, 0, G_TX_RENDERTILE, G_IM_FMT_RGBA, G_IM_SIZ_16b, 320, 0, 0, 0, 0 + 31,
+                         0 + 31, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOMIRROR | G_TX_WRAP,
+                         G_TX_NOMASK, G_TX_NOLOD);
 
-        gDPSetOtherMode(displayListHead++, mode0 | G_TL_TILE | G_TD_CLAMP | G_TP_NONE | G_CYC_COPY | G_PM_NPRIMITIVE,
-                        G_AC_THRESHOLD | G_ZS_PIXEL | G_RM_NOOP | G_RM_NOOP2);
-
-        gDPLoadMultiTile(displayListHead++, bg->b.imagePtr, 0,
-            G_TX_RENDERTILE, G_IM_FMT_RGBA, G_IM_SIZ_16b, 320, 0, 0, 0, 0 + 31,
-            0 + 31, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD,
-            G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD);
-
-        gSPBgRectCopy(displayListHead++, bg);
-
+        gSPBgRectCopy(gfx++, bg);
     } else {
-        bg->s.frameW = width * 4;
-        bg->s.frameH = height * 4;
-        bg->s.scaleW = 1024;
-        bg->s.scaleH = 1024;
+        bg->s.frameW = width * (1 << 2);
+        bg->s.frameH = height * (1 << 2);
+        bg->s.scaleW = 1 << 10;
+        bg->s.scaleH = 1 << 10;
         bg->s.imageYorig = bg->b.imageY;
-        gDPSetOtherMode(displayListHead++,
-                        mode0 | G_AD_DISABLE | G_CD_DISABLE | G_CK_NONE | G_TC_FILT | G_TF_POINT | G_TT_NONE |
+        gDPSetOtherMode(gfx++,
+                        tlutMode | G_AD_DISABLE | G_CD_DISABLE | G_CK_NONE | G_TC_FILT | G_TF_POINT | G_TT_NONE |
                             G_TL_TILE | G_TD_CLAMP | G_TP_NONE | G_CYC_1CYCLE | G_PM_NPRIMITIVE,
                         G_AC_THRESHOLD | G_ZS_PIXEL | AA_EN | CVG_DST_CLAMP | ZMODE_OPA | CVG_X_ALPHA | ALPHA_CVG_SEL |
                             GBL_c1(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_BL, G_BL_1MA) |
                             GBL_c2(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_BL, G_BL_1MA));
-        gDPSetCombineLERP(displayListHead++, 0, 0, 0, TEXEL0, 0, 0, 0, 1, 0, 0, 0, TEXEL0, 0, 0, 0, 1);
-        gSPObjRenderMode(displayListHead++, G_OBJRM_ANTIALIAS | G_OBJRM_BILERP);
-        gSPBgRect1Cyc(displayListHead++, bg);
+        gDPSetCombineLERP(gfx++, 0, 0, 0, TEXEL0, 0, 0, 0, 1, 0, 0, 0, TEXEL0, 0, 0, 0, 1);
+        gSPObjRenderMode(gfx++, G_OBJRM_ANTIALIAS | G_OBJRM_BILERP);
+        gSPBgRect1Cyc(gfx++, bg);
     }
 
-    gDPPipeSync(displayListHead++);
-    *displayList = displayListHead;
+    gDPPipeSync(gfx++);
+
+    *gfxP = gfx;
 }
 
 // Room Draw Polygon Type 1 - Single Format
@@ -364,22 +372,21 @@ void func_80096680(PlayState* play, Room* room, u32 flags) {
         }
 
         if (sp98) {
-            // gSPLoadUcodeL(POLY_OPA_DISP++, rspS2DEX)?
-            //gSPLoadUcodeEx(POLY_OPA_DISP++, OS_K0_TO_PHYSICAL(D_80113070), OS_K0_TO_PHYSICAL(D_801579A0), 0x800);
+            gSPLoadUcodeL(POLY_OPA_DISP++, ucode_s2dex);
 
             {
                 Vec3f sp60;
                 spA8 = POLY_OPA_DISP;
                 Camera_GetSkyboxOffset(&sp60, camera);
-                func_8009638C(&spA8, polygon1->single.source, polygon1->single.tlut, polygon1->single.width,
-                              polygon1->single.height, polygon1->single.fmt, polygon1->single.siz,
-                              polygon1->single.mode0, polygon1->single.tlutCount,
-                              (sp60.x + sp60.z) * 1.2f + sp60.y * 0.6f, sp60.y * 2.4f + (sp60.x + sp60.z) * 0.3f);
+                Room_DrawBackground2D(&spA8, polygon1->single.source, polygon1->single.tlut, polygon1->single.width,
+                                      polygon1->single.height, polygon1->single.fmt, polygon1->single.siz,
+                                      polygon1->single.mode0, polygon1->single.tlutCount,
+                                      (sp60.x + sp60.z) * 1.2f + sp60.y * 0.6f,
+                                      sp60.y * 2.4f + (sp60.x + sp60.z) * 0.3f);
                 POLY_OPA_DISP = spA8;
             }
 
-            // gSPLoadUcode(POLY_OPA_DISP++, SysUcode_GetUCode(), SysUcode_GetUCodeData())?
-            gSPLoadUcodeEx(POLY_OPA_DISP++, SysUcode_GetUCode(), SysUcode_GetUCodeData(), 0x800);
+            gSPLoadUcode(POLY_OPA_DISP++, SysUcode_GetUCode());
         }
     }
 
@@ -403,9 +410,10 @@ BgImage* func_80096A74(PolygonType1* polygon1, PlayState* play) {
 
     camera = GET_ACTIVE_CAM(play);
     camId = camera->camDataIdx;
-    if (camId == -1 && (CVarGetInteger("gNoRestrictItems", 0) || CVarGetInteger("gCrowdControl", 0))) {
+    if (camId == -1 && (CVarGetInteger(CVAR_CHEAT("NoRestrictItems"), 0) ||
+                        (CVarGetInteger(CVAR_REMOTE_CROWD_CONTROL("Enabled"), 0)))) {
         // This prevents a crash when using items that change the
-        // camera (such as din's fire), voiding out or dying on 
+        // camera (such as din's fire), voiding out or dying on
         // scenes with prerendered backgrounds.
         return NULL;
     }
@@ -467,21 +475,20 @@ void func_80096B6C(PlayState* play, Room* room, u32 flags) {
         }
 
         if (sp94) {
-            // gSPLoadUcodeL(POLY_OPA_DISP++, rspS2DEX)?
-            //gSPLoadUcodeEx(POLY_OPA_DISP++, OS_K0_TO_PHYSICAL(D_80113070), OS_K0_TO_PHYSICAL(D_801579A0), 0x800);
+            gSPLoadUcodeL(POLY_OPA_DISP++, ucode_s2dex);
 
             {
                 Vec3f sp5C;
                 spA8 = POLY_OPA_DISP;
                 Camera_GetSkyboxOffset(&sp5C, camera);
-                func_8009638C(&spA8, bgImage->source, bgImage->tlut, bgImage->width, bgImage->height, bgImage->fmt,
-                              bgImage->siz, bgImage->mode0, bgImage->tlutCount,
-                              (sp5C.x + sp5C.z) * 1.2f + sp5C.y * 0.6f, sp5C.y * 2.4f + (sp5C.x + sp5C.z) * 0.3f);
+                Room_DrawBackground2D(&spA8, bgImage->source, bgImage->tlut, bgImage->width, bgImage->height,
+                                      bgImage->fmt, bgImage->siz, bgImage->mode0, bgImage->tlutCount,
+                                      (sp5C.x + sp5C.z) * 1.2f + sp5C.y * 0.6f,
+                                      sp5C.y * 2.4f + (sp5C.x + sp5C.z) * 0.3f);
                 POLY_OPA_DISP = spA8;
             }
 
-            // gSPLoadUcode(POLY_OPA_DISP++, SysUcode_GetUCode(), SysUcode_GetUCodeData())?
-            gSPLoadUcodeEx(POLY_OPA_DISP++, SysUcode_GetUCode(), SysUcode_GetUCodeData(), 0x800);
+            gSPLoadUcode(POLY_OPA_DISP++, SysUcode_GetUCode());
         }
     }
 
@@ -578,12 +585,6 @@ u32 func_80096FE8(PlayState* play, RoomContext* roomCtx) {
 s32 func_8009728C(PlayState* play, RoomContext* roomCtx, s32 roomNum) {
     size_t size;
 
-    // In ER, override roomNum to load based on scene and spawn
-    if (IS_RANDO && gSaveContext.respawnFlag <= 0 &&
-        Randomizer_GetSettingValue(RSK_SHUFFLE_ENTRANCES)) {
-        roomNum = Entrance_OverrideSpawnSceneRoom(play->sceneNum, play->curSpawn, roomNum);
-    }
-
     return OTRfunc_8009728C(play, roomCtx, roomNum);
 
     if (roomCtx->status == 0) {
@@ -595,7 +596,8 @@ s32 func_8009728C(PlayState* play, RoomContext* roomCtx, s32 roomNum) {
         assert(roomNum < play->numRooms);
 
         size = play->roomList[roomNum].vromEnd - play->roomList[roomNum].vromStart;
-        roomCtx->unk_34 = (void*)ALIGN16((intptr_t)roomCtx->bufPtrs[roomCtx->unk_30] - ((size + 8) * roomCtx->unk_30 + 7));
+        roomCtx->unk_34 =
+            (void*)ALIGN16((intptr_t)roomCtx->bufPtrs[roomCtx->unk_30] - ((size + 8) * roomCtx->unk_30 + 7));
 
         osCreateMesgQueue(&roomCtx->loadQueue, &roomCtx->loadMsg, 1);
         DmaMgr_SendRequest2(&roomCtx->dmaRequest, roomCtx->unk_34, play->roomList[roomNum].vromStart, size, 0,
@@ -610,7 +612,6 @@ s32 func_8009728C(PlayState* play, RoomContext* roomCtx, s32 roomNum) {
 
 s32 func_800973FC(PlayState* play, RoomContext* roomCtx) {
     return OTRfunc_800973FC(play, roomCtx);
-
 
     if (roomCtx->status == 1) {
         if (!osRecvMesg(&roomCtx->loadQueue, NULL, OS_MESG_NOBLOCK)) {
@@ -632,8 +633,7 @@ s32 func_800973FC(PlayState* play, RoomContext* roomCtx) {
 }
 
 void Room_Draw(PlayState* play, Room* room, u32 flags) {
-    if (room->segment != NULL)
-    {
+    if (room->segment != NULL) {
         gSegments[3] = VIRTUAL_TO_PHYSICAL(room->segment);
         assert(room->meshHeader->base.type < ARRAY_COUNTU(sRoomDrawHandlers));
         sRoomDrawHandlers[room->meshHeader->base.type](play, room, flags);
@@ -643,21 +643,21 @@ void Room_Draw(PlayState* play, Room* room, u32 flags) {
 void func_80097534(PlayState* play, RoomContext* roomCtx) {
     roomCtx->prevRoom.num = -1;
     roomCtx->prevRoom.segment = NULL;
-    func_80031B14(play, &play->actorCtx); //kills all actors without room num set to -1
+    func_80031B14(play, &play->actorCtx); // kills all actors without room num set to -1
     Actor_SpawnTransitionActors(play, &play->actorCtx);
     Map_InitRoomData(play, roomCtx->curRoom.num);
     if (!((play->sceneNum >= SCENE_HYRULE_FIELD) && (play->sceneNum <= SCENE_LON_LON_RANCH))) {
         Map_SavePlayerInitialInfo(play);
     }
     Audio_SetEnvReverb(play->roomCtx.curRoom.echo);
-    u8 idx = gSaveContext.sohStats.tsIdx;
-    gSaveContext.sohStats.sceneTimestamps[idx].scene = gSaveContext.sohStats.sceneNum;
-    gSaveContext.sohStats.sceneTimestamps[idx].room = gSaveContext.sohStats.roomNum;
-    gSaveContext.sohStats.sceneTimestamps[idx].roomTime = gSaveContext.sohStats.roomTimer / 2;
-    gSaveContext.sohStats.sceneTimestamps[idx].isRoom = 
-        gPlayState->sceneNum == gSaveContext.sohStats.sceneTimestamps[idx].scene &&
-        gPlayState->roomCtx.curRoom.num != gSaveContext.sohStats.sceneTimestamps[idx].room;
-    gSaveContext.sohStats.tsIdx++;
-    gSaveContext.sohStats.roomNum = roomCtx->curRoom.num;
-    gSaveContext.sohStats.roomTimer = 0;
+    u8 idx = gSaveContext.ship.stats.tsIdx;
+    gSaveContext.ship.stats.sceneTimestamps[idx].scene = gSaveContext.ship.stats.sceneNum;
+    gSaveContext.ship.stats.sceneTimestamps[idx].room = gSaveContext.ship.stats.roomNum;
+    gSaveContext.ship.stats.sceneTimestamps[idx].roomTime = gSaveContext.ship.stats.roomTimer / 2;
+    gSaveContext.ship.stats.sceneTimestamps[idx].isRoom =
+        gPlayState->sceneNum == gSaveContext.ship.stats.sceneTimestamps[idx].scene &&
+        gPlayState->roomCtx.curRoom.num != gSaveContext.ship.stats.sceneTimestamps[idx].room;
+    gSaveContext.ship.stats.tsIdx++;
+    gSaveContext.ship.stats.roomNum = roomCtx->curRoom.num;
+    gSaveContext.ship.stats.roomTimer = 0;
 }

@@ -4,9 +4,20 @@
 #include "overlays/actors/ovl_Door_Warp1/z_door_warp1.h"
 #include "scenes/dungeons/ddan_boss/ddan_boss_room_1.h"
 #include "soh/frame_interpolation.h"
-#include "soh/Enhancements/boss-rush/BossRush.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
+#include "soh/OTRGlobals.h"
+#include "soh/ResourceManagerHelpers.h"
 
-#define FLAGS (ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED)
+#include <stdlib.h> // malloc
+#include <string.h> // memcpy
+
+#define FLAGS                                                                                 \
+    (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_UPDATE_CULLING_DISABLED | \
+     ACTOR_FLAG_DRAW_CULLING_DISABLED)
+
+#define LAVA_TEX_WIDTH 32
+#define LAVA_TEX_HEIGHT 64
+#define LAVA_TEX_SIZE 2048
 
 void BossDodongo_Init(Actor* thisx, PlayState* play);
 void BossDodongo_Destroy(Actor* thisx, PlayState* play);
@@ -57,7 +68,14 @@ static u8 sMaskTex16x32[16 * 32] = { { 0 } };
 static u8 sMaskTex32x16[32 * 16] = { { 0 } };
 static u8 sMaskTex8x8[8 * 8] = { { 0 } };
 static u8 sMaskTex8x32[8 * 32] = { { 0 } };
-static u8 sMaskTexLava[32 * 64] = { { 0 } };
+static u8 sMaskTexLava[LAVA_TEX_WIDTH * LAVA_TEX_HEIGHT] = { { 0 } };
+
+static u32* sLavaFloorModifiedTexRaw = NULL;
+static u32* sLavaWavyTexRaw = NULL;
+static u16 sLavaFloorModifiedTex[LAVA_TEX_SIZE];
+static u16 sLavaWavyTex[LAVA_TEX_SIZE];
+
+static u8 hasRegisteredBlendedHook = 0;
 
 static InitChainEntry sInitChain[] = {
     ICHAIN_U8(targetMode, 5, ICHAIN_CONTINUE),
@@ -65,6 +83,93 @@ static InitChainEntry sInitChain[] = {
     ICHAIN_F32_DIV1000(gravity, -3000.0f, ICHAIN_CONTINUE),
     ICHAIN_F32(targetArrowOffset, 8200.0f, ICHAIN_STOP),
 };
+
+void BossDodongo_RegisterBlendedLavaTextureUpdate() {
+    // Not in scene so there is nothing to do
+    if (gPlayState == NULL || gPlayState->sceneNum != SCENE_DODONGOS_CAVERN_BOSS) {
+        return;
+    }
+
+    // Free old textures
+    if (sLavaFloorModifiedTexRaw != NULL) {
+        free(sLavaFloorModifiedTexRaw);
+        sLavaFloorModifiedTexRaw = NULL;
+    }
+    if (sLavaWavyTexRaw != NULL) {
+        free(sLavaWavyTexRaw);
+        sLavaWavyTexRaw = NULL;
+    }
+
+    // Unload original textures to bypass cache result for lookups
+    ResourceMgr_UnloadOriginalWhenAltExists(sLavaFloorLavaTex);
+    ResourceMgr_UnloadOriginalWhenAltExists(sLavaFloorRockTex);
+    ResourceMgr_UnloadOriginalWhenAltExists(gDodongosCavernBossLavaFloorTex);
+
+    // When the texture is HD (raw) we need to work with u32 values for RGBA32
+    // Otherwise the original asset is u16 for RGBA16
+    if (ResourceMgr_TexIsRaw(gDodongosCavernBossLavaFloorTex)) {
+        u32* lavaTex = ResourceGetDataByName(sLavaFloorLavaTex);
+        size_t lavaSize = ResourceGetSizeByName(sLavaFloorLavaTex);
+        size_t floorSize = ResourceGetSizeByName(gDodongosCavernBossLavaFloorTex);
+        size_t rockSize = ResourceGetSizeByName(sLavaFloorRockTex);
+
+        // If the sizes don't match, then don't bother with the blended effect to avoid crashing
+        if (floorSize != lavaSize || floorSize != rockSize) {
+            uint8_t maskVal = !!Flags_GetClear(gPlayState, gPlayState->roomCtx.curRoom.num);
+
+            if (sMaskTexLava[0] != maskVal) {
+                for (int i = 0; i < ARRAY_COUNT(sMaskTexLava); i++) {
+                    sMaskTexLava[i] = maskVal;
+                }
+            }
+
+            Gfx_RegisterBlendedTexture(gDodongosCavernBossLavaFloorTex, sMaskTexLava, NULL);
+            Gfx_TextureCacheDelete(sMaskTexLava);
+            return;
+        }
+
+        sLavaFloorModifiedTexRaw = malloc(lavaSize);
+        sLavaWavyTexRaw = malloc(floorSize);
+
+        memcpy(sLavaFloorModifiedTexRaw, lavaTex, lavaSize);
+
+        // When KD is dead, just immediately copy the rock texture
+        if (Flags_GetClear(gPlayState, gPlayState->roomCtx.curRoom.num)) {
+            u32* rockTex = ResourceGetDataByName(sLavaFloorRockTex);
+            memcpy(sLavaFloorModifiedTexRaw, rockTex, rockSize);
+        }
+
+        memcpy(sLavaWavyTexRaw, sLavaFloorModifiedTexRaw, floorSize);
+
+        // Register the blended effect for the raw texture
+        Gfx_RegisterBlendedTexture(gDodongosCavernBossLavaFloorTex, sMaskTexLava, sLavaWavyTexRaw);
+    } else {
+        // When KD is dead, just immediately copy the rock texture
+        if (Flags_GetClear(gPlayState, gPlayState->roomCtx.curRoom.num)) {
+            u16* rockTex = ResourceGetDataByName(sLavaFloorRockTex);
+            memcpy(sLavaFloorModifiedTex, rockTex, sizeof(sLavaFloorModifiedTex));
+        } else {
+            u16* lavaTex = ResourceGetDataByName(sLavaFloorLavaTex);
+            memcpy(sLavaFloorModifiedTex, lavaTex, sizeof(sLavaFloorModifiedTex));
+        }
+
+        // Register the blended effect for the non-raw texture
+        memcpy(sLavaWavyTex, sLavaFloorModifiedTex, sizeof(sLavaWavyTex));
+
+        Gfx_RegisterBlendedTexture(gDodongosCavernBossLavaFloorTex, sMaskTexLava, sLavaWavyTex);
+    }
+
+    // Set all true for the lava as it will always replace the scene texture
+    if (sMaskTexLava[0] == 0) {
+        for (int i = 0; i < ARRAY_COUNT(sMaskTexLava); i++) {
+            sMaskTexLava[i] = 1;
+        }
+    }
+
+    Gfx_TextureCacheDelete(sMaskTexLava);
+    Gfx_TextureCacheDelete(sLavaWavyTex);
+    Gfx_TextureCacheDelete(sLavaFloorModifiedTex);
+}
 
 void func_808C12C4(u8* arg1, s16 arg2) {
     if (arg2[arg1] != 0) {
@@ -86,12 +191,57 @@ void func_808C12C4(u8* arg1, s16 arg2) {
     }
 }
 
-void func_808C1554(void* arg0, void* floorTex, s32 arg2, f32 arg3) {
-    arg0 = GetResourceDataByNameHandlingMQ(arg0);
-    floorTex = ResourceGetDataByName(floorTex);
+// Same as func_808C1554 but works with u32 values for RGBA32 raw textures
+void func_808C1554_Raw(void* arg0, void* floorTex, s32 arg2, f32 arg3) {
+    // Raw lava not registered, so abort the wave modification
+    if (sLavaWavyTexRaw == NULL || sLavaFloorModifiedTexRaw == NULL) {
+        return;
+    }
 
-    u16* temp_s3 = SEGMENTED_TO_VIRTUAL(arg0);
-    u16* temp_s1 = SEGMENTED_TO_VIRTUAL(floorTex);
+    u16 width = ResourceGetTexWidthByName(arg0);
+    s32 size = ResourceGetTexHeightByName(arg0) * width;
+
+    u32* temp_s3 = sLavaWavyTexRaw;
+    u32* temp_s1 = sLavaFloorModifiedTexRaw;
+    s32 i;
+    s32 i2;
+    u32* sp54 = malloc(size * sizeof(u32)); // Match the size for lava floor tex
+    s32 temp;
+    s32 temp2;
+
+    // Multiplier is used to try to scale the wavy effect to match the scale of the HD texture
+    // Applying sqrt(multiplier) to arg3 is to control how many pixels move left/right for the selected row
+    // Applying to arg2 and M_PI help to space out the wave effect
+    // It's not perfect but close enough
+    u16 multiplier = width / LAVA_TEX_WIDTH;
+
+    for (i = 0; i < size; i += width) {
+        temp = sinf((((i / width) + (s32)(((arg2 * multiplier) * 50.0f) / 100.0f)) & (width - 1)) *
+                    (M_PI / (16 * multiplier))) *
+               (arg3 * sqrt(multiplier));
+        for (i2 = 0; i2 < width; i2++) {
+            sp54[i + ((temp + i2) & (width - 1))] = temp_s1[i + i2];
+        }
+    }
+    for (i = 0; i < width; i++) {
+        temp = sinf(((i + (s32)(((arg2 * multiplier) * 80.0f) / 100.0f)) & (width - 1)) * (M_PI / (16 * multiplier))) *
+               (arg3 * sqrt(multiplier));
+        temp *= width;
+        for (i2 = 0; i2 < size; i2 += width) {
+            temp2 = (temp + i2) & (size - 1);
+            temp_s3[i + temp2] = sp54[i + i2];
+        }
+    }
+
+    free(sp54);
+    Gfx_TextureCacheDelete(sLavaWavyTexRaw);
+}
+
+// Modified to support CPU modified texture with the resource system
+// Used for the original non-raw asset working with u16 values
+void func_808C1554(void* arg0, void* floorTex, s32 arg2, f32 arg3) {
+    u16* temp_s3 = sLavaWavyTex;
+    u16* temp_s1 = sLavaFloorModifiedTex;
     s16 i;
     s16 i2;
     u16 sp54[2048];
@@ -112,6 +262,8 @@ void func_808C1554(void* arg0, void* floorTex, s32 arg2, f32 arg3) {
             temp_s3[i + temp2] = sp54[i + i2];
         }
     }
+
+    Gfx_TextureCacheDelete(sLavaWavyTex);
 }
 
 void func_808C17C8(PlayState* play, Vec3f* arg1, Vec3f* arg2, Vec3f* arg3, f32 arg4, s16 arg5) {
@@ -172,8 +324,8 @@ void BossDodongo_Init(Actor* thisx, PlayState* play) {
     Actor_ProcessInitChain(&this->actor, sInitChain);
     ActorShape_Init(&this->actor.shape, 9200.0f, ActorShadow_DrawCircle, 250.0f);
     Actor_SetScale(&this->actor, 0.01f);
-    SkelAnime_Init(play, &this->skelAnime, &object_kingdodongo_Skel_01B310, &object_kingdodongo_Anim_00F0D8, NULL,
-                   NULL, 0);
+    SkelAnime_Init(play, &this->skelAnime, &object_kingdodongo_Skel_01B310, &object_kingdodongo_Anim_00F0D8, NULL, NULL,
+                   0);
     Animation_PlayLoop(&this->skelAnime, &object_kingdodongo_Anim_00F0D8);
     this->unk_1F8 = 1.0f;
     BossDodongo_SetupIntroCutscene(this, play);
@@ -187,27 +339,23 @@ void BossDodongo_Init(Actor* thisx, PlayState* play) {
     Collider_SetJntSph(play, &this->collider, &this->actor, &sJntSphInit, this->items);
 
     if (Flags_GetClear(play, play->roomCtx.curRoom.num)) { // KD is dead
-        u16* LavaFloorTex = ResourceGetDataByName(gDodongosCavernBossLavaFloorTex);
-        u16* LavaFloorRockTex = ResourceGetDataByName(sLavaFloorRockTex);
-        temp_s1_3 = SEGMENTED_TO_VIRTUAL(LavaFloorTex);
-        temp_s2 = SEGMENTED_TO_VIRTUAL(LavaFloorRockTex);
-        Actor_Kill(&this->actor);
-        Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_DOOR_WARP1, -890.0f, -1523.76f,
-                           -3304.0f, 0, 0, 0, WARP_DUNGEON_CHILD);
-        Actor_Spawn(&play->actorCtx, play, ACTOR_BG_BREAKWALL, -890.0f, -1523.76f, -3304.0f, 0, 0, 0, 0x6000, true);
-        Actor_Spawn(&play->actorCtx, play, ACTOR_ITEM_B_HEART, -690.0f, -1523.76f, -3304.0f, 0, 0, 0, 0, true);
+        // SOH [General]
+        // Applying the "cooled off" lava rock CPU modified texture for re-visiting the scene
+        // is now handled by BossDodongo_RegisterBlendedLavaTextureUpdate below
 
-        for (int i = 0; i < ARRAY_COUNT(sMaskTexLava); i++) {
-            sMaskTexLava[i] = 1;
-        }
-    } else {
-        for (int i = 0; i < ARRAY_COUNT(sMaskTexLava); i++) {
-            sMaskTexLava[i] = 0;
+        Actor_Kill(&this->actor);
+        Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_DOOR_WARP1, -890.0f, -1523.76f, -3304.0f, 0, 0, 0,
+                           WARP_DUNGEON_CHILD);
+        Actor_Spawn(&play->actorCtx, play, ACTOR_BG_BREAKWALL, -890.0f, -1523.76f, -3304.0f, 0, 0, 0, 0x6000, true);
+        if (GameInteractor_Should(VB_SPAWN_HEART_CONTAINER, true)) {
+            Actor_Spawn(&play->actorCtx, play, ACTOR_ITEM_B_HEART, -690.0f, -1523.76f, -3304.0f, 0, 0, 0, 0, true);
         }
     }
 
-    this->actor.flags &= ~ACTOR_FLAG_TARGETABLE;
+    this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
 
+    // #region SOH [General]
+    // Init mask values for all KD blended textures
     for (int i = 0; i < ARRAY_COUNT(sMaskTex8x16); i++) {
         sMaskTex8x16[i] = 0;
     }
@@ -223,6 +371,8 @@ void BossDodongo_Init(Actor* thisx, PlayState* play) {
     for (int i = 0; i < ARRAY_COUNT(sMaskTex32x16); i++) {
         sMaskTex32x16[i] = 0;
     }
+
+    // Register all blended textures
     Gfx_RegisterBlendedTexture(object_kingdodongo_Tex_015890, sMaskTex8x16, NULL);
     Gfx_RegisterBlendedTexture(object_kingdodongo_Tex_017210, sMaskTex8x32, NULL);
     Gfx_RegisterBlendedTexture(object_kingdodongo_Tex_015D90, sMaskTex16x16, NULL);
@@ -234,10 +384,21 @@ void BossDodongo_Init(Actor* thisx, PlayState* play) {
     Gfx_RegisterBlendedTexture(object_kingdodongo_Tex_016990, sMaskTex32x16, NULL);
     Gfx_RegisterBlendedTexture(object_kingdodongo_Tex_016E10, sMaskTex32x16, NULL);
 
-    // OTRTODO: This is causing OOB memory reads with HD assets
-    // commenting this out means the lava will stay lava even after beating king d
-    // 
-    // Gfx_RegisterBlendedTexture(gDodongosCavernBossLavaFloorTex, sMaskTexLava, sLavaFloorRockTex);
+    // Clear cache for masks
+    Gfx_TextureCacheDelete(sMaskTex8x16);
+    Gfx_TextureCacheDelete(sMaskTex8x32);
+    Gfx_TextureCacheDelete(sMaskTex16x16);
+    Gfx_TextureCacheDelete(sMaskTex16x32);
+    Gfx_TextureCacheDelete(sMaskTex32x16);
+
+    BossDodongo_RegisterBlendedLavaTextureUpdate();
+
+    // Register alt listener to update the blended lava for the replacement texture based on alt path
+    if (!hasRegisteredBlendedHook) {
+        GameInteractor_RegisterOnAssetAltChange(BossDodongo_RegisterBlendedLavaTextureUpdate);
+        hasRegisteredBlendedHook = 1;
+    }
+    // #endregion
 }
 
 void BossDodongo_Destroy(Actor* thisx, PlayState* play) {
@@ -290,7 +451,7 @@ void BossDodongo_IntroCutscene(BossDodongo* this, PlayState* play) {
             break;
         case 1:
             func_80064520(play, &play->csCtx);
-            func_8002DF54(play, &this->actor, 1);
+            Player_SetCsActionWithHaltedActors(play, &this->actor, 1);
             Play_ClearAllSubCameras(play);
             this->cutsceneCamera = Play_CreateSubCamera(play);
             Play_ChangeCameraStatus(play, 0, 1);
@@ -317,11 +478,11 @@ void BossDodongo_IntroCutscene(BossDodongo* this, PlayState* play) {
             }
 
             if (this->unk_198 == 110) {
-                func_8002DF54(play, &this->actor, 9);
+                Player_SetCsActionWithHaltedActors(play, &this->actor, 9);
             }
 
             if (this->unk_198 == 5) {
-                func_8002DF54(play, &this->actor, 12);
+                Player_SetCsActionWithHaltedActors(play, &this->actor, 12);
             }
 
             if (this->unk_198 < 6) {
@@ -436,7 +597,7 @@ void BossDodongo_IntroCutscene(BossDodongo* this, PlayState* play) {
                 func_800C08AC(play, this->cutsceneCamera, 0);
                 this->cutsceneCamera = 0;
                 func_80064534(play, &play->csCtx);
-                func_8002DF54(play, &this->actor, 7);
+                Player_SetCsActionWithHaltedActors(play, &this->actor, 7);
                 BossDodongo_SetupWalk(this);
                 this->unk_1DA = 50;
                 this->unk_1BC = 0;
@@ -496,7 +657,7 @@ void BossDodongo_SetupWalk(BossDodongo* this) {
     this->unk_1AA = 0;
     this->actionFunc = BossDodongo_Walk;
     this->unk_1DA = 0;
-    this->actor.flags |= ACTOR_FLAG_TARGETABLE;
+    this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
     this->unk_1E4 = 0.0f;
 }
 
@@ -690,7 +851,7 @@ void BossDodongo_Walk(BossDodongo* this, PlayState* play) {
             }
 
             if (this->unk_1BC != 0) {
-                func_80078884(NA_SE_EN_DODO_K_WALK);
+                Sfx_PlaySfxCentered(NA_SE_EN_DODO_K_WALK);
             } else {
                 Audio_PlayActorSound2(&this->actor, NA_SE_EN_DODO_K_WALK);
             }
@@ -751,7 +912,7 @@ void BossDodongo_Roll(BossDodongo* this, PlayState* play) {
     f32 sp4C;
     f32 sp48;
 
-    this->actor.flags |= ACTOR_FLAG_PLAY_HIT_SFX;
+    this->actor.flags |= ACTOR_FLAG_SFX_FOR_PLAYER_BODY_HIT;
     SkelAnime_Update(&this->skelAnime);
 
     if (this->unk_1DA == 10) {
@@ -781,8 +942,7 @@ void BossDodongo_Roll(BossDodongo* this, PlayState* play) {
             }
 
             if (!(this->unk_19E & 1)) {
-                Actor_SpawnFloorDustRing(play, &this->actor, &this->actor.world.pos, 40.0f, 3, 8.0f, 500, 10,
-                                         false);
+                Actor_SpawnFloorDustRing(play, &this->actor, &this->actor.world.pos, 40.0f, 3, 8.0f, 500, 10, false);
             }
         }
     }
@@ -888,7 +1048,7 @@ void BossDodongo_Update(Actor* thisx, PlayState* play2) {
     thisx->shape.rot.y = thisx->world.rot.y;
 
     Math_SmoothStepToF(&thisx->shape.yOffset, this->unk_228, 1.0f, 100.0f, 0.0f);
-    Actor_MoveForward(thisx);
+    Actor_MoveXZGravity(thisx);
     BossDodongo_UpdateDamage(this, play);
     Actor_UpdateBgCheckInfo(play, thisx, 10.0f, 10.0f, 20.0f, 4);
     Math_SmoothStepToF(&this->unk_208, 0, 1, 0.001f, 0.0);
@@ -970,7 +1130,7 @@ void BossDodongo_Update(Actor* thisx, PlayState* play2) {
             magmaScale = ((s16)(Rand_ZeroOne() * 50)) - 50;
         }
 
-        if (player2->csMode >= 10) {
+        if (player2->csAction >= 10) {
             phi_s0_3 = -1;
         }
 
@@ -1014,21 +1174,73 @@ void BossDodongo_Update(Actor* thisx, PlayState* play2) {
             }
         }
 
-        // TODO The lave floor bubbles with an effect that modifies the texture. This needs to be recreated shader-side.
-        //func_808C1554(gDodongosCavernBossLavaFloorTex, sLavaFloorLavaTex, this->unk_19E, this->unk_224);
+        // The lava bubbles with a wavy effect as a CPU modified texture
+        // This has been done by maintaining copied/modified texture values in the actor code
+        // The "cooling off" effect for the lava is pre-applied to the lava texture before applying
+        // the wavy effect. Since this is two effects and closely related to the actor, I've opted
+        // to handle them here rather than as a shader effect.
+        //
+        // Apply the corresponding wavy effect based on the texture being raw or not
+        if (ResourceMgr_TexIsRaw(gDodongosCavernBossLavaFloorTex)) {
+            func_808C1554_Raw(gDodongosCavernBossLavaFloorTex, sLavaFloorLavaTex, this->unk_19E, this->unk_224);
+        } else {
+            func_808C1554(gDodongosCavernBossLavaFloorTex, sLavaFloorLavaTex, this->unk_19E, this->unk_224);
+        }
     }
 
+    // Apply the "cooling off" effect for the lava
     if (this->unk_1C6 != 0) {
-        u16* ptr1 = ResourceGetDataByName(sLavaFloorLavaTex);
-        u16* ptr2 = ResourceGetDataByName(sLavaFloorRockTex);
-        s16 i2;
+        // Similar to above, the cooling off effect is a CPU modified texture effect
+        // Apply corresponding to the texture being raw or not
+        if (ResourceMgr_TexIsRaw(sLavaFloorRockTex)) {
+            u32* ptr1 = sLavaFloorModifiedTexRaw;
+            u32* ptr2 = ResourceGetDataByName(sLavaFloorRockTex);
+            u16 width = ResourceGetTexWidthByName(sLavaFloorRockTex);
+            u16 height = ResourceGetTexHeightByName(sLavaFloorRockTex);
+            s16 i2;
 
-        for (i2 = 0; i2 < 20; i2++) {
-            s16 new_var = this->unk_1C2 & 0x7FF;
+            // Get the scale based on the original texture size
+            u16 widthScale = width / LAVA_TEX_WIDTH;
+            u16 heightScale = height / LAVA_TEX_HEIGHT;
+            u32 size = width * height;
 
-            sMaskTexLava[new_var] = 1;
-            this->unk_1C2 += 37;
+            for (i2 = 0; i2 < 20; i2++) {
+                s16 new_var = this->unk_1C2 & (LAVA_TEX_SIZE - 1);
+
+                // Raw lava must be registered, otherwise skip the effect for incompatible texture pack
+                // and instead set the mask to simulate the lava disappearing by turning black
+                if (sLavaFloorModifiedTexRaw != NULL) {
+                    // Compute the index to a scaled position (scaling pseudo x,y as a 1D value)
+                    s32 indexStart =
+                        ((new_var % LAVA_TEX_WIDTH) * widthScale) + ((new_var / LAVA_TEX_WIDTH) * width * heightScale);
+
+                    // From the starting index, apply extra pixels right/down based on the scale
+                    for (size_t j = 0; j < heightScale; j++) {
+                        for (size_t i3 = 0; i3 < widthScale; i3++) {
+                            s32 scaledIndex = (indexStart + i3 + (j * width)) & (size - 1);
+                            ptr1[scaledIndex] = ptr2[scaledIndex];
+                        }
+                    }
+                } else {
+                    sMaskTexLava[new_var] = 1;
+                    Gfx_TextureCacheDelete(sMaskTexLava);
+                }
+
+                this->unk_1C2 += 37;
+            }
+        } else {
+            u16* ptr1 = sLavaFloorModifiedTex;
+            u16* ptr2 = ResourceGetDataByName(sLavaFloorRockTex);
+            s16 i2;
+
+            for (i2 = 0; i2 < 20; i2++) {
+                s16 new_var = this->unk_1C2 & 0x7FF;
+
+                ptr1[new_var] = ptr2[new_var];
+                this->unk_1C2 += 37;
+            }
         }
+
         Math_SmoothStepToF(&this->unk_224, 0.0f, 1.0f, 0.01f, 0.0f);
     }
 
@@ -1066,8 +1278,7 @@ void BossDodongo_Update(Actor* thisx, PlayState* play2) {
     BossDodongo_UpdateEffects(play);
 }
 
-s32 BossDodongo_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
-                                 void* thisx) {
+s32 BossDodongo_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     f32 mtxScaleY;
     f32 mtxScaleZ;
     BossDodongo* this = (BossDodongo*)thisx;
@@ -1082,6 +1293,10 @@ block_1:
 
     if (*dList != NULL) {
         OPEN_DISPS(play->state.gfxCtx);
+
+        if (this->skelAnime.skeletonHeader->skeletonType == SKELANIME_TYPE_FLEX) {
+            MATRIX_TOMTX(*play->flexLimbOverrideMTX);
+        }
 
         mtxScaleZ = 1.0f;
         mtxScaleY = 1.0f;
@@ -1103,10 +1318,18 @@ block_1:
             Matrix_RotateX(-(this->unk_25C[limbIndex] * 0.115f), MTXMODE_APPLY);
         }
 
-        gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
-                  G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        if (this->skelAnime.skeletonHeader->skeletonType == SKELANIME_TYPE_FLEX) {
+            gSPMatrix(POLY_OPA_DISP++, *play->flexLimbOverrideMTX, G_MTX_LOAD);
+        } else {
+            gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        }
+
         gSPDisplayList(POLY_OPA_DISP++, *dList);
         Matrix_Pop();
+
+        if (this->skelAnime.skeletonHeader->skeletonType == SKELANIME_TYPE_FLEX) {
+            (*play->flexLimbOverrideMTX)++;
+        }
 
         CLOSE_DISPS(play->state.gfxCtx);
     }
@@ -1149,10 +1372,6 @@ void BossDodongo_Draw(Actor* thisx, PlayState* play) {
         gSPInvalidateTexCache(POLY_OPA_DISP++, sMaskTex16x16);
         gSPInvalidateTexCache(POLY_OPA_DISP++, sMaskTex16x32);
         gSPInvalidateTexCache(POLY_OPA_DISP++, sMaskTex32x16);
-    }
-
-    if (this->unk_1C6 != 0) {
-        gSPInvalidateTexCache(POLY_OPA_DISP++, sMaskTexLava);
     }
 
     if ((this->unk_1C0 >= 2) && (this->unk_1C0 & 1)) {
@@ -1311,7 +1530,7 @@ void BossDodongo_SetupDeathCutscene(BossDodongo* this) {
     Audio_PlayActorSound2(&this->actor, NA_SE_EN_DODO_K_DEAD);
     this->unk_1DA = 0;
     this->csState = 0;
-    this->actor.flags &= ~(ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_HOSTILE);
+    this->actor.flags &= ~(ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE);
     this->unk_1BC = 1;
     Audio_QueueSeqCmd(0x1 << 28 | SEQ_PLAYER_BGM_MAIN << 24 | 0x100FF);
 }
@@ -1334,7 +1553,7 @@ void BossDodongo_DeathCutscene(BossDodongo* this, PlayState* play) {
         case 0:
             this->csState = 5;
             func_80064520(play, &play->csCtx);
-            func_8002DF54(play, &this->actor, 1);
+            Player_SetCsActionWithHaltedActors(play, &this->actor, 1);
             this->cutsceneCamera = Play_CreateSubCamera(play);
             Play_ChangeCameraStatus(play, MAIN_CAM, CAM_STAT_UNK3);
             Play_ChangeCameraStatus(play, this->cutsceneCamera, CAM_STAT_ACTIVE);
@@ -1345,8 +1564,7 @@ void BossDodongo_DeathCutscene(BossDodongo* this, PlayState* play) {
             this->cameraAt.x = camera->at.x;
             this->cameraAt.y = camera->at.y;
             this->cameraAt.z = camera->at.z;
-            gSaveContext.sohStats.itemTimestamp[TIMESTAMP_DEFEAT_KING_DODONGO] = GAMEPLAYSTAT_TOTAL_TIME;
-            BossRush_HandleCompleteBoss(play);
+            GameInteractor_ExecuteOnBossDefeat(&this->actor);
             break;
         case 5:
             tempSin = Math_SinS(this->actor.shape.rot.y - 0x1388) * 150.0f;
@@ -1366,8 +1584,8 @@ void BossDodongo_DeathCutscene(BossDodongo* this, PlayState* play) {
                 Animation_Change(&this->skelAnime, &object_kingdodongo_Anim_003CF8, 1.0f, 0.0f,
                                  Animation_GetLastFrame(&object_kingdodongo_Anim_003CF8), ANIMMODE_ONCE, -1.0f);
                 this->csState = 6;
-                Actor_Spawn(&play->actorCtx, play, ACTOR_BG_BREAKWALL, -890.0f, -1523.76f, -3304.0f, 0, 0, 0,
-                            0x6000, true);
+                Actor_Spawn(&play->actorCtx, play, ACTOR_BG_BREAKWALL, -890.0f, -1523.76f, -3304.0f, 0, 0, 0, 0x6000,
+                            true);
             }
             break;
         case 6:
@@ -1541,8 +1759,8 @@ void BossDodongo_DeathCutscene(BossDodongo* this, PlayState* play) {
                         effectPos.x = Rand_CenteredFloat(120.0f) + this->actor.focus.pos.x;
                         effectPos.y = Rand_ZeroFloat(50.0f) + this->actor.world.pos.y;
                         effectPos.z = Rand_CenteredFloat(120.0f) + this->actor.focus.pos.z;
-                        func_8002836C(play, &effectPos, &dustVel, &dustAcell, &dustPrimColor, &dustEnvColor, 0x1F4,
-                                      0xA, 0xA);
+                        func_8002836C(play, &effectPos, &dustVel, &dustAcell, &dustPrimColor, &dustEnvColor, 0x1F4, 0xA,
+                                      0xA);
                         effectPos.x = Rand_CenteredFloat(120.0f) + this->actor.focus.pos.x;
                         effectPos.y = -1498.76f;
                         effectPos.z = Rand_CenteredFloat(120.0f) + this->actor.focus.pos.z;
@@ -1631,7 +1849,7 @@ void BossDodongo_DeathCutscene(BossDodongo* this, PlayState* play) {
 
             if (this->unk_1DA == 820) {
                 Audio_QueueSeqCmd(SEQ_PLAYER_BGM_MAIN << 24 | NA_BGM_BOSS_CLEAR);
-                if (!IS_BOSS_RUSH) {
+                if (GameInteractor_Should(VB_SPAWN_HEART_CONTAINER, true)) {
                     Actor_Spawn(
                         &play->actorCtx, play, ACTOR_ITEM_B_HEART,
                         Math_SinS(this->actor.shape.rot.y) * -50.0f + this->actor.world.pos.x, this->actor.world.pos.y,
@@ -1649,11 +1867,10 @@ void BossDodongo_DeathCutscene(BossDodongo* this, PlayState* play) {
                 this->csState = 100;
                 Play_ChangeCameraStatus(play, MAIN_CAM, CAM_STAT_ACTIVE);
                 func_80064534(play, &play->csCtx);
-                func_8002DF54(play, &this->actor, 7);
-                if (!IS_BOSS_RUSH) {
-                    Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_DOOR_WARP1, -890.0f, -1523.76f, -3304.0f, 0, 0, 0, WARP_DUNGEON_CHILD);
-                } else {
-                    Actor_Spawn(&play->actorCtx, play, ACTOR_DOOR_WARP1, -890.0f, -1523.76f, -3304.0f, 0, 0, 0, WARP_DUNGEON_ADULT, false);
+                Player_SetCsActionWithHaltedActors(play, &this->actor, 7);
+                if (GameInteractor_Should(VB_SPAWN_BLUE_WARP, true, this)) {
+                    Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_DOOR_WARP1, -890.0f, -1523.76f,
+                                       -3304.0f, 0, 0, 0, WARP_DUNGEON_CHILD);
                 }
                 this->skelAnime.playSpeed = 0.0f;
                 Flags_SetClear(play, play->roomCtx.curRoom.num);
@@ -1667,8 +1884,7 @@ void BossDodongo_DeathCutscene(BossDodongo* this, PlayState* play) {
                 sp68.x = Rand_CenteredFloat(60.0f) + this->actor.focus.pos.x;
                 sp68.y = (Rand_ZeroOne() * 50.0f) + -1498.76f;
                 sp68.z = Rand_CenteredFloat(60.0f) + this->actor.focus.pos.z;
-                EffectSsGMagma2_Spawn(play, &sp68, &D_808CA568, &D_808CA56C, 5, 1,
-                                      (s16)(Rand_ZeroOne() * 50.0f) + 50);
+                EffectSsGMagma2_Spawn(play, &sp68, &D_808CA568, &D_808CA56C, 5, 1, (s16)(Rand_ZeroOne() * 50.0f) + 50);
             }
             break;
     }
@@ -1735,8 +1951,7 @@ void BossDodongo_DrawEffects(PlayState* play) {
             Matrix_Translate(eff->unk_00.x, eff->unk_00.y, eff->unk_00.z, MTXMODE_NEW);
             Matrix_ReplaceRotation(unkMtx);
             Matrix_Scale(eff->unk_2C, eff->unk_2C, 1.0f, MTXMODE_APPLY);
-            gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(gfxCtx),
-                      G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+            gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             gSPDisplayList(POLY_XLU_DISP++, object_kingdodongo_DL_009DD0);
         }
         FrameInterpolation_RecordCloseChild();

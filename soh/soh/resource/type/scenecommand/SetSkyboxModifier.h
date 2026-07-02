@@ -7,10 +7,10 @@
 #include "SceneCommand.h"
 #include <libultraship/libultra/types.h>
 
-namespace LUS {
+namespace SOH {
 typedef struct {
-  uint8_t skyboxDisabled;
-  uint8_t sunMoonDisabled;
+    uint8_t skyboxDisabled;
+    uint8_t sunMoonDisabled;
 } SkyboxModifier;
 
 class SetSkyboxModifier : public SceneCommand<SkyboxModifier> {
@@ -22,4 +22,4 @@ class SetSkyboxModifier : public SceneCommand<SkyboxModifier> {
 
     SkyboxModifier modifier;
 };
-}; // namespace LUS
+}; // namespace SOH

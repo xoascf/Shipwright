@@ -1,11 +1,11 @@
 #include "SetMesh.h"
 
-namespace LUS {
+namespace SOH {
 MeshHeader* SetMesh::GetPointer() {
     return &meshHeader;
 }
 
 size_t SetMesh::GetPointerSize() {
-	return sizeof(MeshHeader);
+    return sizeof(MeshHeader);
 }
-} // namespace LUS
+} // namespace SOH

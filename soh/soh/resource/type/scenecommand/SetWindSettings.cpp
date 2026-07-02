@@ -1,11 +1,11 @@
 #include "SetWindSettings.h"
 
-namespace LUS {
+namespace SOH {
 WindSettings* SetWindSettings::GetPointer() {
     return &settings;
 }
 
 size_t SetWindSettings::GetPointerSize() {
-	return sizeof(WindSettings);
+    return sizeof(WindSettings);
 }
-} // namespace LUS
+} // namespace SOH

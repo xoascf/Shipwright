@@ -1,16 +1,16 @@
 #include "Animation.h"
 
-namespace LUS {
+namespace SOH {
 AnimationData* Animation::GetPointer() {
     return &animationData;
 }
 
 size_t Animation::GetPointerSize() {
-    switch(type) {
+    switch (type) {
         case AnimationType::Normal:
             return sizeof(animationData.animationHeader);
         case AnimationType::Link:
-            return  sizeof(animationData.linkAnimationHeader);
+            return sizeof(animationData.linkAnimationHeader);
         case AnimationType::Curve:
             return sizeof(animationData.transformUpdateIndex);
         case AnimationType::Legacy:
@@ -18,4 +18,4 @@ size_t Animation::GetPointerSize() {
             return 0;
     }
 }
-} // namespace LUS
+} // namespace SOH

@@ -9,8 +9,7 @@
 #include "RomFile.h"
 #include <libultraship/libultra/types.h>
 
-
-namespace LUS {
+namespace SOH {
 // typedef struct {
 //     /* 0x00 */ uintptr_t vromStart;
 //     /* 0x04 */ uintptr_t vromEnd;
@@ -29,4 +28,4 @@ class SetRoomList : public SceneCommand<RomFile> {
     std::vector<std::string> fileNames;
     std::vector<RomFile> rooms;
 };
-}; // namespace LUS
+}; // namespace SOH
