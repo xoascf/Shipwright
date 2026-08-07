@@ -488,19 +488,26 @@ void OTRGlobals::RunExtract(int argc, char* argv[]) {
                 switch (windowsStep) {
                     case WS_TEMP: {
 #ifdef _WIN32
-                        char* tempVar = getenv("TEMP");
+                        wchar_t* tempVar = _wgetenv(L"TEMP");
                         std::filesystem::path tempPath;
                         try {
-                            tempPath = std::filesystem::canonical(tempVar);
-                        } catch (std::filesystem::filesystem_error const& ex) {
-                            std::string userPath = getenv("USERPROFILE");
-                            userPath.append("\\AppData\\Local\\Temp");
-                            tempPath = std::filesystem::canonical(userPath);
+                            if (tempVar != nullptr) {
+                                tempPath = std::filesystem::canonical(tempVar);
+                            } else {
+                                wchar_t* userProfile = _wgetenv(L"USERPROFILE");
+                                if (userProfile != nullptr) {
+                                    std::wstring userPath = userProfile;
+                                    userPath.append(L"\\AppData\\Local\\Temp");
+                                    tempPath = std::filesystem::canonical(userPath);
+                                }
+                            }
+                        } catch (...) {
+                            // If tempPath cannot be resolved canonical, proceed without failing
                         }
                         wchar_t buffer[MAX_PATH];
-                        GetModuleFileName(NULL, buffer, _countof(buffer));
+                        GetModuleFileNameW(NULL, buffer, _countof(buffer));
                         ownPath = std::filesystem::canonical(buffer).parent_path();
-                        if (IsSubpath(ownPath, tempPath)) {
+                        if (!tempPath.empty() && IsSubpath(ownPath, tempPath)) {
                             SohGui::RegisterPopup("SoH Path Error",
                                                   "SoH is running in a temp folder.\nExtract the .zip and run again.",
                                                   "OK", "", [&]() { exit(0); });
